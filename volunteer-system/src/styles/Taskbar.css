@@ -1,4 +1,4 @@
-/* General navbar styling */
+/* General navbar styling for 'banner' */
 .navbar {
     background-color: #ffffff;
     padding: 1em;
@@ -28,7 +28,8 @@
 
 /* Taskbar styling */
 .taskbar {
-    margin-left: auto; /* Pushes the taskbar to the right */
+    margin-left: auto; /* Aligns the taskbar to the right */
+    margin-right: 2em;  /* Moves taskbar a bit from the right */
 }
 
 .taskbar ul {
@@ -44,21 +45,45 @@
     margin-left: 2em; 
     position: relative; /* Needed for the pseudo-element */
     font-family: Georgia;
+    font-size: medium;
 }
 
+/* Adjusts position of divider */
 .taskbar ul li::after {
     content: '|';
     position: absolute;
-    right: -1em; /* Adjust the position as needed */
+    right: -1em; 
     color: rgb(0, 0, 0); 
 }
 
 .taskbar ul li:last-child::after {
-    content: ''; /* Remove the divider after the last item */
+    content: ''; /* Removes the divider after the last item */
 }
 
 .taskbar ul li a {
     color: rgb(0, 0, 0);
     text-decoration: none;
     font-size: 1.2em;
+}
+
+/* Banner styling */
+.banner-container {
+    text-align: center; /* Centers the banner horizontally */
+    margin-top: 1em; /* Adds spacing between the taskbar and banner */
+}
+
+.firstBanner {
+    width: 100%; /* Makes the banner full width */
+    height: auto; /* Ensures the image scales properly */
+}
+
+/* Who Are We? statement styling */
+.whoAreWe-container {
+    text-align: center;
+    margin-top: 1em;
+}
+
+.who-Are-We {
+    width: 100%;
+    height: auto;
 }
