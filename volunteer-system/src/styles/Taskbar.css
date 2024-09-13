@@ -1,4 +1,4 @@
-/* General navbar styling for 'banner' */
+/* General navbar styling */
 .navbar {
     background-color: #ffffff;
     padding: 1em;
@@ -10,8 +10,8 @@
 /* Logo styling */
 .logo-container {
     display: flex;
-    align-items: center; /* Center the logo and text vertically together */
-    margin-right: auto; /* Pushes the logo-container to the left */
+    align-items: center;
+    margin-right: auto;
 }
 
 .logo {
@@ -28,8 +28,8 @@
 
 /* Taskbar styling */
 .taskbar {
-    margin-left: auto; /* Aligns the taskbar to the right */
-    margin-right: 2em;  /* Moves taskbar a bit from the right */
+    margin-left: auto;
+    margin-right: 2em;
 }
 
 .taskbar ul {
@@ -42,22 +42,21 @@
 
 .taskbar ul li {
     display: inline;
-    margin-left: 2em; 
-    position: relative; /* Needed for the pseudo-element */
+    margin-left: 2em;
+    position: relative;
     font-family: Georgia;
     font-size: medium;
 }
 
-/* Adjusts position of divider */
 .taskbar ul li::after {
     content: '|';
     position: absolute;
-    right: -1em; 
-    color: rgb(0, 0, 0); 
+    right: -1em;
+    color: rgb(0, 0, 0);
 }
 
 .taskbar ul li:last-child::after {
-    content: ''; /* Removes the divider after the last item */
+    content: '';
 }
 
 .taskbar ul li a {
@@ -66,24 +65,51 @@
     font-size: 1.2em;
 }
 
-/* Banner styling */
-.banner-container {
-    text-align: center; /* Centers the banner horizontally */
-    margin-top: 1em; /* Adds spacing between the taskbar and banner */
+/* Dropdown styling */
+.dropdown {
+    position: relative;
 }
 
-.firstBanner {
-    width: 100%; /* Makes the banner full width */
-    height: auto; /* Ensures the image scales properly */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #ffffff;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    list-style-type: none;
+    padding: 0;
+    top: 100%; /* Position the dropdown below the link */
+    left: 0;
 }
 
-/* Who Are We? statement styling */
-.whoAreWe-container {
-    text-align: center;
-    margin-top: 1em;
+.dropdown-content li {
+    display: block;
+    margin: 0;
 }
 
-.who-Are-We {
-    width: 100%;
-    height: auto;
+.dropdown-content li a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    font-size: 1em;
+    font-family: Georgia;
+    white-space: nowrap;
+}
+
+/* Show the dropdown menu on hover */
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* Hover effect for dropdown items */
+.dropdown-content li a:hover {
+    background-color: #e46f85;
+    color: white;
+}
+
+/* Hide dropdown items when not hovering over the dropdown */
+.dropdown:not(:hover) .dropdown-content {
+    display: none;
 }
