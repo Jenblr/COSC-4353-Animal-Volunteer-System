@@ -1,48 +1,33 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'
 import '../../styles/LoginPage.css';
 
-const LoginPage = () => {
-    const [email, setEmail] = useState('');
+const AdminLoginPage = () => {
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [emailError, setEmailError] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-
-    // Email validation & error-handling
-    const validateEmail = (email) => {
-        const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-        return re.test(String(email).toLowerCase());
-    };
-
-    const handleEmailChange = (e) => {
-        setEmail(e.target.value);
-        if (!validateEmail(e.target.value)) {
-            setEmailError('Please enter a valid email address');
-        } else {
-            setEmailError('');
-        }
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
-        if (!validateEmail(email)) {
-            setEmailError('Please enter a valid email address');
+        // Basic validation = user leaves empty fields
+        if (!username || !password) {
+            setError('Please enter a username and password');
             setLoading(false);
             return;
         }
 
         try {
-            const response = await fetch('/login', {
+            const response = await fetch('/admin-login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ username, password }),
             });
 
             const data = await response.json();
@@ -51,7 +36,7 @@ const LoginPage = () => {
                 // Successful login = store token and redirect to home
                 console.log('Login successful:', data);
                 navigate('/home');
-            } else {
+            } else { // Username and password doesn't match what is stored in database
                 setError(data.message || 'Invalid credentials');
             }
 
@@ -64,21 +49,22 @@ const LoginPage = () => {
         }
     };
 
+
     return (
-        <div className="login-container">
-            <form className="login-form" onSubmit={handleSubmit}>
-                <h2>Volunteer Login</h2>
+        <div className = "login-container admin-login">
+            <form className= "login-form" onSubmit={handleSubmit}>
+                <h2>Admin Login</h2>   
                 <div className="form-group">
-                    <label htmlFor="email">Email:</label>
+                    <label htmlFor="username">Username:</label>
                     <input
-                        type="email"
-                        id="email"
-                        value={email}
-                        onChange={handleEmailChange}
+                        type="text"
+                        id="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
                         required
                     />
-                    {emailError && <span className="error-message">{emailError}</span>}
                 </div>
+
                 <div className="form-group">
                     <label htmlFor="password">Password:</label>
                     <input
@@ -91,18 +77,17 @@ const LoginPage = () => {
                 </div>
 
                 {error && <div className="error-message">{error}</div>}
-                <button type="submit" className="login-button" disabled={loading}>
-                    {loading ? 'Logging in...' : 'Log In'}
+                <button type="submit" className="login-button admin-login-button" disabled={loading}>
+                    {loading ? 'Logging in...' : 'Admin Log In'}
                 </button>
 
-                {/* Re-direct user if not registered OR an admin */}
+                {/* If user accidentally clicks admin login */}
                 <div className="additional-links">
-                    <p>Don't have an account? <Link to="/register">Sign up</Link></p>
-                    <p><Link to="/admin-login">Admin? Click here</Link></p>
+                    <p><Link to="/login">Back to User Login</Link></p>
                 </div>
             </form>
         </div>
-    );
-};
+    )
+}
 
-export default LoginPage;
+export default AdminLoginPage;

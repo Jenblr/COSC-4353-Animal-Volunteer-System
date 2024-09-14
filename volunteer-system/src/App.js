@@ -5,6 +5,7 @@ import Taskbar from './components/Main/Taskbar';
 import Calendar from './components/Events/Calendar';
 import Profile from './components/Profile/Profile';
 import LoginPage from './components/Authentication/LoginPage';
+import AdminLoginPage from './components/Authentication/AdminLoginPage';
 import NotificationDisplay from './components/Notifications/NotificationDisplay';
 import './App.css'
 
@@ -19,7 +20,9 @@ function App() {
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/admin-login" element={<AdminLoginPage />} />
           <Route path="/notifications" element={<NotificationDisplay />} />
+
         </Routes>
       </div>
     </Router>

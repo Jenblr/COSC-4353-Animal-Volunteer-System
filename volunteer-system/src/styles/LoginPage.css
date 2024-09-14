@@ -81,3 +81,44 @@ input {
 .additional-links a:hover {
     text-decoration: underline;
 }
+
+/* Admin-specific styles */
+.admin-login {
+    background-color: #f0f0f0;
+}
+
+.admin-login .login-form {
+    border: 2px solid #4a90e2;
+    background-color: #ffffff;
+}
+
+.admin-login h2 {
+    color: #4a90e2;
+}
+
+.admin-login-button {
+    background-color: #4a90e2;
+}
+
+.admin-login-button:hover {
+    background-color: #357abd;
+}
+
+.admin-login .additional-links a {
+    color: #4a90e2;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+    .login-form {
+        padding: 1.5rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    .login-button, .admin-login-button {
+        padding: 0.6rem;
+    }
+}
