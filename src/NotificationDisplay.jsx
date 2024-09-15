@@ -16,7 +16,7 @@ const NotificationDisplay = () => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const newSocket = io('https://f05e1c5b-9ff3-483d-8700-c9f7559c0ca3-00-3tkbw2on6xx87.picard.replit.dev/'); //connecting to websocket
+    const newSocket = io('Websocket Wss URL goes here'); //connecting to websocket
     setSocket(newSocket);
 
     newSocket.on('notification', (data) => {
