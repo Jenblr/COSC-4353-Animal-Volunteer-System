@@ -16,7 +16,7 @@ const LoginPage = () => {
         return re.test(String(email).toLowerCase());
     };
 
-    const handleEmailChange = (e) => {
+    const handleEmailValue = (e) => {
         setEmail(e.target.value);
         if (!validateEmail(e.target.value)) {
             setEmailError('Please enter a valid email address');
@@ -74,7 +74,7 @@ const LoginPage = () => {
                         type="email"
                         id="email"
                         value={email}
-                        onChange={handleEmailChange}
+                        onChange={handleEmailValue}
                         required
                     />
                     {emailError && <span className="error-message">{emailError}</span>}
