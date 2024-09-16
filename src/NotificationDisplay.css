@@ -23,6 +23,21 @@
   transition: color 0.3s ease; /* Smooth transition for hover effect */
 }
 
+.event {
+  color: #AA336A;
+  background-color: #90EE90;
+}
+
+.reminder {
+  color: #AA336A;
+  background-color: #FFD700;
+}
+
+.update {
+  color: #AA336A
+  background-color: #ADD8E6 
+}
+
 .close-button:hover {
   color: red; /* Change color on hover */
 }
