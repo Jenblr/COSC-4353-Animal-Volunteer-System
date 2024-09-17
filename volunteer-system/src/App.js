@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Home from './components/Main/Home';
 import Taskbar from './components/Main/Taskbar';
 import Calendar from './components/Events/Calendar';
+import EventManagementForm from './components/Events/EventManagementForm';
+import VolunteerMatchForm from './components/Events/VolunteerMatchingForm';
 import Profile from './components/Profile/Profile';
 import LoginPage from './components/Authentication/LoginPage';
 import AdminLoginPage from './components/Authentication/AdminLoginPage';
@@ -35,6 +37,9 @@ function App() {
           <Route path="/" element={<Navigate to="/home" />} />
           <Route path="/home" element={<Home />} />
           <Route path="/calendar" element={<Calendar />} />
+          <Route path="/events" element={<Navigate to="/event-management" />} />
+          <Route path="/event-management" element={<EventManagementForm />} />
+          <Route path="/volunteer-event-match" element={<VolunteerMatchForm />} />
           <Route path="/manage-profile" element={isLoggedIn ? <Profile /> : <Navigate to="/login" />} />
           <Route path="/login" element={<LoginPage setIsLoggedIn={setIsLoggedIn} setIsAdmin={setIsAdmin} />} />
           <Route path="/admin-login" element={<AdminLoginPage setIsLoggedIn={setIsLoggedIn} setIsAdmin={setIsAdmin} />} />
