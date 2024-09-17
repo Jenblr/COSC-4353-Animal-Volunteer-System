@@ -1,14 +1,22 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import '../../styles/LoginPage.css';
 
-const LoginPage = () => {
+const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [emailError, setEmailError] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    // Mock user data
+    const mockUsers = [
+        { email: 'demo@example.com', password: 'demopassword' },
+        { email: 'user@example.com', password: 'userpassword' },
+    ];
 
     // Email validation & error-handling
     const validateEmail = (email) => {
@@ -25,7 +33,7 @@ const LoginPage = () => {
         }
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
@@ -36,33 +44,33 @@ const LoginPage = () => {
             return;
         }
 
-        try {
-            const response = await fetch('/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                // Successful login = store token and redirect to home
-                console.log('Login successful:', data);
+        // Mocking login with demo user data
+        setTimeout(() => {
+            const user = mockUsers.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                localStorage.setItem('token', 'userToken'); 
+                localStorage.setItem('role', user.role); 
+                setIsLoggedIn(true); 
+                if (user.role === 'admin') {
+                    setIsAdmin(true); 
+                }
                 navigate('/home');
             } else {
-                setError(data.message || 'Invalid credentials');
+                setError('Invalid credentials');
             }
-
-        } catch (error) { // Catches network errors
-            console.error('Error logging in:', error);
-            setError('An error occurred. Please try again.');
-
-        } finally {
             setLoading(false);
-        }
+        }, 1000); // Simulate a 1-second delay
     };
+
+    // Function to fill in demo user credentials
+    const fillDemoCredentials = () => {
+        setEmail('demo@example.com');
+        setPassword('demopassword');
+        setEmailError('');
+    };
+
+    const [showPassword, setShowPassword] = useState(false);
 
     return (
         <div className="login-container">
@@ -79,15 +87,23 @@ const LoginPage = () => {
                     />
                     {emailError && <span className="error-message">{emailError}</span>}
                 </div>
+
                 <div className="form-group">
                     <label htmlFor="password">Password:</label>
-                    <input
-                        type="password"
-                        id="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
+                    <div className="password-container">
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            id="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                        <FontAwesomeIcon
+                            icon={showPassword ? faEyeSlash : faEye}
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="password-icon"
+                        />
+                    </div>
                 </div>
 
                 {error && <div className="error-message">{error}</div>}
@@ -95,7 +111,10 @@ const LoginPage = () => {
                     {loading ? 'Logging in...' : 'Log In'}
                 </button>
 
-                {/* Re-direct user if not registered OR an admin */}
+                <button type="button" onClick={fillDemoCredentials} className="demo-button">
+                    Use Demo User
+                </button>
+
                 <div className="additional-links">
                     <p>Don't have an account? <Link to="/register">Sign up</Link></p>
                     <p><Link to="/admin-login">Admin? Click here</Link></p>

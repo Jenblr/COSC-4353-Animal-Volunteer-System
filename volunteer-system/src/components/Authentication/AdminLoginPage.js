@@ -2,12 +2,16 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom'
 import '../../styles/LoginPage.css';
 
-const AdminLoginPage = () => {
+const AdminLoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+
+    // Mock admin user data
+    const mockAdmin = { username: 'admin', password: 'adminpassword' };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -21,39 +25,32 @@ const AdminLoginPage = () => {
             return;
         }
 
-        try {
-            const response = await fetch('/admin-login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, password }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                // Successful login = store token and redirect to home
-                console.log('Login successful:', data);
-                navigate('/home');
-            } else { // Username and password doesn't match what is stored in database
-                setError(data.message || 'Invalid credentials');
+        // Simulating login with mock admin data
+        setTimeout(() => {
+            if (username === mockAdmin.username && password === mockAdmin.password) {
+                localStorage.setItem('token', 'adminToken'); 
+                localStorage.setItem('role', 'admin'); 
+                setIsLoggedIn(true); 
+                setIsAdmin(true); 
+                navigate('/home'); 
+            } else {
+                setError('Invalid credentials');
             }
-
-        } catch (error) { // Catches network errors
-            console.error('Error logging in:', error);
-            setError('An error occurred. Please try again.');
-
-        } finally {
             setLoading(false);
-        }
+        }, 1000); // Simulate 1-second delay
     };
 
+    // Function to fill in demo admin credentials
+    const fillDemoAdminCredentials = () => {
+        setUsername('admin');
+        setPassword('adminpassword');
+        setError('');
+    };
 
     return (
-        <div className = "login-container admin-login">
-            <form className= "login-form" onSubmit={handleSubmit}>
-                <h2>Admin Login</h2>   
+        <div className="login-container admin-login">
+            <form className="login-form" onSubmit={handleSubmit}>
+                <h2>Admin Login</h2>
                 <div className="form-group">
                     <label htmlFor="username">Username:</label>
                     <input
@@ -68,12 +65,15 @@ const AdminLoginPage = () => {
                 <div className="form-group">
                     <label htmlFor="password">Password:</label>
                     <input
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         id="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? 'Hide' : 'Show'}
+                    </button>
                 </div>
 
                 {error && <div className="error-message">{error}</div>}
@@ -87,7 +87,7 @@ const AdminLoginPage = () => {
                 </div>
             </form>
         </div>
-    )
-}
+    );
+};
 
 export default AdminLoginPage;
