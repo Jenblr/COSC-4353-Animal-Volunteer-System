@@ -8,6 +8,7 @@ import VolunteerMatchForm from './components/Events/VolunteerMatchingForm';
 import Profile from './components/Profile/Profile';
 import LoginPage from './components/Authentication/LoginPage';
 import AdminLoginPage from './components/Authentication/AdminLoginPage';
+import VolunteerHistory from './components/Profile/VolunteerHistory';
 import NotificationDisplay from './components/Notifications/NotificationDisplay';
 import './App.css'
 
@@ -43,6 +44,7 @@ function App() {
           <Route path="/manage-profile" element={isLoggedIn ? <Profile /> : <Navigate to="/login" />} />
           <Route path="/login" element={<LoginPage setIsLoggedIn={setIsLoggedIn} setIsAdmin={setIsAdmin} />} />
           <Route path="/admin-login" element={<AdminLoginPage setIsLoggedIn={setIsLoggedIn} setIsAdmin={setIsAdmin} />} />
+          <Route path="/volunteer-history" element={<VolunteerHistory />} />
           <Route path="/notifications" element={<NotificationDisplay />} />
         </Routes>
       </div>
