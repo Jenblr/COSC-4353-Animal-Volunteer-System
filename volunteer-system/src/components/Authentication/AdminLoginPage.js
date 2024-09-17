@@ -81,6 +81,10 @@ const AdminLoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
                     {loading ? 'Logging in...' : 'Admin Log In'}
                 </button>
 
+                <button type="button" onClick={fillDemoAdminCredentials} className="demo-button">
+                    Use Demo Admin Credentials
+                </button>
+
                 {/* If user accidentally clicks admin login */}
                 <div className="additional-links">
                     <p><Link to="/login">Back to User Login</Link></p>

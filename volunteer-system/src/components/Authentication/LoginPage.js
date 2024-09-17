@@ -10,17 +10,19 @@ const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
     const [emailError, setEmailError] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
-    // Mock user data
+    // Mock user data with roles
     const mockUsers = [
-        { email: 'demo@example.com', password: 'demopassword' },
-        { email: 'user@example.com', password: 'userpassword' },
+        { email: 'demo@example.com', password: 'demopassword', role: 'user' },
+        { email: 'user@example.com', password: 'userpassword', role: 'user' },
+        { email: 'admin@example.com', password: 'adminpassword', role: 'admin' } // Add this if admin login possible here
     ];
 
     // Email validation & error-handling
     const validateEmail = (email) => {
-        const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
         return re.test(String(email).toLowerCase());
     };
 
@@ -47,13 +49,13 @@ const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
         // Mocking login with demo user data
         setTimeout(() => {
             const user = mockUsers.find(u => u.email === email && u.password === password);
-            
+
             if (user) {
-                localStorage.setItem('token', 'userToken'); 
-                localStorage.setItem('role', user.role); 
-                setIsLoggedIn(true); 
+                localStorage.setItem('token', 'userToken');
+                localStorage.setItem('role', user.role);
+                setIsLoggedIn(true);
                 if (user.role === 'admin') {
-                    setIsAdmin(true); 
+                    setIsAdmin(true); // Set admin state if user is an admin
                 }
                 navigate('/home');
             } else {
@@ -69,8 +71,6 @@ const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
         setPassword('demopassword');
         setEmailError('');
     };
-
-    const [showPassword, setShowPassword] = useState(false);
 
     return (
         <div className="login-container">

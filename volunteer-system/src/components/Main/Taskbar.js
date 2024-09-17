@@ -45,14 +45,17 @@ const Taskbar = ({ isAdmin, isLoggedIn, setIsLoggedIn, setIsAdmin }) => {
                     <li><Link to='/home'>Home</Link></li>
                     <li><Link to='/calendar'>Calendar</Link></li>
 
-                    <li className="dropdown">
-                        <Link to='/events'>Events</Link>
-                        <ul className="dropdown-content">
-                        {isAdmin && <li><Link to='/event-management'>Event Management</Link></li>} 
-                        {isAdmin && <li><Link to='/volunteer-event-match' onClick={(e) => handleAuthenticatedLink(e, '/volunteer-event-match')}>Volunteer Event Match</Link></li>}
-                        </ul>
-                    </li>
-
+                    {/* Events viewable only by Admin users */}
+                    {isAdmin && (
+                        <li className="dropdown">
+                            <Link to='/events'>Events</Link>
+                            <ul className="dropdown-content">
+                                <li><Link to='/event-management'>Event Management</Link></li> 
+                                <li><Link to='/volunteer-event-match' onClick={(e) => handleAuthenticatedLink(e, '/volunteer-event-match')}>Volunteer Event Match</Link></li>
+                            </ul>
+                        </li>
+                    )}
+                    
                     <li className="dropdown">
                         <Link to='/profile' onClick={(e) => handleAuthenticatedLink(e, '/profile')}>Profile</Link>
                         <ul className="dropdown-content">
