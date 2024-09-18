@@ -9,3 +9,7 @@
 # Packages to install
 - npm install
 - npm install react-router-dom
+- npm install @fortawesome/react-fontawesome
+- npm install @fortawesome/free-solid-svg-icons
+- npm install react-select
+- npm install react-datepicker

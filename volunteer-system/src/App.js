@@ -5,7 +5,7 @@ import Taskbar from './components/Main/Taskbar';
 import Calendar from './components/Events/Calendar';
 import EventManagementForm from './components/Events/EventManagementForm';
 import VolunteerMatchForm from './components/Events/VolunteerMatchingForm';
-import Profile from './components/Profile/Profile';
+import ProfileForm from './components/Profile/ProfileForm';
 import Registration from './components/Authentication/RegistrationPage';
 import LoginPage from './components/Authentication/LoginPage';
 import AdminLoginPage from './components/Authentication/AdminLoginPage';
@@ -42,7 +42,7 @@ function App() {
           <Route path="/events" element={<Navigate to="/event-management" />} />
           <Route path="/event-management" element={<EventManagementForm />} />
           <Route path="/volunteer-event-match" element={<VolunteerMatchForm />} />
-          <Route path="/manage-profile" element={isLoggedIn ? <Profile /> : <Navigate to="/login" />} />
+          <Route path="/profile-form" element={<ProfileForm />} />
           <Route path="/register" element={<Registration />} />
           <Route path="/login" element={<LoginPage setIsLoggedIn={setIsLoggedIn} setIsAdmin={setIsAdmin} />} />
           <Route path="/admin-login" element={<AdminLoginPage setIsLoggedIn={setIsLoggedIn} setIsAdmin={setIsAdmin} />} />
