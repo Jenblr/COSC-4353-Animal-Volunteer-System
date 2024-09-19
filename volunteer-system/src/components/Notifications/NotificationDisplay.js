@@ -6,7 +6,6 @@ const NotificationDisplay = ({ isAdmin }) => {
   const [newUpdate, setNewUpdate] = useState('');
   const [newReminder, setNewReminder] = useState('');
 
-  // Fetch notifications 
   useEffect(() => {
     const fetchNotifications = () => {
       const sampleNotifications = [

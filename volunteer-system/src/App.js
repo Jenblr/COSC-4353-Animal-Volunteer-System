@@ -5,6 +5,7 @@ import Taskbar from './components/Main/Taskbar';
 import Calendar from './components/Events/Calendar';
 import EventManagementForm from './components/Events/EventManagementForm';
 import VolunteerMatchForm from './components/Events/VolunteerMatchingForm';
+import Profile from './components/Profile/Dashboard';
 import ProfileForm from './components/Profile/ProfileForm';
 import Registration from './components/Authentication/RegistrationPage';
 import LoginPage from './components/Authentication/LoginPage';
@@ -38,15 +39,21 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/home" />} />
           <Route path="/home" element={<Home />} />
+
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/events" element={<Navigate to="/event-management" />} />
           <Route path="/event-management" element={<EventManagementForm />} />
           <Route path="/volunteer-event-match" element={<VolunteerMatchForm />} />
+
+          <Route path="/profile" element={<Navigate to="/manage-profile" />} />
+          <Route path="/manage-profile" element={<Profile />} />
           <Route path="/profile-form" element={<ProfileForm />} />
+          <Route path="/volunteer-history" element={<VolunteerHistory />} />
+
           <Route path="/register" element={<Registration />} />
           <Route path="/login" element={<LoginPage setIsLoggedIn={setIsLoggedIn} setIsAdmin={setIsAdmin} />} />
           <Route path="/admin-login" element={<AdminLoginPage setIsLoggedIn={setIsLoggedIn} setIsAdmin={setIsAdmin} />} />
-          <Route path="/volunteer-history" element={<VolunteerHistory />} />
+
           <Route path="/notifications" element={<NotificationDisplay isAdmin={isAdmin} />} />
         </Routes>
       </div>
