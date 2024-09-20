@@ -40,7 +40,7 @@ function App() {
           <Route path="/" element={<Navigate to="/home" />} />
           <Route path="/home" element={<Home />} />
 
-          <Route path="/calendar" element={<Calendar />} />
+          <Route path="/calendar" element={<Calendar isAdmin={isAdmin} />} />
           <Route path="/events" element={<Navigate to="/event-management" />} />
           <Route path="/event-management" element={<EventManagementForm />} />
           <Route path="/volunteer-event-match" element={<VolunteerMatchForm />} />

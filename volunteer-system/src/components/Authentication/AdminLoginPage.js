@@ -25,7 +25,7 @@ const AdminLoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
             return;
         }
 
-        // Simulating login with mock admin data
+        // Login using mock admin data
         setTimeout(() => {
             if (username === mockAdmin.username && password === mockAdmin.password) {
                 localStorage.setItem('token', 'adminToken'); 

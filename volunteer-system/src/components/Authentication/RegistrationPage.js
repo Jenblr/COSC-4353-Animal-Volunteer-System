@@ -36,9 +36,7 @@ const RegistrationPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateEmail(email) && password.length >= 8 && password === confirmPassword) {
-      // Here you would typically send the data to your backend
       console.log('Registration attempt with:', email, password);
-      // Redirect to profile form
       navigate('/profile-form');
     } else {
       if (!validateEmail(email)) {

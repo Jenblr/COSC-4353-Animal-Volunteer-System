@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import '../../styles/Calendar.css';
 
-const Calendar = () => {
+const Calendar = ({ isAdmin }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState({});
   const [showEventForm, setShowEventForm] = useState(false);
@@ -52,7 +52,9 @@ const Calendar = () => {
               </div>
             </div>
           ))}
-          <button className="add-event-btn" onClick={() => handleAddEventClick(date)}>+</button>
+          {isAdmin && (
+            <button className="add-event-btn" onClick={() => handleAddEventClick(date)}>+</button>
+          )}
         </div>
       );
     }
