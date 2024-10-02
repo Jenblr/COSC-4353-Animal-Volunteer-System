@@ -12,12 +12,19 @@
 - **Database:** PostgreSQL
 ---
 # Packages Installed
+**Frontend**
 - npm install
 - npm install react-router-dom
 - npm install @fortawesome/react-fontawesome
 - npm install @fortawesome/free-solid-svg-icons
 - npm install react-select
 - npm install react-datepicker
+
+**Backend**
+- npm install express bcryptjs jsonwebtoken dotenv
+- npm install --save-dev jest supertest nodemon
+- npm install cors
+
 ---
 # Installation
 - **Requirements:**
@@ -25,3 +32,7 @@
     - **Frontend:**
         - Go to client folder → ```cd volunteer-system```
         - Start server → ```npm start```
+    - **Backend:**  
+        - Go to backend folder → ```cd backend```
+        - Start server → ```npx nodemon src/app.js```
+        - Download Postman (or Postman extension on VScode)
