@@ -5,14 +5,16 @@
 - Starts our server on the 5000 port
 */
 
+require('dotenv').config();
 const express = require('express');
+const bodyParser = require('body-parser');
 const cors = require('cors');
-require('dotenv').config(); // Load environment variables
+const authRoutes = require('./routes/authRoutes');
 
-const app = express();
+const app = express(); // Initializes Express app
 
 // Middleware
-app.use(express.json());
+app.use(bodyParser.json());
 app.use(cors());
 
 // Root Route for http://localhost:5000/
@@ -20,9 +22,17 @@ app.get('/', (req, res) => {
     res.send('Animal Volunteer System Backend');
 });
 
-// Authentication Routes
-const authRoutes = require('./routes/authRoutes');
+// Authentication Routes = Registration and Login
 app.use('/api/auth', authRoutes);
+
+// Other routes (for everyone else's module) = this is our base url
+// app.use('/api');
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ message: 'Something went wrong!' });
+})
 
 // Start the server
 const PORT = process.env.PORT || 5000;

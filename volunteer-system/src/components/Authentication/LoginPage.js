@@ -13,13 +13,6 @@ const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
-    // Mock user data with roles
-    const mockUsers = [
-        { email: 'demo@example.com', password: 'demopassword', role: 'user' },
-        { email: 'user@example.com', password: 'userpassword', role: 'user' },
-        { email: 'admin@example.com', password: 'adminpassword', role: 'admin' } // Add this if admin login possible here
-    ];
-
     // Email validation & error-handling
     const validateEmail = (email) => {
         const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -35,34 +28,34 @@ const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
-        if (!validateEmail(email)) {
-            setEmailError('Please enter a valid email address');
-            setLoading(false);
-            return;
-        }
-
-        // Mocking login with demo user data
-        setTimeout(() => {
-            const user = mockUsers.find(u => u.email === email && u.password === password);
-
-            if (user) {
-                localStorage.setItem('token', 'userToken');
-                localStorage.setItem('role', user.role);
-                setIsLoggedIn(true);
-                if (user.role === 'admin') {
-                    setIsAdmin(true); // Set admin state if user is an admin
-                }
-                navigate('/home');
+        // Send POST request to login endpoint
+        try {
+            const response = await fetch('http://localhost:5000/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+            });
+            const data = await response.json();
+            if (response.ok) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('role', data.role);
+            setIsLoggedIn(true);
+            if (data.role === 'admin') setIsAdmin(true);
+            navigate('/home');
             } else {
-                setError('Invalid credentials');
+            setError(data.message || 'Invalid credentials');
             }
-            setLoading(false);
-        }, 1000); // Simulate a 1-second delay
+        } catch (err) {
+            setError('Error occurred during login');
+        }
+        setLoading(false);
     };
 
     // Function to fill in demo user credentials

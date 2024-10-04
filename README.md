@@ -24,6 +24,7 @@
 - npm install express bcryptjs jsonwebtoken dotenv
 - npm install --save-dev jest supertest nodemon
 - npm install cors
+- npm install express-validator
 
 ---
 # Installation
