@@ -8,43 +8,44 @@ const jwt = require('jsonwebtoken');
 // Sample users array to simulate a database
 const users = [
     {
-        username: 'admin@example.com',
+        id: 1,
+        email: 'admin@example.com',
         password: bcrypt.hashSync('adminpassword', 8),
         role: 'admin'
     }
 ];
 
 // Registration for volunteer users 
-exports.registerUser = (username, password, role) => {
-    const userExists = users.find(user => user.username === username);
+exports.registerUser = (email, password, role) => {
+    const userExists = users.find(user => user.email === email);
     if (userExists) {
-        throw new Error('User already exists');
+        return { status: 400, message: 'User already exists' };
     }
 
     const hashedPassword = bcrypt.hashSync(password, 8);
-    const newUser = { username, password: hashedPassword, role: role || 'volunteer' };
+    const newUser = { id: users.length + 1, email, password: hashedPassword, role: role || 'volunteer' };
     users.push(newUser);
 
-    return newUser;
+    return { status: 201, user: newUser };
 };
 
 // Login for both volunteer and admin
-exports.loginUser = (username, password) => {
-    const user = users.find(user => user.username === username);
+exports.loginUser = (email, password) => {
+    const user = users.find(user => user.email === email);
     if (!user) {
-        throw new Error('User not found');
+        return { status: 404, message: 'User not found' };
     }
 
     const validPassword = bcrypt.compareSync(password, user.password);
     if (!validPassword) {
-        throw new Error('Invalid credentials');
+        return { status: 401, message: 'Invalid credentials' };
     }
 
     const token = jwt.sign(
-        { id: user.id, username: user.username, role: user.role },
+        { id: user.id, email: user.email, role: user.role },
         process.env.JWT_SECRET,
         { expiresIn: '1h' }
     );
 
-    return token;
+    return { status: 200, token };
 };

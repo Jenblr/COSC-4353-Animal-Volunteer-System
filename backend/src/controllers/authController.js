@@ -6,27 +6,27 @@
 const authService = require('../services/authService');
 
 exports.register = (req, res) => {
-    const { username, password, role } = req.body;
+    const { email, password, role } = req.body;
 
-    if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password are required' });
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    try {
-        const newUser = authService.registerUser(username, password, role);
-        return res.status(201).json({ message: 'User registered successfully', user: newUser });
-    } catch (error) {
-        return res.status(400).json({ message: error.message });
+    const response = authService.registerUser(email, password, role);
+    if (response.status === 201) {
+        return res.status(201).json({ message: 'User registered successfully', user: response.user });
+    } else {
+        return res.status(response.status).json({ message: response.message });
     }
 };
 
 exports.login = (req, res) => {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
-    try {
-        const token = authService.loginUser(username, password);
-        return res.status(200).json({ token });
-    } catch (error) {
-        return res.status(400).json({ message: error.message });
+    const response = authService.loginUser(email, password);
+    if (response.status === 200) {
+        return res.status(200).json({ token: response.token });
+    } else {
+        return res.status(response.status).json({ message: response.message });
     }
 };

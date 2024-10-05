@@ -18,18 +18,26 @@
 
 ### Authentication Endpoints Testing: Postman
 1. **Create collection:** 'Authentication and User Roles Tests'
-2. **Add new requests to the collection:**
+2. **Add new environment:** 'Local Environment'
+    - **Variable:** baseURL ; **Type:** default; **Initial Value:** 'http://localhost:5000/api'
+    - **Variable:** token ; **Type:** default
+3. **Add new requests to the collection:**
     - 'User Registration'
     - 'Login User'
+    - 'Admin Login Request'
     - 'User Access Protected Route'
     - 'Admin Access Protected Route'
+4. **Choose Environment:** (Top right corner) 'Local Environment'
+5. **URL:** {{baseURL}}/auth/ [INSERT ROUTE FOR SPECIFIC REQUEST FILE]
 
 ---
 
 ### POST requests:
+
 **Requests**
 - 'User Registration'
 - 'Login User'
+- 'Admin Login Request'
 
 **Headers**
 - **Key:** Content-Type
@@ -50,6 +58,6 @@
 
 **Authorization**
 - **Type:** Bearer Token
-- **Value:** token generated from 'Login User'
+- **Value:** token generated from 'user/admin login' : {{token}}
 
 <hr style="border: 3px dashed ;">

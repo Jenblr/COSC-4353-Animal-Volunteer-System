@@ -26,6 +26,9 @@
 - npm install cors
 - npm install express-validator
 
+**Unit Testing**
+- npm install --save-dev jest supertest
+
 ---
 # Installation
 - **Requirements:**
