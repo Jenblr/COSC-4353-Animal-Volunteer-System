@@ -1,3 +1,17 @@
+const events = [
+    {
+      id: 1,
+      eventName: "Annual Dog Walk Fundraiser",
+      eventDescription: "Join us for our biggest event of the year! Walk dogs from our shelter and help raise funds for animal care.",
+      location: "Hermann Park, Houston",
+      requiredSkills: ["Dog walking", "Fundraising"],
+      urgency: "Medium",
+      eventDate: "2024-10-15",
+      startTime: "09:00",
+      endTime: "14:00",
+      createdAt: "2024-01-15T10:00:00Z"
+    }
+];
 const validateEventData = (eventData) => {
     const errors = {};
   

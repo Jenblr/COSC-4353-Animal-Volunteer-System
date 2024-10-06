@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../../styles/Events.css';
 
 const MultiSelect = ({ options, selected, onChange }) => {
@@ -45,32 +45,85 @@ const EventManagementForm = () => {
     endTime: ''
   });
   const [errors, setErrors] = useState({});
+  const [skillOptions, setSkillOptions] = useState([]);
 
-  const skillOptions = [
-    'Dog walking',
-    'Taking photos of animals',
-    'Organizing shelter donations',
-    'Helping with laundry',
-    'Cleaning',
-    'Medication',
-    'Grooming',
-    'Assisting potential adopters'
-  ];
+const [urgencyOptions, setUrgencyOptions] = useState([]);
+
+const [isLoading, setIsLoading] = useState(false);
+
+const [successMessage, setSuccessMessage] = useState('');
 
 
 
-  const urgencyOptions = ['Low', 'Medium', 'High', 'Critical'];
+useEffect(() => {
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
-    if (errors[name]) {
-      setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
-    }
-  };
+const fetchFormOptions = async () => {
+
+try {
+
+const response = await fetch('/api/events/form-options', {
+
+headers: {
+
+'Authorization': `Bearer ${localStorage.getItem('token')}`
+
+}
+
+});
+
+if (response.ok) {
+
+const options = await response.json();
+
+setSkillOptions(options.skillOptions);
+
+setUrgencyOptions(options.urgencyOptions);
+
+} else {
+
+console.error('Failed to fetch form options');
+
+}
+
+} catch (error) {
+
+console.error('Error fetching form options:', error);
+
+}
+
+};
+
+
+
+fetchFormOptions();
+
+}, []);
+
+  // const skillOptions = [
+  //   'Dog walking',
+  //   'Taking photos of animals',
+  //   'Organizing shelter donations',
+  //   'Helping with laundry',
+  //   'Cleaning',
+  //   'Medication',
+  //   'Grooming',
+  //   'Assisting potential adopters'
+  // ];
+
+
+
+  // const urgencyOptions = ['Low', 'Medium', 'High', 'Critical'];
+
+  // const handleChange = (e) => {
+  //   const { name, value } = e.target;
+  //   setFormData(prevState => ({
+  //     ...prevState,
+  //     [name]: value
+  //   }));
+  //   if (errors[name]) {
+  //     setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
+  //   }
+  // };
 
   const handleSkillsChange = (selectedSkills) => {
     setFormData(prevState => ({
@@ -81,65 +134,158 @@ const EventManagementForm = () => {
       setErrors(prevErrors => ({ ...prevErrors, requiredSkills: '' }));
     }
   };
+  const resetForm = () => {
 
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.eventName.trim()) {
-      newErrors.eventName = 'Event Name is required';
-    } else if (formData.eventName.length > 100) {
-      newErrors.eventName = 'Event Name must be 100 characters or less';
-    }
-
-    if (!formData.eventDescription.trim()) {
-      newErrors.eventDescription = 'Event Description is required';
-    }
-
-    if (!formData.location.trim()) {
-      newErrors.location = 'Location is required';
-    }
-
-    if (formData.requiredSkills.length === 0) {
-      newErrors.requiredSkills = 'At least one skill is required';
-    }
-
-    if (!formData.urgency) {
-      newErrors.urgency = 'Urgency is required';
-    }
-
-    if (!formData.eventDate) {
-      newErrors.eventDate = 'Event Date is required';
-    }
-
-    if (!formData.startTime) {
-      newErrors.startTime = 'Start Time is required';
-    }
-
-    if (!formData.endTime) {
-      newErrors.endTime = 'End Time is required';
-    }
-
-    if (formData.startTime && formData.endTime && formData.startTime >= formData.endTime) {
-      newErrors.endTime = 'End Time must be after Start Time';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
+    setFormData({
+    
+    eventName: '',
+    
+    eventDescription: '',
+    
+    location: '',
+    
+    requiredSkills: [],
+    
+    urgency: '',
+    
+    eventDate: '',
+    
+    startTime: '',
+    
+    endTime: ''
+    
+    });
+    
+    setErrors({});
+    
+    };
+    
+    
+    
+    const handleSubmit = async (e) => {
+    
     e.preventDefault();
-    if (validateForm()) {
-      console.log('Form submitted:', formData);
+    
+    setIsLoading(true);
+    
+    setSuccessMessage('');
+    
+    setErrors({});
+    
+    
+    
+    try {
+    
+    const response = await fetch('/api/events', {
+    
+    method: 'POST',
+    
+    headers: {
+    
+    'Content-Type': 'application/json',
+    
+    'Authorization': `Bearer ${localStorage.getItem('token')}`
+    
+    },
+    
+    body: JSON.stringify(formData),
+    
+    });
+    
+    
+    
+    if (!response.ok) {
+    
+    const errorData = await response.json();
+    
+    setErrors(errorData.errors || { general: 'An error occurred while creating the event.' });
+    
+    } else {
+    
+    const newEvent = await response.json();
+    
+    console.log('Event created:', newEvent);
+    
+    setSuccessMessage('Event created successfully!');
+    
+    resetForm();
+    
     }
-  };
+    
+    } catch (error) {
+    
+    console.error('Error submitting form:', error);
+    
+    setErrors({ general: 'An unexpected error occurred. Please try again.' });
+    
+    } finally {
+    
+    setIsLoading(false);
+    
+    }
+    
+    };
+
+  // const validateForm = () => {
+  //   const newErrors = {};
+
+  //   if (!formData.eventName.trim()) {
+  //     newErrors.eventName = 'Event Name is required';
+  //   } else if (formData.eventName.length > 100) {
+  //     newErrors.eventName = 'Event Name must be 100 characters or less';
+  //   }
+
+  //   if (!formData.eventDescription.trim()) {
+  //     newErrors.eventDescription = 'Event Description is required';
+  //   }
+
+  //   if (!formData.location.trim()) {
+  //     newErrors.location = 'Location is required';
+  //   }
+
+  //   if (formData.requiredSkills.length === 0) {
+  //     newErrors.requiredSkills = 'At least one skill is required';
+  //   }
+
+  //   if (!formData.urgency) {
+  //     newErrors.urgency = 'Urgency is required';
+  //   }
+
+  //   if (!formData.eventDate) {
+  //     newErrors.eventDate = 'Event Date is required';
+  //   }
+
+  //   if (!formData.startTime) {
+  //     newErrors.startTime = 'Start Time is required';
+  //   }
+
+  //   if (!formData.endTime) {
+  //     newErrors.endTime = 'End Time is required';
+  //   }
+
+  //   if (formData.startTime && formData.endTime && formData.startTime >= formData.endTime) {
+  //     newErrors.endTime = 'End Time must be after Start Time';
+  //   }
+
+  //   setErrors(newErrors);
+  //   return Object.keys(newErrors).length === 0;
+  // };
+
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+  //   if (validateForm()) {
+  //     console.log('Form submitted:', formData);
+  //   }
+  // };
 
   return (
     <div className="event-management-form">
       <div className="form-header">
         <h2>Event Management Form</h2>
       </div>
-      <div className="form-content">
+      {/* <div className="form-content"> */}
+      {successMessage && <div className="success-message">{successMessage}</div>}
+      {errors.general && <div className="error-message">{errors.general}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="eventName">Event Name:</label>
@@ -240,11 +386,13 @@ const EventManagementForm = () => {
           </div>
 
           <div className="submit-container">
-            <button type="submit">Submit</button>
+            
+            <button type="submit" disabled={isLoading}>{isLoading ? 'Submitting...' : 'Submit'}    
+            </button>
           </div>
         </form>
       </div>
-    </div>
+    // </div>
   );
 };
 
