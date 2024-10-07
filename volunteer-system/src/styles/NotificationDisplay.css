@@ -1,0 +1,55 @@
+.notification-display-container {
+    padding: 20px;
+    background-color: #f9f9f9;
+  }
+  
+  .notifications-list {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .notification-item {
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+  }
+  
+  .notification-item.new-event {
+    background-color: #e7f4e3;
+  }
+  
+  .notification-item.update {
+    background-color: #e3f0f8;
+  }
+  
+  .notification-item.reminder {
+    background-color: #fde3e3;
+  }
+  
+  .admin-notification-actions {
+    margin-top: 20px;
+  }
+  
+  .add-notification {
+    display: flex;
+    margin-bottom: 10px;
+  }
+  
+  .add-notification input {
+    flex: 1;
+    padding: 8px;
+    margin-right: 10px;
+  }
+  
+  .add-notification button {
+    padding: 8px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .add-notification button:hover {
+    background-color: #45a049;
+  }
+  
