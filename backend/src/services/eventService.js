@@ -8,8 +8,29 @@ const events = [
       urgency: "Medium",
       eventDate: "2024-10-15",
       startTime: "09:00",
-      endTime: "14:00",
-      createdAt: "2024-01-15T10:00:00Z"
+      endTime: "14:00"
+    },
+    {
+      id: 2,
+      eventName: "Emergency Supply Drive",
+      eventDescription: "Urgent need for volunteers to help sort and organize donated supplies for animals affected by recent flooding.",
+      location: "Community Center, 789 River Rd, Floodville, USA",
+      requiredSkills: ["Organizing shelter donations", "Helping with laundry"],
+      urgency: "Critical",
+      eventDate: "2024-05-10",
+      startTime: "07:00",
+      endTime: "19:00"
+    },
+    {
+      id: 3,
+      eventName: "Pet Photography Day",
+      eventDescription: "Help us update our adoption listings with new, high-quality photos of our animals. Bring your camera!",
+      location: "Pawsome Adoptions, 101 Camera Lane, Shutterville, USA",
+      requiredSkills: ["Taking photos of animals", "Assisting potential adopters"],
+      urgency: "Medium",
+      eventDate: "2024-07-22",
+      startTime: "10:00",
+      endTime: "15:00"
     }
 ];
 const validateEventData = (eventData) => {
@@ -56,7 +77,10 @@ const validateEventData = (eventData) => {
       createdAt: new Date().toISOString()
     };
     events.push(newEvent);
-    return newEvent;
+    return {
+      message: "Event created successfully",
+      event: newEvent
+    };
   };
   
   exports.getAllEvents = () => {
@@ -84,7 +108,10 @@ const validateEventData = (eventData) => {
   
     const updatedEvent = { ...events[index], ...eventData, updatedAt: new Date().toISOString() };
     events[index] = updatedEvent;
-    return updatedEvent;
+    return {
+      message: "Event updated successfully",
+      event: updatedEvent
+    };
   };
   
   exports.deleteEvent = (id) => {
@@ -93,6 +120,7 @@ const validateEventData = (eventData) => {
       throw { status: 404, message: 'Event not found' };
     }
     events.splice(index, 1);
+    return { message: "Event deleted successfully" };
   };
   
   exports.getFormOptions = () => {

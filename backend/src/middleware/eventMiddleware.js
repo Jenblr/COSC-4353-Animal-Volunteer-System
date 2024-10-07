@@ -1,5 +1,19 @@
 // middleware/validateEventInput.js
 
+//helper function to validate date string (YYYY-MM-DD)
+function isValidDate(dateString) {
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(dateString)) return false;
+    const date = new Date(dateString);
+    return date instanceof Date && !isNaN(date) && date.toISOString().slice(0, 10) === dateString;
+  }
+  
+  //helper function to validate time string (HH:MM)
+  function isValidTime(timeString) {
+    const regex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+    return regex.test(timeString);
+  }
+  
 const validateEventInput = (req, res, next) => {
     const { eventName, eventDescription, location, requiredSkills, urgency, eventDate, startTime, endTime } = req.body;
     const errors = {};
@@ -55,18 +69,5 @@ const validateEventInput = (req, res, next) => {
     next();
   };
   
-//helper function to validate date string (YYYY-MM-DD)
-function isValidDate(dateString) {
-    const regex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!regex.test(dateString)) return false;
-    const date = new Date(dateString);
-    return date instanceof Date && !isNaN(date) && date.toISOString().slice(0, 10) === dateString;
-  }
-  
-  //helper function to validate time string (HH:MM)
-  function isValidTime(timeString) {
-    const regex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-    return regex.test(timeString);
-  }
-  
+
 module.exports = { validateEventInput };

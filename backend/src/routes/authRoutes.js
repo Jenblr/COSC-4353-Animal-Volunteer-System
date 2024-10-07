@@ -8,6 +8,8 @@ const router = express.Router();
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const { validateRegistration, validateLogin } = require('../utils/validators');
 const authController = require('../controllers/authController');
+const eventController = require('../controllers/eventController');//added By Afra
+const { validateEventInput } = require('../middleware/eventMiddleware');//added by Afra
 
 // Public routes 
 router.post('/register', validateRegistration, authController.register);
@@ -37,11 +39,18 @@ router.get('/volunteer-history', verifyToken, (req, res) => {
 router.get('/notifications', verifyToken, (req, res) => {
     res.json('Notifications data');
 });
+///new add
+router.get('/events', verifyToken, verifyAdmin, eventController.getAllEvents);
+router.get('/events/form-options', verifyToken, verifyAdmin, eventController.getFormOptions);
+router.get('/events/:id', verifyToken, verifyAdmin, eventController.getEventById);
+router.post('/events', verifyToken, verifyAdmin, validateEventInput, eventController.createEvent);
+router.put('/events/:id', verifyToken, verifyAdmin, validateEventInput, eventController.updateEvent);
+router.delete('/events/:id', verifyToken, verifyAdmin, eventController.deleteEvent)
 
 // Protected admin-only routes
-router.get('/events', verifyToken, verifyAdmin, (req, res) => {
-    res.json('Events data');
-});
+// router.get('/events', verifyToken, verifyAdmin, (req, res) => {
+//     res.json('Events data');
+// });
 
 router.get('/event-management', verifyToken, verifyAdmin, (req, res) => {
     res.json('Event Management data');
