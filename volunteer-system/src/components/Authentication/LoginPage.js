@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import axios from 'axios';
 import '../../styles/LoginPage.css';
 
 const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
@@ -15,7 +16,7 @@ const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
 
     // Email validation & error-handling
     const validateEmail = (email) => {
-        const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
         return re.test(String(email).toLowerCase());
     };
 
@@ -33,36 +34,31 @@ const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
         setLoading(true);
         setError('');
 
-        // Send POST request to login endpoint
-        try {
-            const response = await fetch('http://localhost:5000/api/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-            });
-            const data = await response.json();
-            if (response.ok) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('role', data.role);
-            setIsLoggedIn(true);
-            if (data.role === 'admin') setIsAdmin(true);
-            navigate('/home');
-            } else {
-            setError(data.message || 'Invalid credentials');
-            }
-        } catch (err) {
-            setError('Error occurred during login');
+        // Basic validation
+        if (!email || !password) {
+            setError('Please enter an email and password');
+            setLoading(false);
+            return;
         }
-        setLoading(false);
-    };
 
-    // Function to fill in demo user credentials
-    const fillDemoCredentials = () => {
-        setEmail('demo@example.com');
-        setPassword('demopassword');
-        setEmailError('');
+        try {
+            const response = await axios.post('http://localhost:5000/api/auth/login', {
+                email: email, 
+                password
+            });
+
+            const { token, role } = response.data;
+
+            localStorage.setItem('token', token);
+            localStorage.setItem('role', role);
+            setIsLoggedIn(true);
+            setIsAdmin(role === 'admin');
+            navigate('/home');
+        } catch (error) {
+            setError(error.response?.data?.message || 'Invalid credentials');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -102,10 +98,6 @@ const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
                 {error && <div className="error-message">{error}</div>}
                 <button type="submit" className="login-button" disabled={loading}>
                     {loading ? 'Logging in...' : 'Log In'}
-                </button>
-
-                <button type="button" onClick={fillDemoCredentials} className="demo-button">
-                    Use Demo User
                 </button>
 
                 <div className="additional-links">

@@ -19,6 +19,7 @@
 - npm install @fortawesome/free-solid-svg-icons
 - npm install react-select
 - npm install react-datepicker
+- npm install axios
 
 **Backend**
 - npm install express bcryptjs jsonwebtoken dotenv
