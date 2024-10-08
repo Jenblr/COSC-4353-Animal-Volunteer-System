@@ -29,21 +29,21 @@ const validateEventInput = (req, res, next) => {
     if (!eventDescription || typeof eventDescription !== 'string' || eventDescription.trim().length === 0) {
       errors.eventDescription = 'Event Description is required';
     }
-    // Validate address1
+    // validate address1
   if (!address1 || typeof address1 !== 'string' || address1.trim().length === 0) {
     errors.address1 = 'Address 1 is required';
   } else if (address1.length > 100) {
     errors.address1 = 'Address 1 must be 100 characters or less';
   }
 
-  // Validate city
+  //validate city
   if (!city || typeof city !== 'string' || city.trim().length === 0) {
     errors.city = 'City is required';
   } else if (city.length > 100) {
     errors.city = 'City must be 100 characters or less';
   }
 
-  // Validate state (ensure it's a valid 2-letter US state code)
+  //validate state (ensure it's a valid 2-letter US state code)
   const validStates = [
     'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
     'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
@@ -55,7 +55,7 @@ const validateEventInput = (req, res, next) => {
     errors.state = 'Valid state is required';
   }
 
-  // Validate zipCode (5-9 characters)
+  //validate zipCode (5-9 characters)
   if (!zipCode || typeof zipCode !== 'string' || zipCode.trim().length === 0) {
     errors.zipCode = 'Zip Code is required';
   } else if (zipCode.length < 5 || zipCode.length > 9) {
