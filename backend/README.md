@@ -44,12 +44,26 @@
 - **Value:** application/json
 
 **Body**
-- raw
-- input: 
+- **SELECT:** raw
+- **Input for User Registration + Login User requests:**
 {
     "username": "testuser",
     "password": "password1234"
 }
+- **Tests Tab Input for Login User requests:**
+const jsonData = pm.response.json();
+pm.environment.set("token", jsonData.token);
+
+- **Input for Admin Login Request:**
+{
+    "email": "admin@example.com",
+    "password": "adminpassword"
+}
+
+- **Tests Tab Input for Admin Login Request:**
+const jsonData = pm.response.json();
+pm.environment.set("token", jsonData.token);
+
 ---
 ### GET requests:
 **Requests**

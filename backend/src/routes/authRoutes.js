@@ -10,14 +10,14 @@ const { validateRegistration, validateLogin } = require('../utils/validators');
 const authController = require('../controllers/authController');
 
 // Public routes 
+router.get('/home', (req, res) => {
+    res.json('Home data');
+});
+
 router.post('/register', validateRegistration, authController.register);
 router.post('/login', validateLogin, authController.login);
 
 // Protected routes for regular users
-router.get('/home', verifyToken, (req, res) => {
-    res.json('Home data');
-});
-
 router.get('/calendar', verifyToken, (req, res) => {
     res.json('Calendar data');
 });

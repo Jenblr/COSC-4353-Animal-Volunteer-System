@@ -47,5 +47,5 @@ exports.loginUser = (email, password) => {
         { expiresIn: '1h' }
     );
 
-    return { status: 200, token };
+    return { status: 200, token, role: user.role };
 };

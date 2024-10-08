@@ -22,11 +22,8 @@ app.get('/', (req, res) => {
     res.send('Animal Volunteer System Backend');
 });
 
-// Authentication Routes = Registration and Login
+// Authentication Routes = User needs to be logged in to access certain routes
 app.use('/api/auth', authRoutes);
-
-// Other routes (for everyone else's module) = this is our base url
-// app.use('/api');
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -11,7 +11,7 @@ const verifyToken = (req, res, next) => {
         return res.status(403).json({ message: 'No token provided' });
     }
 
-    const token = authHeader.split(' ')[1]; // Extracting token from array 
+    const token = authHeader.split(' ')[1]; 
     if (!token) {
         return res.status(403).json({ message: 'Malformed token' });
     }
@@ -21,7 +21,7 @@ const verifyToken = (req, res, next) => {
             return res.status(401).json({ message: 'Failed to authenticate token' });
         }
         req.userId = decoded.id;
-        req.userRole = decoded.role; // Extract user role from token
+        req.userRole = decoded.role;
         next();
     });
 };
