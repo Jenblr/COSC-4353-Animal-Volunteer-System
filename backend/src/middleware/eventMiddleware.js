@@ -15,7 +15,7 @@ function isValidDate(dateString) {
   }
   
 const validateEventInput = (req, res, next) => {
-    const { eventName, eventDescription, location, requiredSkills, urgency, eventDate, startTime, endTime } = req.body;
+  const { eventName, eventDescription, address1, city, state, zipCode, requiredSkills, urgency, eventDate, startTime, endTime } = req.body;
     const errors = {};
   
     //validate eventName
@@ -29,11 +29,40 @@ const validateEventInput = (req, res, next) => {
     if (!eventDescription || typeof eventDescription !== 'string' || eventDescription.trim().length === 0) {
       errors.eventDescription = 'Event Description is required';
     }
+    // Validate address1
+  if (!address1 || typeof address1 !== 'string' || address1.trim().length === 0) {
+    errors.address1 = 'Address 1 is required';
+  } else if (address1.length > 100) {
+    errors.address1 = 'Address 1 must be 100 characters or less';
+  }
+
+  // Validate city
+  if (!city || typeof city !== 'string' || city.trim().length === 0) {
+    errors.city = 'City is required';
+  } else if (city.length > 100) {
+    errors.city = 'City must be 100 characters or less';
+  }
+
+  // Validate state (ensure it's a valid 2-letter US state code)
+  const validStates = [
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+  ];
+  if (!state || !validStates.includes(state)) {
+    errors.state = 'Valid state is required';
+  }
+
+  // Validate zipCode (5-9 characters)
+  if (!zipCode || typeof zipCode !== 'string' || zipCode.trim().length === 0) {
+    errors.zipCode = 'Zip Code is required';
+  } else if (zipCode.length < 5 || zipCode.length > 9) {
+    errors.zipCode = 'Zip Code must be between 5 and 9 characters';
+  }
   
-    //validate location
-    if (!location || typeof location !== 'string' || location.trim().length === 0) {
-      errors.location = 'Location is required';
-    }
+    
   
     //validate requiredSkills
     if (!Array.isArray(requiredSkills) || requiredSkills.length === 0) {

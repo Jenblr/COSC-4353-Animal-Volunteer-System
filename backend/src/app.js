@@ -10,7 +10,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
-//const eventRoutes = require('./routes/eventRoutes');//event
+const eventRoutes = require('./routes/eventRoutes');//event
 
 const app = express(); // Initializes Express app
 
@@ -26,6 +26,7 @@ app.get('/', (req, res) => {
 // Authentication Routes = Registration and Login
 app.use('/api/auth', authRoutes);
 
+app.use('/api/auth/events', eventRoutes); // Add event routes
 
 // Other routes (for everyone else's module) = this is our base url
 // app.use('/api');
