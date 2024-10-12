@@ -11,6 +11,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+//const eventRoutes = require('./routes/eventRoutes');
 
 const app = express(); // Initializes Express app
 
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);
 
 // Other routes (for everyone else's module) = this is our base url
 app.use('/api/notifications', notificationRoutes); 
+//app.use('/api/auth/events', eventRoutes); 
 // app.use('/api');
 
 // Error handling middleware

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios'; // Add axios for API requests
 import '../../styles/NotificationDisplay.css';
 
 const NotificationDisplay = ({ isAdmin }) => {
@@ -7,40 +8,52 @@ const NotificationDisplay = ({ isAdmin }) => {
   const [newReminder, setNewReminder] = useState('');
 
   useEffect(() => {
-    const fetchNotifications = () => {
-      const sampleNotifications = [
-        { type: 'New Event', message: 'Shelter Maintenance has been added!', date: '09-23-2024' },
-        { type: 'Reminder', message: 'Reminder: Pet Training Workshop on 10-01-2024!', date: '10-01-2024' }
-      ];
-      setNotifications(sampleNotifications);
+    // Fetch notifications from the backend
+    const fetchNotifications = async () => {
+      try {
+        const response = await axios.get('/api/notifications'); // Replace with your backend URL
+        setNotifications(response.data.notifications);
+      } catch (error) {
+        console.error('Failed to fetch notifications', error);
+      }
     };
 
     fetchNotifications();
   }, []);
 
   // Handle admin adding a new update
-  const handleAddUpdate = () => {
+  const handleAddUpdate = async () => {
     if (newUpdate.trim()) {
       const updateNotification = {
         type: 'Update',
         message: newUpdate,
-        date: new Date().toISOString().slice(0, 10)
       };
-      setNotifications(prev => [updateNotification, ...prev]);
-      setNewUpdate('');
+
+      try {
+        const response = await axios.post('/api/notifications/add', updateNotification); // Replace with your backend URL
+        setNotifications(prev => [response.data.newNotification, ...prev]);
+        setNewUpdate('');
+      } catch (error) {
+        console.error('Failed to add update', error);
+      }
     }
   };
 
   // Handle admin adding a new reminder
-  const handleAddReminder = () => {
+  const handleAddReminder = async () => {
     if (newReminder.trim()) {
       const reminderNotification = {
         type: 'Reminder',
         message: newReminder,
-        date: new Date().toISOString().slice(0, 10)
       };
-      setNotifications(prev => [reminderNotification, ...prev]);
-      setNewReminder('');
+
+      try {
+        const response = await axios.post('/api/notifications/add', reminderNotification); // Replace with your backend URL
+        setNotifications(prev => [response.data.newNotification, ...prev]);
+        setNewReminder('');
+      } catch (error) {
+        console.error('Failed to add reminder', error);
+      }
     }
   };
 
