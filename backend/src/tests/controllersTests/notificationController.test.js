@@ -7,10 +7,10 @@ describe('Notification Controller', () => {
   let req, res;
 
   beforeEach(() => {
-    req = { params: {}, body: {} };
+    req = { params: { id: '1' } };  // Mocked ID should be a string
     res = {
       status: jest.fn().mockReturnThis(),
-      json: jest.fn()
+      json: jest.fn(),
     };
   });
 

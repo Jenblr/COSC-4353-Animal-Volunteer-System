@@ -4,6 +4,11 @@ const notificationRoutes = require('../../routes/notificationRoutes');
 const notificationService = require('../../services/notificationService');
 
 jest.mock('../../services/notificationService'); // Mock the service
+jest.mock('../../middleware/authMiddleware', () => ({
+  verifyToken: (req, res, next) => next(),  // Skip token verification
+  verifyAdmin: (req, res, next) => next()   // Skip admin verification
+}));
+
 const app = express();
 
 app.use(express.json());

@@ -6,13 +6,18 @@ const getNotifications = (req, res) => {
   res.status(200).json({ notifications });
 };
 
-// Get a specific notification by ID (optional route)
 const getNotification = (req, res) => {
   const id = parseInt(req.params.id, 10);
+  
+  if (isNaN(id)) {
+    return res.status(400).json({ message: 'Invalid ID' });
+  }
+
   const notification = notificationService.getNotificationById(id);
   if (!notification) {
     return res.status(404).json({ message: 'Notification not found' });
   }
+
   res.status(200).json({ notification });
 };
 

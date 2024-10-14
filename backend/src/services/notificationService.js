@@ -11,7 +11,8 @@ let notifications = [
   
   // Get a single notification by ID
   const getNotificationById = (id) => {
-    return notifications.find((notification) => notification.id === id);
+    const notificationId = parseInt(id, 10);
+    return notifications.find((notification) => notification.id === notificationId);
   };
   
   // Add a new notification
