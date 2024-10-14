@@ -54,5 +54,5 @@ describe('Notification Controller', () => {
     expect(res.json).toHaveBeenCalledWith({ message: 'Notification not found' });
   });
 
-  // Add more tests for other methods like deleteNotification, etc.
+  
 });

@@ -11,7 +11,7 @@ const NotificationDisplay = ({ isAdmin }) => {
     // Fetch notifications from the backend
     const fetchNotifications = async () => {
       try {
-        const response = await axios.get('/api/notifications'); // Replace with your backend URL
+        const response = await axios.get('/api/notifications');
         setNotifications(response.data.notifications);
       } catch (error) {
         console.error('Failed to fetch notifications', error);
@@ -30,7 +30,7 @@ const NotificationDisplay = ({ isAdmin }) => {
       };
 
       try {
-        const response = await axios.post('/api/notifications/add', updateNotification); // Replace with your backend URL
+        const response = await axios.post('/api/notifications/add', updateNotification);
         setNotifications(prev => [response.data.newNotification, ...prev]);
         setNewUpdate('');
       } catch (error) {
@@ -48,7 +48,7 @@ const NotificationDisplay = ({ isAdmin }) => {
       };
 
       try {
-        const response = await axios.post('/api/notifications/add', reminderNotification); // Replace with your backend URL
+        const response = await axios.post('/api/notifications/add', reminderNotification);
         setNotifications(prev => [response.data.newNotification, ...prev]);
         setNewReminder('');
       } catch (error) {
