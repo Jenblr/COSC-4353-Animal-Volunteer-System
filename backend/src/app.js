@@ -11,6 +11,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');//event
+const matchingRoutes = require('./routes/matchingRoutes');//matching
 
 const app = express(); // Initializes Express app
 
@@ -27,6 +28,8 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 
 app.use('/api/auth/events', eventRoutes); // Add event routes
+
+app.use('/api/auth/volunteer-matching', matchingRoutes); //matching routes
 
 // Other routes (for everyone else's module) = this is our base url
 // app.use('/api');

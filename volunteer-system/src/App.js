@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Home from './components/Main/Home';
 import Taskbar from './components/Main/Taskbar';
 import Calendar from './components/Events/Calendar';
-// import EventManagementForm from './components/Events/EventManagementForm';
+import EventManagementForm from './components/Events/EventManagementForm';
 import VolunteerMatchForm from './components/Events/VolunteerMatchingForm';
 import Profile from './components/Profile/Dashboard';
 import ProfileForm from './components/Profile/ProfileForm';
@@ -42,7 +42,7 @@ function App() {
 
           <Route path="/calendar" element={<Calendar isAdmin={isAdmin} />} />
           <Route path="/events" element={<Navigate to="/event-management" />} />
-          {/* <Route path="/event-management" element={<EventManagementForm />} /> */}
+          <Route path="/event-management" element={<EventManagementForm />} />
           <Route path="/volunteer-event-match" element={<VolunteerMatchForm />} />
 
           <Route path="/profile" element={<Navigate to="/manage-profile" />} />

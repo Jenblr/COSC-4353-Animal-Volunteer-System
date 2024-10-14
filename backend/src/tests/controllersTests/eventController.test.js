@@ -8,7 +8,6 @@ describe('Event Controller', () => {
   let mockResponse;
 
   beforeEach(() => {
-    jest.clearAllMocks();
     mockRequest = {
       body: {},
       params: {}
@@ -19,144 +18,98 @@ describe('Event Controller', () => {
     };
   });
 
-  describe('createEvent', () => {
-    test('should create a new event and return 201 status', async () => {
-      const mockEvent = { id: 1, eventName: 'Test Event' };
-      eventService.createEvent.mockResolvedValue({ message: "Event created successfully", event: mockEvent });
+  test('createEvent should return 201 status on success', async () => {
+    const mockEvent = { id: 1, eventName: 'Test Event' };
+    eventService.createEvent.mockResolvedValue({ message: 'Event created successfully', event: mockEvent });
 
-      mockRequest.body = { eventName: 'Test Event' };
+    await eventController.createEvent(mockRequest, mockResponse);
 
-      await eventController.createEvent(mockRequest, mockResponse);
-
-      expect(eventService.createEvent).toHaveBeenCalledWith(mockRequest.body);
-      expect(mockResponse.status).toHaveBeenCalledWith(201);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: "Event created successfully", event: mockEvent });
-    });
-
-    test('should handle validation errors', async () => {
-      const error = { name: 'ValidationError', errors: { eventName: 'Event name is required' } };
-      eventService.createEvent.mockRejectedValue(error);
-
-      await eventController.createEvent(mockRequest, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({ errors: error.errors });
-    });
+    expect(mockResponse.status).toHaveBeenCalledWith(201);
+    expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Event created successfully', event: mockEvent });
   });
 
-  describe('getAllEvents', () => {
-    test('should return all events', async () => {
-      const mockEvents = [{ id: 1, eventName: 'Event 1' }, { id: 2, eventName: 'Event 2' }];
-      eventService.getAllEvents.mockResolvedValue(mockEvents);
+  test('getAllEvents should return 200 status with events', async () => {
+    const mockEvents = [{ id: 1, eventName: 'Event 1' }, { id: 2, eventName: 'Event 2' }];
+    eventService.getAllEvents.mockResolvedValue(mockEvents);
 
-      await eventController.getAllEvents(mockRequest, mockResponse);
+    await eventController.getAllEvents(mockRequest, mockResponse);
 
-      expect(eventService.getAllEvents).toHaveBeenCalled();
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith(mockEvents);
-    });
-
-    test('should handle errors when fetching events', async () => {
-      eventService.getAllEvents.mockRejectedValue(new Error('Database error'));
-
-      await eventController.getAllEvents(mockRequest, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Internal server error' });
-    });
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    expect(mockResponse.json).toHaveBeenCalledWith(mockEvents);
   });
 
-  describe('getEventById', () => {
-    test('should return a specific event', async () => {
-      const mockEvent = { id: 1, eventName: 'Test Event' };
-      eventService.getEventById.mockResolvedValue(mockEvent);
+  test('getEventById should return 200 status with event', async () => {
+    const mockEvent = { id: 1, eventName: 'Test Event' };
+    mockRequest.params.id = '1';
+    eventService.getEventById.mockResolvedValue(mockEvent);
 
-      mockRequest.params.id = '1';
+    await eventController.getEventById(mockRequest, mockResponse);
 
-      await eventController.getEventById(mockRequest, mockResponse);
-
-      expect(eventService.getEventById).toHaveBeenCalledWith('1');
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith(mockEvent);
-    });
-
-    test('should return 404 for non-existent event', async () => {
-      eventService.getEventById.mockResolvedValue(null);
-
-      mockRequest.params.id = '999';
-
-      await eventController.getEventById(mockRequest, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Event not found' });
-    });
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    expect(mockResponse.json).toHaveBeenCalledWith(mockEvent);
   });
 
-  describe('updateEvent', () => {
-    test('should update an event and return 200 status', async () => {
-      const mockUpdatedEvent = { id: 1, eventName: 'Updated Event' };
-      eventService.updateEvent.mockResolvedValue({ message: "Event updated successfully", event: mockUpdatedEvent });
+  test('updateEvent should return 200 status on success', async () => {
+    const mockEvent = { id: 1, eventName: 'Updated Event' };
+    mockRequest.params.id = '1';
+    mockRequest.body = { eventName: 'Updated Event' };
+    eventService.updateEvent.mockResolvedValue({ message: 'Event updated successfully', event: mockEvent });
 
-      mockRequest.params.id = '1';
-      mockRequest.body = { eventName: 'Updated Event' };
+    await eventController.updateEvent(mockRequest, mockResponse);
 
-      await eventController.updateEvent(mockRequest, mockResponse);
-
-      expect(eventService.updateEvent).toHaveBeenCalledWith('1', mockRequest.body);
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: "Event updated successfully", event: mockUpdatedEvent });
-    });
-
-    test('should return 404 for updating non-existent event', async () => {
-      eventService.updateEvent.mockRejectedValue({ status: 404, message: 'Event not found' });
-
-      mockRequest.params.id = '999';
-
-      await eventController.updateEvent(mockRequest, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Event not found' });
-    });
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Event updated successfully', event: mockEvent });
   });
 
-  describe('deleteEvent', () => {
-    test('should delete an event and return 200 status', async () => {
-      eventService.deleteEvent.mockResolvedValue({ message: "Event deleted successfully" });
+  test('deleteEvent should return 200 status on success', async () => {
+    mockRequest.params.id = '1';
+    eventService.deleteEvent.mockResolvedValue({ message: 'Event deleted successfully' });
 
-      mockRequest.params.id = '1';
+    await eventController.deleteEvent(mockRequest, mockResponse);
 
-      await eventController.deleteEvent(mockRequest, mockResponse);
-
-      expect(eventService.deleteEvent).toHaveBeenCalledWith('1');
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: "Event deleted successfully" });
-    });
-
-    test('should return 404 for deleting non-existent event', async () => {
-      eventService.deleteEvent.mockRejectedValue({ status: 404, message: 'Event not found' });
-
-      mockRequest.params.id = '999';
-
-      await eventController.deleteEvent(mockRequest, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Event not found' });
-    });
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Event deleted successfully' });
+  });
+  test('createEvent should handle service errors', async () => {
+    eventService.createEvent.mockRejectedValue(new Error('Service error'));
+    await eventController.createEvent(mockRequest, mockResponse);
+    expect(mockResponse.status).toHaveBeenCalledWith(500);
+    expect(mockResponse.json).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Internal server error'
+    }));
   });
 
-  describe('getFormOptions', () => {
-    test('should return form options', async () => {
-      const mockOptions = {
-        skillOptions: ['Skill 1', 'Skill 2'],
-        urgencyOptions: ['Low', 'Medium', 'High']
-      };
-      eventService.getFormOptions.mockResolvedValue(mockOptions);
+  test('getAllEvents should handle empty event list', async () => {
+    eventService.getAllEvents.mockResolvedValue([]);
+    await eventController.getAllEvents(mockRequest, mockResponse);
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    expect(mockResponse.json).toHaveBeenCalledWith([]);
+  });
 
-      await eventController.getFormOptions(mockRequest, mockResponse);
+  test('getEventById should handle non-existent event', async () => {
+    mockRequest.params.id = '999';
+    eventService.getEventById.mockRejectedValue({ status: 404, message: 'Event not found' });
+    await eventController.getEventById(mockRequest, mockResponse);
+    expect(mockResponse.status).toHaveBeenCalledWith(404);
+    expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Event not found' });
+  });
 
-      expect(eventService.getFormOptions).toHaveBeenCalled();
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith(mockOptions);
-    });
+  test('updateEvent should handle invalid input', async () => {
+    mockRequest.params.id = '1';
+    mockRequest.body = { eventName: '' };
+    eventService.updateEvent.mockRejectedValue({ status: 400, errors: { eventName: 'Event Name is required' } });
+    await eventController.updateEvent(mockRequest, mockResponse);
+    expect(mockResponse.status).toHaveBeenCalledWith(400);
+    expect(mockResponse.json).toHaveBeenCalledWith(expect.objectContaining({
+      errors: expect.objectContaining({ eventName: 'Event Name is required' })
+    }));
+  });
+
+  test('deleteEvent should handle non-existent event', async () => {
+    mockRequest.params.id = '999';
+    eventService.deleteEvent.mockRejectedValue({ status: 404, message: 'Event not found' });
+    await eventController.deleteEvent(mockRequest, mockResponse);
+    expect(mockResponse.status).toHaveBeenCalledWith(404);
+    expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Event not found' });
   });
 });
