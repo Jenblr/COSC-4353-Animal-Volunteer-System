@@ -1,5 +1,5 @@
-
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import '../../styles/Calendar.css';
 
 const Calendar = ({ isAdmin }) => {
@@ -15,21 +15,52 @@ const Calendar = ({ isAdmin }) => {
     endMinute: '00' 
   });
 
+  useEffect(() => {
+    // Fetch events from the backend when the component mounts
+    const fetchEvents = async () => {
+      try {
+        const response = await axios.get('/api/events'); // Adjust the endpoint based on your backend route
+        const eventData = response.data;
+
+        // Convert event data into a date-keyed object for easier lookup
+        const eventsByDate = eventData.reduce((acc, event) => {
+          const dateString = event.eventDate; // Assuming the eventDate is in 'YYYY-MM-DD' format
+          if (!acc[dateString]) {
+            acc[dateString] = [];
+          }
+          acc[dateString].push(event);
+          return acc;
+        }, {});
+
+        setEvents(eventsByDate);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
   const daysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
+  
+  
+
   const renderCalendarDays = () => {
     const days = [];
     const totalDays = daysInMonth(currentDate);
     const firstDay = firstDayOfMonth(currentDate);
 
+    // Add empty divs for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
       days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
     }
 
+    // Add days of the month with events
     for (let day = 1; day <= totalDays; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       const dateString = date.toISOString().split('T')[0];
@@ -39,22 +70,21 @@ const Calendar = ({ isAdmin }) => {
         <div key={day} className="calendar-day">
           <span className="day-number">{day}</span>
           {dayEvents.map((event, index) => (
-            <div 
-              key={`${dateString}-${event.title}-${event.startHour}:${event.startMinute}`} 
+            <div
+              key={`${dateString}-${event.eventName}-${index}`}
               className="event-item"
             >
-              <span className="event-title">{event.title}</span>
-              <span className="event-time">{`${event.startHour}:${event.startMinute} - ${event.endHour}:${event.endMinute}`}</span>
+              <span className="event-title">{event.eventName}</span>
+              <span className="event-time">{`${event.startTime} - ${event.endTime}`}</span>
               <div className="event-tooltip">
-                <strong>{event.title}</strong>
+                <strong>{event.eventName}</strong>
                 <br />
-                {`${event.startHour}:${event.startMinute} - ${event.endHour}:${event.endMinute}`}
+                {`${event.startTime} - ${event.endTime}`}
               </div>
             </div>
           ))}
-          {isAdmin && (
-            <button className="add-event-btn" onClick={() => handleAddEventClick(date)}>+</button>
-          )}
+          {isAdmin && ( 
+            <button className="add-event-btn" onClick={() => handleAddEventClick(date)}>+</button> )}
         </div>
       );
     }
