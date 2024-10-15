@@ -27,7 +27,8 @@ const volunteerHistory = [
 
 exports.getHistory = (userId) => {
   console.log('Fetching history for userId:', userId);
-  return volunteerHistory;
+  //return volunteerHistory;
+  return volunteerHistory.filter(record => record.volunteer === userId);
 };
 
 exports.addHistoryRecord = (userId, recordData) => {
@@ -39,6 +40,30 @@ exports.addHistoryRecord = (userId, recordData) => {
   volunteerHistory.push(newRecord);
   return { status: 201, record: newRecord };
 };
+
+/*exports.updateHistoryRecord = (userId, recordId, updateData) => {
+  console.log('Updating record. UserId:', userId, 'RecordId:', recordId);
+  const recordIndex = volunteerHistory.findIndex(r => r.id === parseInt(recordId));
+  
+  if (recordIndex === -1) {
+    return { status: 404, message: 'History record not found' };
+  }
+
+  volunteerHistory[recordIndex] = { ...volunteerHistory[recordIndex], ...updateData };
+  return { status: 200, record: volunteerHistory[recordIndex] };
+};
+
+exports.deleteHistoryRecord = (userId, recordId) => {
+  console.log('Deleting record. UserId:', userId, 'RecordId:', recordId);
+  const recordIndex = volunteerHistory.findIndex(r => r.id === parseInt(recordId));
+  
+  if (recordIndex === -1) {
+    return { status: 404, message: 'History record not found' };
+  }
+
+  volunteerHistory.splice(recordIndex, 1);
+  return { status: 200, message: 'Record deleted successfully' };
+};*/
 
 exports.updateHistoryRecord = (userId, recordId, updateData) => {
   console.log('Updating record. UserId:', userId, 'RecordId:', recordId);

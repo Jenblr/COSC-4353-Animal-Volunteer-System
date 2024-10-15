@@ -61,8 +61,28 @@ exports.getProfile = (userId) => {
 };
 
 
-exports.createProfile = (userId, profileData) => {
+/*exports.createProfile = (userId, profileData) => {
     if (profiles.some(profile => profile.userId === String(userId))) {
+        return { status: 400, message: 'Profile already exists' };
+    }
+
+    const validationErrors = validateProfile(profileData);
+    if (Object.keys(validationErrors).length > 0) {
+        return { status: 400, message: 'Validation failed', errors: validationErrors };
+    }
+
+    const newProfile = { userId: String(userId), ...profileData };
+    profiles.push(newProfile); 
+
+    console.log('New profile created:', newProfile);
+
+    return { status: 201, profile: newProfile };
+};*/
+
+exports.createProfile = (userId, profileData) => {
+    console.log('Creating profile for userId:', userId);
+    if (profiles.some(profile => profile.userId === String(userId))) {
+        console.log('Profile already exists for userId:', userId);
         return { status: 400, message: 'Profile already exists' };
     }
 
