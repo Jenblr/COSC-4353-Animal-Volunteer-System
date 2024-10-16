@@ -19,7 +19,7 @@ const Calendar = ({ isAdmin }) => {
     // Fetch events from the backend when the component mounts
     const fetchEvents = async () => {
       try {
-        const response = await axios.get('/api/events'); // Adjust the endpoint based on your backend route
+        const response = await axios.get('http://localhost:5000/api/events'); // Adjust the endpoint based on your backend route
         const eventData = response.data;
 
         // Convert event data into a date-keyed object for easier lookup
