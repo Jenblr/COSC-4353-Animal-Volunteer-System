@@ -9,6 +9,7 @@ const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const { validateRegistration, validateLogin } = require('../utils/validators');
 const authController = require('../controllers/authController');
 
+
 // Public routes 
 router.get('/home', (req, res) => {
     res.json('Home data');
@@ -38,10 +39,11 @@ router.get('/notifications', verifyToken, (req, res) => {
     res.json('Notifications data');
 });
 
+
 // Protected admin-only routes
-router.get('/events', verifyToken, verifyAdmin, (req, res) => {
-    res.json('Events data');
-});
+// router.get('/events', verifyToken, verifyAdmin, (req, res) => {
+//     res.json('Events data');
+// });
 
 router.get('/event-management', verifyToken, verifyAdmin, (req, res) => {
     res.json('Event Management data');
