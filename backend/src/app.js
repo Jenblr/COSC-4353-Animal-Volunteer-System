@@ -10,8 +10,11 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
+<<<<<<< HEAD
 const notificationRoutes = require('./routes/notificationRoutes');
 //const eventRoutes = require('./routes/eventRoutes');
+=======
+>>>>>>> origin/JenniferN
 
 const app = express(); // Initializes Express app
 
@@ -24,6 +27,7 @@ app.get('/', (req, res) => {
     res.send('Animal Volunteer System Backend');
 });
 
+<<<<<<< HEAD
 // Authentication Routes = Registration and Login
 app.use('/api/auth', authRoutes);
 
@@ -32,6 +36,11 @@ app.use('/api/notifications', notificationRoutes);
 //app.use('/api/auth/events', eventRoutes); 
 // app.use('/api');
 
+=======
+// Authentication Routes = User needs to be logged in to access certain routes
+app.use('/api/auth', authRoutes);
+
+>>>>>>> origin/JenniferN
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);

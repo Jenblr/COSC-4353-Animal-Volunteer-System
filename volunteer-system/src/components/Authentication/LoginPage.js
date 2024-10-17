@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+<<<<<<< HEAD
+=======
+import axios from 'axios';
+>>>>>>> origin/JenniferN
 import '../../styles/LoginPage.css';
 
 const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
@@ -15,7 +19,11 @@ const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
 
     // Email validation & error-handling
     const validateEmail = (email) => {
+<<<<<<< HEAD
         const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+=======
+        const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+>>>>>>> origin/JenniferN
         return re.test(String(email).toLowerCase());
     };
 
@@ -33,6 +41,7 @@ const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
         setLoading(true);
         setError('');
 
+<<<<<<< HEAD
         // Send POST request to login endpoint
         try {
             const response = await fetch('http://localhost:5000/api/auth/login', {
@@ -63,6 +72,33 @@ const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
         setEmail('demo@example.com');
         setPassword('demopassword');
         setEmailError('');
+=======
+        // Basic validation
+        if (!email || !password) {
+            setError('Please enter an email and password');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const response = await axios.post('http://localhost:5000/api/auth/login', {
+                email: email, 
+                password
+            });
+
+            const { token, role } = response.data;
+
+            localStorage.setItem('token', token);
+            localStorage.setItem('role', role);
+            setIsLoggedIn(true);
+            setIsAdmin(role === 'admin');
+            navigate('/home');
+        } catch (error) {
+            setError(error.response?.data?.message || 'Invalid credentials');
+        } finally {
+            setLoading(false);
+        }
+>>>>>>> origin/JenniferN
     };
 
     return (
@@ -104,10 +140,13 @@ const LoginPage = ({ setIsLoggedIn, setIsAdmin }) => {
                     {loading ? 'Logging in...' : 'Log In'}
                 </button>
 
+<<<<<<< HEAD
                 <button type="button" onClick={fillDemoCredentials} className="demo-button">
                     Use Demo User
                 </button>
 
+=======
+>>>>>>> origin/JenniferN
                 <div className="additional-links">
                     <p>Don't have an account? <Link to="/register">Sign up</Link></p>
                     <p><Link to="/admin-login">Admin? Click here</Link></p>

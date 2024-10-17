@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import axios from 'axios'; // Add axios for API requests
+=======
+>>>>>>> origin/JenniferN
 import '../../styles/NotificationDisplay.css';
 
 const NotificationDisplay = ({ isAdmin }) => {
@@ -7,6 +10,7 @@ const NotificationDisplay = ({ isAdmin }) => {
   const [newUpdate, setNewUpdate] = useState('');
   const [newReminder, setNewReminder] = useState('');
 
+<<<<<<< HEAD
   useEffect(() => { 
     // Fetch notifications from the backend
     const fetchNotifications = async () => {
@@ -21,17 +25,31 @@ const NotificationDisplay = ({ isAdmin }) => {
       } catch (error) {
         console.error('Failed to fetch notifications', error);
       }
+=======
+  useEffect(() => {
+    const fetchNotifications = () => {
+      const sampleNotifications = [
+        { type: 'New Event', message: 'Shelter Maintenance has been added!', date: '09-23-2024' },
+        { type: 'Reminder', message: 'Reminder: Pet Training Workshop on 10-01-2024!', date: '10-01-2024' }
+      ];
+      setNotifications(sampleNotifications);
+>>>>>>> origin/JenniferN
     };
 
     fetchNotifications();
   }, []);
 
   // Handle admin adding a new update
+<<<<<<< HEAD
   const handleAddUpdate = async () => {
+=======
+  const handleAddUpdate = () => {
+>>>>>>> origin/JenniferN
     if (newUpdate.trim()) {
       const updateNotification = {
         type: 'Update',
         message: newUpdate,
+<<<<<<< HEAD
       };
 
       try {
@@ -46,15 +64,26 @@ const NotificationDisplay = ({ isAdmin }) => {
       } catch (error) {
         console.error('Failed to add update', error);
       }
+=======
+        date: new Date().toISOString().slice(0, 10)
+      };
+      setNotifications(prev => [updateNotification, ...prev]);
+      setNewUpdate('');
+>>>>>>> origin/JenniferN
     }
   };
 
   // Handle admin adding a new reminder
+<<<<<<< HEAD
   const handleAddReminder = async () => {
+=======
+  const handleAddReminder = () => {
+>>>>>>> origin/JenniferN
     if (newReminder.trim()) {
       const reminderNotification = {
         type: 'Reminder',
         message: newReminder,
+<<<<<<< HEAD
       };
 
       try {
@@ -69,6 +98,12 @@ const NotificationDisplay = ({ isAdmin }) => {
       } catch (error) {
         console.error('Failed to add reminder', error);
       }
+=======
+        date: new Date().toISOString().slice(0, 10)
+      };
+      setNotifications(prev => [reminderNotification, ...prev]);
+      setNewReminder('');
+>>>>>>> origin/JenniferN
     }
   };
 
@@ -114,4 +149,8 @@ const NotificationDisplay = ({ isAdmin }) => {
   );
 };
 
+<<<<<<< HEAD
 export default NotificationDisplay;
+=======
+export default NotificationDisplay;
+>>>>>>> origin/JenniferN

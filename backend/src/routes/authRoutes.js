@@ -10,14 +10,24 @@ const { validateRegistration, validateLogin } = require('../utils/validators');
 const authController = require('../controllers/authController');
 
 // Public routes 
+<<<<<<< HEAD
+=======
+router.get('/home', (req, res) => {
+    res.json('Home data');
+});
+
+>>>>>>> origin/JenniferN
 router.post('/register', validateRegistration, authController.register);
 router.post('/login', validateLogin, authController.login);
 
 // Protected routes for regular users
+<<<<<<< HEAD
 router.get('/home', verifyToken, (req, res) => {
     res.json('Home data');
 });
 
+=======
+>>>>>>> origin/JenniferN
 router.get('/calendar', verifyToken, (req, res) => {
     res.json('Calendar data');
 });
