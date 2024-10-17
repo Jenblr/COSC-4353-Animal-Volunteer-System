@@ -25,7 +25,7 @@ exports.login = (req, res) => {
 
     const response = authService.loginUser(email, password);
     if (response.status === 200) {
-        return res.status(200).json({ token: response.token });
+        return res.status(200).json({ token: response.token, role: response.role });
     } else {
         return res.status(response.status).json({ message: response.message });
     }
