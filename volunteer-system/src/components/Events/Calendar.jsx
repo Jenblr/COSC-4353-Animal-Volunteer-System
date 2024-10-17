@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-=======
-
-import React, { useState } from 'react';
->>>>>>> origin/JenniferN
 import '../../styles/Calendar.css';
 
 const Calendar = ({ isAdmin }) => {
@@ -20,7 +15,6 @@ const Calendar = ({ isAdmin }) => {
     endMinute: '00' 
   });
 
-<<<<<<< HEAD
   useEffect(() => {
     // Fetch events from the backend when the component mounts
     const fetchEvents = async () => {
@@ -47,37 +41,26 @@ const Calendar = ({ isAdmin }) => {
     fetchEvents();
   }, []);
 
-=======
->>>>>>> origin/JenniferN
   const daysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
-<<<<<<< HEAD
   
   
 
-=======
->>>>>>> origin/JenniferN
   const renderCalendarDays = () => {
     const days = [];
     const totalDays = daysInMonth(currentDate);
     const firstDay = firstDayOfMonth(currentDate);
 
-<<<<<<< HEAD
     // Add empty divs for days before the first day of the month
-=======
->>>>>>> origin/JenniferN
     for (let i = 0; i < firstDay; i++) {
       days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
     }
 
-<<<<<<< HEAD
     // Add days of the month with events
-=======
->>>>>>> origin/JenniferN
     for (let day = 1; day <= totalDays; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       const dateString = date.toISOString().split('T')[0];
@@ -87,7 +70,6 @@ const Calendar = ({ isAdmin }) => {
         <div key={day} className="calendar-day">
           <span className="day-number">{day}</span>
           {dayEvents.map((event, index) => (
-<<<<<<< HEAD
             <div
               key={`${dateString}-${event.eventName}-${index}`}
               className="event-item"
@@ -103,24 +85,6 @@ const Calendar = ({ isAdmin }) => {
           ))}
           {isAdmin && ( 
             <button className="add-event-btn" onClick={() => handleAddEventClick(date)}>+</button> )}
-=======
-            <div 
-              key={`${dateString}-${event.title}-${event.startHour}:${event.startMinute}`} 
-              className="event-item"
-            >
-              <span className="event-title">{event.title}</span>
-              <span className="event-time">{`${event.startHour}:${event.startMinute} - ${event.endHour}:${event.endMinute}`}</span>
-              <div className="event-tooltip">
-                <strong>{event.title}</strong>
-                <br />
-                {`${event.startHour}:${event.startMinute} - ${event.endHour}:${event.endMinute}`}
-              </div>
-            </div>
-          ))}
-          {isAdmin && (
-            <button className="add-event-btn" onClick={() => handleAddEventClick(date)}>+</button>
-          )}
->>>>>>> origin/JenniferN
         </div>
       );
     }

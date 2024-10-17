@@ -47,10 +47,5 @@ exports.loginUser = (email, password) => {
         { expiresIn: '1h' }
     );
 
-<<<<<<< HEAD
-    return { status: 200, token };
-};
-=======
     return { status: 200, token, role: user.role };
 };
->>>>>>> origin/JenniferN
