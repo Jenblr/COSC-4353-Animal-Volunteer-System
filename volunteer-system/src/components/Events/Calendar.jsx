@@ -15,6 +15,7 @@ const Calendar = ({ isAdmin }) => {
     endMinute: '00' 
   });
 
+  // Fetch events from the backend when the component mounts
   useEffect(() => {
     const token = localStorage.getItem('token');
     const fetchEvents = async () => {
@@ -24,87 +25,141 @@ const Calendar = ({ isAdmin }) => {
             Authorization: `Bearer ${token}`,
           },
         });
-        
+        console.log('Full response:', response);
         const eventData = response.data;
         console.log('Fetched event data:', eventData);
-  
-        // Ensure the data is an array and map it by dates
+
+        // Process event data by date
         const eventsArray = Array.isArray(eventData) ? eventData : eventData.events || [];
-  
-        // Convert the event data into a date-keyed object while also keeping event IDs
         const eventsByDate = eventsArray.reduce((acc, event) => {
-          const dateString = event.eventDate; // Assuming eventDate is in 'YYYY-MM-DD' format
+          const dateString = event.eventDate; // Assuming 'eventDate' is in 'YYYY-MM-DD' format
           if (!acc[dateString]) {
             acc[dateString] = [];
           }
           acc[dateString].push({
-            id: event.id, // Include event ID
+            id: event.id, 
             title: event.eventName,
             startTime: event.startTime,
             endTime: event.endTime
-          }); // Group events by their date
+          });
           return acc;
         }, {});
-  
-        console.log('Events by Date:', eventsByDate); // Log the structured events
-  
-        // Set the events for the calendar
+
         setEvents(eventsByDate); // Update state with date-keyed object
       } catch (error) {
-        console.error('Error fetching events:', error);
-      }
-    };
-  
+        console.error('Error fetching events:', error.response ? error.response.data : error.message);
+    }
+  };
+
     fetchEvents();
   }, []);
-  
 
+  // useEffect(() => {
+  //   const mockEvents = [
+  //     {
+  //       id: '1',
+  //       eventName: 'Animal Shelter Cleanup',
+  //       eventDescription: 'Help clean and organize the animal shelter.',
+  //       address1: '123 Shelter Lane',
+  //       city: 'Anytown',
+  //       state: 'CA',
+  //       zipCode: '12345',
+  //       requiredSkills: ['Cleaning', 'Animal Care'],
+  //       urgency: 'Medium',
+  //       eventDate: '2024-06-15',
+  //       startTime: '09:00',
+  //       endTime: '14:00',
+  //     },
+  //     {
+  //       id: '2',
+  //       eventName: 'Dog Walking Day',
+  //       eventDescription: 'Volunteers needed to walk dogs from the shelter.',
+  //       address1: '456 Park Avenue',
+  //       city: 'Dogville',
+  //       state: 'NY',
+  //       zipCode: '67890',
+  //       requiredSkills: ['Dog Walking','Animal care'],
+  //       urgency: 'Low',
+  //       eventDate: '2024-07-01',
+  //       startTime: '10:00',
+  //       endTime: '12:00',
+  //     },
+  //     {
+  //       id: '3',
+  //       eventName: 'Emergency Vet Assistance',
+  //       eventDescription: 'Assist veterinarians with emergency cases.',
+  //       address1: '789 Vet Clinic Road',
+  //       city: 'Petsburg',
+  //       state: 'TX',
+  //       zipCode: '54321',
+  //       requiredSkills: ['Medication', 'Emergency Response'],
+  //       urgency: 'High',
+  //       eventDate: '2024-06-30',
+  //       startTime: '08:00',
+  //       endTime: '20:00',
+  //     }
+  //   ];
+
+  //   // Group events by eventDate (e.g., '2024-06-15')
+  //   const mockEventsByDate = mockEvents.reduce((acc, event) => {
+  //     const dateString = event.eventDate;
+  //     if (!acc[dateString]) {
+  //       acc[dateString] = [];
+  //     }
+  //     acc[dateString].push(event);
+  //     return acc;
+  //   }, {});
+
+  //   setEvents(mockEventsByDate); // Set the processed mock events into the state
+  // }, []);
+
+  // Helper to calculate the number of days in the current month
   const daysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  
+  // Helper to calculate the first day of the current month
   const firstDayOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
-  
-  
 
+  // Render days of the calendar
   const renderCalendarDays = () => {
     const days = [];
     const totalDays = daysInMonth(currentDate);
     const firstDay = firstDayOfMonth(currentDate);
-  
-    // Add empty divs for days before the first day of the month
+
+    // Empty divs for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
       days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
     }
-  
+
     // Add days of the month with events
     for (let day = 1; day <= totalDays; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       const dateString = date.toISOString().split('T')[0]; // 'YYYY-MM-DD'
       const dayEvents = events[dateString] || []; // Fetch events for the specific date
-  
+
       days.push(
         <div key={day} className="calendar-day">
           <span className="day-number">{day}</span>
-  
+
           {/* Display events for the current day */}
           {dayEvents.map(event => (
             <div
-              key={event.id} // Use event.id to ensure unique key
+              key={event.id} // Ensure unique key for each event
               className="event-item"
             >
-              <span className="event-title">{event.title}</span> {/* Use event.title */}
+              <span className="event-title">{event.title}</span> 
               <span className="event-time">{`${event.startTime} - ${event.endTime}`}</span>
               <div className="event-tooltip">
-                <strong>{event.title}</strong> {/* Use event.title */}
+                <strong>{event.title}</strong>
                 <br />
                 {`${event.startTime} - ${event.endTime}`}
               </div>
             </div>
           ))}
 
-  
           {/* Admin can add new events */}
           {isAdmin && (
             <button className="add-event-btn" onClick={() => handleAddEventClick(date)}>+</button>
@@ -112,10 +167,9 @@ const Calendar = ({ isAdmin }) => {
         </div>
       );
     }
-  
+
     return days;
   };
- 
 
   const changeMonth = (increment) => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + increment, 1));
@@ -176,52 +230,7 @@ const Calendar = ({ isAdmin }) => {
                 onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                 placeholder="Enter event title"
               />
-              <div className="time-selection">
-                <div className="time-group">
-                  <label>Start:</label>
-                  <select
-                    value={newEvent.startHour}
-                    onChange={(e) => setNewEvent({ ...newEvent, startHour: e.target.value })}
-                  >
-                    {[...Array(24)].map((_, i) => (
-                      <option key={i} value={i.toString().padStart(2, '0')}>
-                        {i.toString().padStart(2, '0')}
-                      </option>
-                    ))}
-                  </select>
-                  :
-                  <select
-                    value={newEvent.startMinute}
-                    onChange={(e) => setNewEvent({ ...newEvent, startMinute: e.target.value })}
-                  >
-                    {['00', '15', '30', '45'].map((minute) => (
-                      <option key={minute} value={minute}>{minute}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="time-group">
-                  <label>End:</label>
-                  <select
-                    value={newEvent.endHour}
-                    onChange={(e) => setNewEvent({ ...newEvent, endHour: e.target.value })}
-                  >
-                    {[...Array(24)].map((_, i) => (
-                      <option key={i} value={i.toString().padStart(2, '0')}>
-                        {i.toString().padStart(2, '0')}
-                      </option>
-                    ))}
-                  </select>
-                  :
-                  <select
-                    value={newEvent.endMinute}
-                    onChange={(e) => setNewEvent({ ...newEvent, endMinute: e.target.value })}
-                  >
-                    {['00', '15', '30', '45'].map((minute) => (
-                      <option key={minute} value={minute}>{minute}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              {/* Time selection inputs... */}
               <button type="submit">Add Event</button>
               <button type="button" onClick={() => setShowEventForm(false)}>Cancel</button>
             </form>
