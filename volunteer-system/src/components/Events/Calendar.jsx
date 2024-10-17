@@ -80,7 +80,7 @@ const Calendar = ({ isAdmin }) => {
   //       zipCode: '67890',
   //       requiredSkills: ['Dog Walking','Animal care'],
   //       urgency: 'Low',
-  //       eventDate: '2024-07-01',
+  //       eventDate: '2024-10-01',
   //       startTime: '10:00',
   //       endTime: '12:00',
   //     },
@@ -94,12 +94,12 @@ const Calendar = ({ isAdmin }) => {
   //       zipCode: '54321',
   //       requiredSkills: ['Medication', 'Emergency Response'],
   //       urgency: 'High',
-  //       eventDate: '2024-06-30',
+  //       eventDate: '2024-10-30',
   //       startTime: '08:00',
   //       endTime: '20:00',
   //     }
   //   ];
-
+  
   //   // Group events by eventDate (e.g., '2024-06-15')
   //   const mockEventsByDate = mockEvents.reduce((acc, event) => {
   //     const dateString = event.eventDate;
@@ -109,7 +109,8 @@ const Calendar = ({ isAdmin }) => {
   //     acc[dateString].push(event);
   //     return acc;
   //   }, {});
-
+  
+  //   console.log("Mocked events by date:", mockEventsByDate); // <-- Check if the events are grouped by date correctly
   //   setEvents(mockEventsByDate); // Set the processed mock events into the state
   // }, []);
 
@@ -150,15 +151,16 @@ const Calendar = ({ isAdmin }) => {
               key={event.id} // Ensure unique key for each event
               className="event-item"
             >
-              <span className="event-title">{event.title}</span> 
+              <span className="event-title">{event.eventName}</span> {/* Display eventName */}
               <span className="event-time">{`${event.startTime} - ${event.endTime}`}</span>
               <div className="event-tooltip">
-                <strong>{event.title}</strong>
+                <strong>{event.eventName}</strong>
                 <br />
                 {`${event.startTime} - ${event.endTime}`}
               </div>
             </div>
           ))}
+
 
           {/* Admin can add new events */}
           {isAdmin && (
