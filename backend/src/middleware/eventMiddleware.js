@@ -1,4 +1,4 @@
-// middleware/validateEventInput.js
+// eventMiddleware.js
 
 //helper function to validate date string (YYYY-MM-DD)
 function isValidDate(dateString) {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../../styles/Calendar.css';
 
@@ -16,30 +16,48 @@ const Calendar = ({ isAdmin }) => {
   });
 
   useEffect(() => {
-    // Fetch events from the backend when the component mounts
+    const token = localStorage.getItem('token');
     const fetchEvents = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/events'); // Adjust the endpoint based on your backend route
+        const response = await axios.get('http://localhost:5000/api/auth/events', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
         const eventData = response.data;
-
-        // Convert event data into a date-keyed object for easier lookup
-        const eventsByDate = eventData.reduce((acc, event) => {
-          const dateString = event.eventDate; // Assuming the eventDate is in 'YYYY-MM-DD' format
+        console.log('Fetched event data:', eventData);
+  
+        // Ensure the data is an array and map it by dates
+        const eventsArray = Array.isArray(eventData) ? eventData : eventData.events || [];
+  
+        // Convert the event data into a date-keyed object while also keeping event IDs
+        const eventsByDate = eventsArray.reduce((acc, event) => {
+          const dateString = event.eventDate; // Assuming eventDate is in 'YYYY-MM-DD' format
           if (!acc[dateString]) {
             acc[dateString] = [];
           }
-          acc[dateString].push(event);
+          acc[dateString].push({
+            id: event.id, // Include event ID
+            title: event.eventName,
+            startTime: event.startTime,
+            endTime: event.endTime
+          }); // Group events by their date
           return acc;
         }, {});
-
-        setEvents(eventsByDate);
+  
+        console.log('Events by Date:', eventsByDate); // Log the structured events
+  
+        // Set the events for the calendar
+        setEvents(eventsByDate); // Update state with date-keyed object
       } catch (error) {
         console.error('Error fetching events:', error);
       }
     };
-
+  
     fetchEvents();
   }, []);
+  
 
   const daysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
@@ -54,44 +72,49 @@ const Calendar = ({ isAdmin }) => {
     const days = [];
     const totalDays = daysInMonth(currentDate);
     const firstDay = firstDayOfMonth(currentDate);
-
+  
     // Add empty divs for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
       days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
     }
-
+  
     // Add days of the month with events
     for (let day = 1; day <= totalDays; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-      const dateString = date.toISOString().split('T')[0];
-      const dayEvents = events[dateString] || [];
-
+      const dateString = date.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+      const dayEvents = events[dateString] || []; // Fetch events for the specific date
+  
       days.push(
         <div key={day} className="calendar-day">
           <span className="day-number">{day}</span>
-          {dayEvents.map((event, index) => (
+  
+          {/* Display events for the current day */}
+          {dayEvents.map(event => (
             <div
-              key={`${dateString}-${event.eventName}-${index}`}
+              key={event.id} // Use event.id to ensure unique key
               className="event-item"
             >
-              <span className="event-title">{event.eventName}</span>
+              <span className="event-title">{event.title}</span> {/* Use event.title */}
               <span className="event-time">{`${event.startTime} - ${event.endTime}`}</span>
               <div className="event-tooltip">
-                <strong>{event.eventName}</strong>
+                <strong>{event.title}</strong> {/* Use event.title */}
                 <br />
                 {`${event.startTime} - ${event.endTime}`}
               </div>
             </div>
           ))}
-          {isAdmin && ( 
-            <button className="add-event-btn" onClick={() => handleAddEventClick(date)}>+</button> )}
+
+  
+          {/* Admin can add new events */}
+          {isAdmin && (
+            <button className="add-event-btn" onClick={() => handleAddEventClick(date)}>+</button>
+          )}
         </div>
       );
     }
-
+  
     return days;
   };
-
  
 
   const changeMonth = (increment) => {
