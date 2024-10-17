@@ -1,14 +1,17 @@
+// eventService.test.js
+
+
 const eventService = require('../../services/eventService');
 
 let originalEvents;
 
 beforeEach(() => {
-  // store the original events to restore later
+ 
   originalEvents = [...eventService.getAllEvents()];
-  
-  //reset the events array to its initial state before each test
+
+ 
   eventService.getAllEvents().length = 0;
-  eventService.getAllEvents().push(...originalEvents);
+  originalEvents.forEach(event => eventService.createEvent({ ...event }));
 });
 
 describe('Event Service', () => {
@@ -41,12 +44,11 @@ describe('Event Service', () => {
   });
 
   test('getEventById should return the correct event', () => {
-    const event = eventService.getEventById(1);
-    expect(event).toHaveProperty('id', 1);
+    const event = eventService.getEventById('1');
+    expect(event).toHaveProperty('id', '1');
   });
 
   test('updateEvent should update an existing event', () => {
-    //all required fields in the update data
     const updatedData = {
       eventName: 'Updated Event Name',
       eventDescription: 'Updated Description',
@@ -60,19 +62,18 @@ describe('Event Service', () => {
       startTime: '10:00',
       endTime: '14:00'
     };
-  
+
     const result = eventService.updateEvent(1, updatedData);
-  
+
     expect(result.event.eventName).toBe('Updated Event Name');
     expect(result.event.eventDescription).toBe('Updated Description');
     expect(result.message).toBe('Event updated successfully');
   });
-  
 
   test('deleteEvent should remove an event', () => {
-    const result = eventService.deleteEvent(1);
+    const result = eventService.deleteEvent('1');
     expect(result.message).toBe('Event deleted successfully');
-    expect(() => eventService.getEventById(1)).toThrow('Event not found');
+    expect(() => eventService.getEventById('1')).toThrow('Event not found');
   });
 
   test('createEvent should throw error for invalid data', () => {
@@ -100,16 +101,16 @@ describe('Event Service', () => {
   });
 
   test('getEventById should throw error for non-existent event', () => {
-    expect(() => eventService.getEventById(999)).toThrow('Event not found');
+    expect(() => eventService.getEventById('999')).toThrow('Event not found');
   });
 
   test('updateEvent should throw error for invalid data', () => {
     const invalidUpdate = { eventName: '' };
-    expect(() => eventService.updateEvent(1, invalidUpdate)).toThrow();
+    expect(() => eventService.updateEvent('1', invalidUpdate)).toThrow();
   });
 
   test('deleteEvent should throw error for non-existent event', () => {
-    expect(() => eventService.deleteEvent(999)).toThrow('Event not found');
+    expect(() => eventService.deleteEvent('999')).toThrow('Event not found');
   });
 
   test('getAllEvents should return empty array when no events exist', () => {
@@ -119,8 +120,9 @@ describe('Event Service', () => {
 
     const result = eventService.getAllEvents();
     expect(result).toEqual([]);
-    
+
     //restore the original events
     events.push(...originalEvents);
   });
 });
+
