@@ -35,10 +35,7 @@ app.use('/api/auth/volunteer-matching', matchingRoutes);
 
 app.use('/api/auth/history', historyRoutes);
 
-// Other routes (for everyone else's module) = this is our base url
 app.use('/api/notifications', notificationRoutes); 
-app.use('/api/auth/events', eventRoutes); 
-// app.use('/api');
 
 // Error handling middleware
 app.use((err, req, res, next) => {

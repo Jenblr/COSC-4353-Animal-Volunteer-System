@@ -1,6 +1,6 @@
 //matchingService.js
-const eventService = require('./eventService');
-const profileService = require('./profileService');
+const eventService = require('../services/eventService');
+const profileService = require('../services/profileService');
 
 exports.getMatchingVolunteers = async (eventId) => {
   try {
