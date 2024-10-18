@@ -1,143 +1,178 @@
 :root {
-    --primary-color: #8B4513;  
-    --secondary-color: #c18922; 
-    --background-color: #FFF8DC; 
-    --form-bg-color: #FAEBD7; 
-    --header-bg-color: #a15c01; 
-    --text-color: #4A4A4A;
-    --border-color: #6a4e28; 
-    --error-color: #a51922; 
-    --success-color: #2E8B57; 
-  }
-  
-  body {
-    font-family: 'Georgia', serif;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    line-height: 1.6;
-    margin: 0;
-    padding: 0;
-  }
-  
+  --primary-color: #8B4513;
+  --secondary-color: #c17222;
+  --background-color: #FFF8DC;
+  --form-bg-color: #FAEBD7;
+  --header-bg-color: #a15c01;
+  --text-color: #4A4A4A;
+  --border-color: #6a4e28;
+  --error-color: #a51922;
+  --success-color: #2E8B57;
+}
+
+body {
+  font-family: 'Georgia', serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+}
+
+.volunteer-matching-form {
+  max-width: 800px;
+  margin: 40px auto;
+  background-color: var(--form-bg-color);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.form-header {
+  background-color: var(--primary-color);
+  padding: 20px 40px;
+  text-align: center;
+}
+
+.form-header h2 {
+  color: #FAEBD7;
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.form-content {
+  padding: 30px 40px;
+}
+
+.form-group {
+  margin-bottom: 25px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--primary-color);
+  font-size: 18px;
+}
+
+.form-group select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 16px;
+  background-color: #FFF;
+  color: var(--text-color);
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.form-group select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.2);
+  outline: none;
+}
+
+.search-volunteers-btn {
+  background-color: var(--secondary-color);
+  color: #FFF;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.search-volunteers-btn:hover {
+  background-color: var(--primary-color);
+}
+
+.search-volunteers-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.volunteer-list {
+  background-color: #fff;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.volunteer-list h3 {
+  color: var(--primary-color);
+  margin-top: 0;
+}
+
+.volunteer-item {
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+}
+
+.volunteer-item label {
+  margin-left: 10px;
+  color: var(--text-color);
+}
+
+.submit-container {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.match-volunteers-button {
+  background-color: var(--primary-color);
+  color: #FFF;
+  padding: 12px 30px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.match-volunteers-button:hover {
+  background-color: var(--secondary-color);
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.match-volunteers-button:active {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.match-volunteers-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 768px) {
   .volunteer-matching-form {
-    max-width: 800px;
-    margin: 40px auto;
-    background-color: var(--form-bg-color);
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    margin: 20px 10px;
   }
-  
-  .form-header {
-    background-color: var(--primary-color);
-    padding: 20px 40px;
-    text-align: center;
-  }
-  
-  .form-header h2 {
-    color: #FAEBD7;
-    margin: 0;
-    font-size: 32px;
-    font-weight: 700;
-    letter-spacing: 1px;
-  }
-  
+
+  .form-header,
   .form-content {
-    padding: 30px 40px;
-  }
-  
-  .form-group {
-    margin-bottom: 25px;
-  }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: var(--primary-color);
-    font-size: 18px;
-  }
-  
-  .form-group input[type="text"] {
-    width: 100%;
-    padding: 12px 15px;
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
-    font-size: 16px;
-    transition: all 0.3s ease;
-    background-color: #FFF;
-    color: var(--text-color);
-    box-sizing: border-box;
-  }
-  
-  .form-group input[type="text"]:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.2);
-    outline: none;
-  }
-  
-  .event-details {
-    background-color: #fff;
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
     padding: 20px;
-    margin-bottom: 25px;
   }
-  
-  .event-details h3 {
-    color: var(--primary-color);
-    margin-top: 0;
+
+  .form-header h2 {
+    font-size: 24px;
   }
-  
-  .event-details p {
-    margin: 10px 0;
+
+  .match-volunteers-button {
+    width: 100%;
   }
-  
-  .submit-container {
-    text-align: center;
-    margin-top: 30px;
-  }
-  
-  button[type="submit"] {
-    background-color: var(--primary-color);
-    color: #FFF;
-    padding: 12px 30px;
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-  }
-  
-  button[type="submit"]:hover {
-    background-color: var(--secondary-color);
-    transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-  
-  button[type="submit"]:active {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-  
-  @media (max-width: 768px) {
-    .volunteer-matching-form {
-      margin: 20px 10px;
-    }
-  
-    .form-header,
-    .form-content {
-      padding: 20px;
-    }
-  
-    .form-header h2 {
-      font-size: 24px;
-    }
-  
-    button[type="submit"] {
-      width: 100%;
-    }
-  }
+}
