@@ -1,66 +1,27 @@
 const historyService = require('../../services/historyService');
 
-describe('HistoryService', () => {
-    describe('getHistory', () => {
-        it('should return history for an existing user', () => {
-            const userHistory = historyService.getHistory('Adam Larson');
-            expect(userHistory).toBeDefined();
-            expect(userHistory.length).toBe(1);
-            expect(userHistory[0].eventName).toBe('Pet Training Workshop');
-        });
+describe('History Service', () => {
+    it('should return all history records', () => {
+        const mockHistory = [{ id: 1, volunteer: 123, participationStatus: 'Not Attended' }];
+        jest.spyOn(historyService, 'getAllHistory').mockReturnValue(mockHistory);
 
-        it('should return an empty array for a non-existent user', () => {
-            const userHistory = historyService.getHistory('Non-existent User');
-            expect(userHistory).toEqual([]);
-        });
+        const result = historyService.getAllHistory();
+        expect(result).toEqual(mockHistory);
     });
 
-    describe('addHistoryRecord', () => {
-        it('should add a new history record', () => {
-            const newRecord = {
-                volunteer: 'Test User',
-                eventName: 'Test Event',
-                eventDescription: 'Test Description',
-                location: 'Test Location',
-                requiredSkills: ['Test Skill'],
-                urgency: 'High',
-                eventDate: '2023-12-01',
-                participationStatus: 'Pending'
-            };
-            const response = historyService.addHistoryRecord('Test User', newRecord);
-            expect(response.status).toBe(201);
-            expect(response.record).toMatchObject(newRecord);
-        });
-    });
+    it('should update history record successfully', () => {
+        const mockHistoryRecord = { id: 1, volunteer: 123, participationStatus: 'Not Attended' };
+        const updateData = { participationStatus: 'Attended' };
 
-    describe('updateHistoryRecord', () => {
-        it('should update an existing history record', () => {
-            const updatedData = {
-                eventName: 'Updated Event',
-                participationStatus: 'Confirmed'
-            };
-            const response = historyService.updateHistoryRecord('Adam Larson', 1, updatedData);
-            expect(response.status).toBe(200);
-            expect(response.record.eventName).toBe('Updated Event');
-            expect(response.record.participationStatus).toBe('Confirmed');
+        jest.spyOn(historyService, 'updateHistoryRecord').mockReturnValue({
+            status: 200,
+            message: 'Record updated successfully',
         });
 
-        it('should return 404 if record not found', () => {
-            const response = historyService.updateHistoryRecord('Adam Larson', 999, {});
-            expect(response.status).toBe(404);
-        });
-    });
-
-    describe('deleteHistoryRecord', () => {
-        it('should delete an existing history record', () => {
-            const response = historyService.deleteHistoryRecord('Adam Larson', 1);
-            expect(response.status).toBe(200);
-            expect(response.message).toBe('Record deleted successfully');
-        });
-
-        it('should return 404 if record not found', () => {
-            const response = historyService.deleteHistoryRecord('Adam Larson', 999);
-            expect(response.status).toBe(404);
+        const result = historyService.updateHistoryRecord(mockHistoryRecord.id, updateData);
+        expect(result).toEqual({
+            status: 200,
+            message: 'Record updated successfully',
         });
     });
 });

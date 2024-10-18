@@ -75,3 +75,49 @@ pm.environment.set("token", jsonData.token);
 - **Value:** token generated from 'user/admin login' : {{token}}
 
 <hr style="border: 3px dashed ;">
+
+
+const events = [
+  {
+    id: 1,
+    eventName: 'Animal Shelter Cleanup',
+    eventDescription: 'Join us for a day of cleaning and organizing the animal shelter. Help us provide a clean and comfortable space for the animals.',
+    address1: '1234 Paw Street',
+    city: 'Houston',
+    state: 'TX',
+    zipCode: '77001',
+    requiredSkills: ['Cleaning', 'Organizing shelter donations'],
+    urgency: 'Medium',
+    eventDate: '2024-10-15',
+    startTime: '09:00',
+    endTime: '12:00',
+  },
+  {
+    id: 2,
+    eventName: 'Laundry Day for the Pups',
+    eventDescription: 'Help wash and fold bedding and towels to keep the animals comfortable and clean. Your help is greatly appreciated!',
+    address1: '7890 Fetch Drive',
+    city: 'El Paso',
+    state: 'TX',
+    zipCode: '79901',
+    requiredSkills: ['Helping with laundry', 'Cleaning'],
+    urgency: 'Medium',
+    eventDate: '2024-11-10',
+    startTime: '08:00',
+    endTime: '12:00'
+  },
+  {
+    id: 3,
+    eventName: 'Adoption Drive',
+    eventDescription: 'Help potential adopters find their new best friend. Assist with paperwork, introduce the animals, and answer questions.',
+    address1: '3456 Purr Road',
+    city: 'San Antonio',
+    state: 'TX',
+    zipCode: '78201',
+    requiredSkills: ['Assisting potential adopters', 'Medication'],
+    urgency: 'Critical',
+    eventDate: '2024-11-01',
+    startTime: '09:00',
+    endTime: '17:00'
+  }
+];

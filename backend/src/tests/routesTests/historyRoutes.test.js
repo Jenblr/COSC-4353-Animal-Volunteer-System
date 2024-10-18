@@ -1,80 +1,57 @@
 const request = require('supertest');
 const express = require('express');
 const historyRoutes = require('../../routes/historyRoutes');
-const { verifyToken } = require('../../middleware/authMiddleware');
-const historyService = require('../../services/historyService');
+const { verifyToken, verifyAdmin } = require('../../middleware/authMiddleware');
+const historyController = require('../../controllers/historyController');
+const eventController = require('../../controllers/eventController');
 
 jest.mock('../../middleware/authMiddleware');
-jest.mock('../../services/historyService');
+jest.mock('../../controllers/historyController');
+jest.mock('../../controllers/eventController');
 
 const app = express();
 app.use(express.json());
-app.use('/api/history', historyRoutes);
+app.use('/history', historyRoutes);
 
 describe('History Routes', () => {
   beforeEach(() => {
-    verifyToken.mockImplementation((req, res, next) => {
-      req.userId = 'testUserId';
-      next();
-    });
-  });
-
-  afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('GET /api/history', () => {
-    test('should return history', async () => {
-      const mockHistory = [{ id: 1, eventName: 'Pet Training Workshop' }];
-      historyService.getHistory.mockResolvedValue(mockHistory);
+  test('GET /history should call verifyToken, eventController.getAllEvents, and historyController.getAllHistory', async () => {
+    verifyToken.mockImplementation((req, res, next) => next());
+    eventController.getAllEvents.mockImplementation((req, res, next) => next());
+    historyController.getAllHistory.mockImplementation((req, res) => res.status(200).json({}));
 
-      const response = await request(app).get('/api/history');
+    const response = await request(app).get('/history');
 
-      expect(response.statusCode).toBe(200);
-      expect(response.body).toEqual(mockHistory);
-      expect(historyService.getHistory).toHaveBeenCalledWith('testUserId');
-    });
+    expect(verifyToken).toHaveBeenCalled();
+    expect(eventController.getAllEvents).toHaveBeenCalled();
+    expect(historyController.getAllHistory).toHaveBeenCalled();
+    expect(response.status).toBe(200);
   });
 
-  describe('POST /api/history', () => {
-    test('should add a new history record', async () => {
-      const newRecord = { eventName: 'Pet Adoption Day', date: '2023-07-15' };
-      historyService.addHistoryRecord.mockResolvedValue({ status: 201, record: { id: 2, ...newRecord } });
+  test('GET /history/:userId should call verifyToken and historyController.getHistory', async () => {
+    verifyToken.mockImplementation((req, res, next) => next());
+    historyController.getHistory.mockImplementation((req, res) => res.status(200).json({}));
 
-      const response = await request(app)
-        .post('/api/history')
-        .send(newRecord);
+    const response = await request(app).get('/history/123');
 
-      expect(response.statusCode).toBe(201);
-      expect(response.body).toEqual({ status: 201, record: { id: 2, ...newRecord } });
-      expect(historyService.addHistoryRecord).toHaveBeenCalledWith('testUserId', newRecord);
-    });
+    expect(verifyToken).toHaveBeenCalled();
+    expect(historyController.getHistory).toHaveBeenCalled();
+    expect(response.status).toBe(200);
   });
 
-  describe('PUT /api/history/:recordId', () => {
-    test('should update a history record', async () => {
-      const updatedRecord = { id: 1, eventName: 'Updated Pet Training Workshop' };
-      historyService.updateHistoryRecord.mockResolvedValue({ status: 200, record: updatedRecord });
+  test('PUT /history/:id should call verifyToken, verifyAdmin, and historyController.updateHistoryRecord', async () => {
+    verifyToken.mockImplementation((req, res, next) => next());
+    verifyAdmin.mockImplementation((req, res, next) => next());
+    historyController.updateHistoryRecord.mockImplementation((req, res) => res.status(200).json({}));
 
-      const response = await request(app)
-        .put('/api/history/1')
-        .send(updatedRecord);
+    const response = await request(app).put('/history/123');
 
-      expect(response.statusCode).toBe(200);
-      expect(response.body).toEqual({ status: 200, record: updatedRecord });
-      expect(historyService.updateHistoryRecord).toHaveBeenCalledWith('testUserId', '1', updatedRecord);
-    });
-  });
-
-  describe('DELETE /api/history/:recordId', () => {
-    test('should delete a history record', async () => {
-      historyService.deleteHistoryRecord.mockResolvedValue({ status: 200, message: 'Record deleted successfully' });
-
-      const response = await request(app).delete('/api/history/1');
-
-      expect(response.statusCode).toBe(200);
-      expect(response.body).toEqual({ status: 200, message: 'Record deleted successfully' });
-      expect(historyService.deleteHistoryRecord).toHaveBeenCalledWith('testUserId', '1');
-    });
+    expect(verifyToken).toHaveBeenCalled();
+    expect(verifyAdmin).toHaveBeenCalled();
+    expect(historyController.updateHistoryRecord).toHaveBeenCalled();
+    expect(response.status).toBe(200);
   });
 });

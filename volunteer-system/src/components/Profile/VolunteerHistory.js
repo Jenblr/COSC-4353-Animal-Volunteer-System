@@ -1,52 +1,46 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import '../../styles/VolunteerHistory.css';
 
 const VolunteerHistory = () => {
   const [volunteerHistory, setVolunteerHistory] = useState([]);
-  const [volunteers, setVolunteers] = useState([]); 
+  const [volunteers, setVolunteers] = useState([]);
   const [selectedVolunteer, setSelectedVolunteer] = useState('');
 
-  // Just an example of how voluteer history is displayed in our table
+  // Fetch volunteer list
   useEffect(() => {
-    const sampleHistory = [
-      {
-        volunteer: 'Adam Larson',
-        eventName: 'Pet Training Workshop',
-        eventDescription: 'Assist in training sessions for shelter animals',
-        location: 'Special Pals Animal Shelter',
-        requiredSkills: ['Animal training', 'Communication'],
-        urgency: 'Medium',
-        eventDate: '10-01-2024',
-        participationStatus: 'Pending',
-      },
-      {
-        volunteer: 'Claire Smith',
-        eventName: 'Pet Photography Day',
-        eventDescription: 'Take photos of animals for adoption profiles',
-        location: 'Citizens for Animal Protection',
-        requiredSkills: ['Photography', 'Animal handling'],
-        urgency: 'Medium',
-        eventDate: '09-22-2024',
-        participationStatus: 'Confirmed',
-      },
-    ];
+    const fetchVolunteers = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/volunteers');
+        setVolunteers(response.data);
+      } catch (error) {
+        console.error('Error fetching volunteers:', error);
+      }
+    };
 
-    setVolunteerHistory(sampleHistory);
+    fetchVolunteers();
   }, []);
 
-  // Simulate fetching volunteer list 
+  // Fetch volunteer history when a volunteer is selected
   useEffect(() => {
-    const sampleVolunteers = ['Adam Larson', 'Claire Smith', 'Mara Kelly'];
-    setVolunteers(sampleVolunteers);
-  }, []);
+    if (selectedVolunteer) {
+      const fetchVolunteerHistory = async () => {
+        try {
+          const response = await axios.get(`http://localhost:5000/api/history/${selectedVolunteer}`);
+          setVolunteerHistory(response.data);
+        } catch (error) {
+          console.error('Error fetching volunteer history:', error);
+        }
+      };
+
+      fetchVolunteerHistory();
+    }
+  }, [selectedVolunteer]);
 
   // Handle volunteer selection
   const handleVolunteerChange = (e) => {
     setSelectedVolunteer(e.target.value);
   };
-
-  
-  const filteredHistory = volunteerHistory.filter((history) => history.volunteer === selectedVolunteer);
 
   return (
     <div className="volunteer-history-container">
@@ -61,9 +55,9 @@ const VolunteerHistory = () => {
           onChange={handleVolunteerChange}
         >
           <option value="">-- Select Volunteer --</option>
-          {volunteers.map((volunteer, index) => (
-            <option key={index} value={volunteer}>
-              {volunteer}
+          {volunteers.map((volunteer) => (
+            <option key={volunteer.id} value={volunteer.id}>
+              {volunteer.name}
             </option>
           ))}
         </select>
@@ -83,8 +77,8 @@ const VolunteerHistory = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredHistory.length > 0 ? (
-              filteredHistory.map((history, index) => (
+            {volunteerHistory.length > 0 ? (
+              volunteerHistory.map((history, index) => (
                 <tr key={index}>
                   <td>{history.eventName}</td>
                   <td>{history.eventDescription}</td>

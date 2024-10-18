@@ -3,162 +3,83 @@ const historyService = require('../../services/historyService');
 
 jest.mock('../../services/historyService');
 
-describe('HistoryController', () => {
-    describe('getHistory', () => {
-        it('should return user history', async () => {
-            const req = { userId: '1' };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn()
-            };
-
-            historyService.getHistory.mockReturnValue([
-                { id: 1, date: '2023-07-01', hours: 4, description: 'Dog walking' }
-            ]);
-
-            await historyController.getHistory(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.json).toHaveBeenCalledWith(expect.arrayContaining([
-                expect.objectContaining({ description: 'Dog walking' })
-            ]));
-        });
+describe('History Controller', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
     });
 
-    describe('addHistoryRecord', () => {
-        it('should add a new history record', async () => {
-            const req = {
-                userId: '1',
-                body: {
-                    date: '2023-08-01',
-                    hours: 3,
-                    description: 'Cat feeding'
-                }
-            };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn()
-            };
+    it('should fetch all history records', () => {
+        const req = {};
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+        const mockHistory = [{ id: 1, volunteer: 123, participationStatus: 'Not Attended' }];
 
-            historyService.addHistoryRecord.mockReturnValue({
-                status: 201,
-                record: req.body
-            });
+        historyService.getAllHistory.mockReturnValue(mockHistory);
 
-            await historyController.addHistoryRecord(req, res);
+        historyController.getAllHistory(req, res);
 
-            expect(res.status).toHaveBeenCalledWith(201);
-            expect(res.json).toHaveBeenCalledWith({
-                status: 201,
-                record: expect.objectContaining({ description: 'Cat feeding' })
-            });
-        });
+        expect(historyService.getAllHistory).toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith(mockHistory);
     });
 
-    describe('updateHistoryRecord', () => {
-        it('should update an existing history record', async () => {
-            const req = {
-                userId: '1',
-                body: {
-                    recordId: 1,
-                    date: '2023-07-01',
-                    hours: 5,
-                    description: 'Extended dog walking'
-                }
-            };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn()
-            };
+    it('should fetch user history by userId', () => {
+        const req = { params: { userId: 123 } };
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+        const mockHistory = [{ id: 1, volunteer: 123, participationStatus: 'Not Attended' }];
 
-            historyService.updateHistoryRecord.mockReturnValue({
-                status: 200,
-                record: req.body
-            });
+        historyService.getAllHistory.mockReturnValue(mockHistory);
 
-            await historyController.updateHistoryRecord(req, res);
+        historyController.getHistory(req, res);
 
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.json).toHaveBeenCalledWith({
-                status: 200,
-                record: expect.objectContaining({ description: 'Extended dog walking' })
-            });
-        });
-
-        it('should return 404 if record not found', async () => {
-            const req = {
-                userId: '1',
-                body: {
-                    recordId: 999,
-                    date: '2023-07-01',
-                    hours: 5,
-                    description: 'Non-existent record'
-                }
-            };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn()
-            };
-
-            historyService.updateHistoryRecord.mockReturnValue({
-                status: 404,
-                message: 'History record not found'
-            });
-
-            await historyController.updateHistoryRecord(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(404);
-            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-                message: 'History record not found'
-            }));
-        });
+        expect(historyService.getAllHistory).toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.json).toHaveBeenCalledWith(mockHistory);
     });
 
-    describe('deleteHistoryRecord', () => {
-        it('should delete a history record', async () => {
-            const req = {
-                userId: '1',
-                params: { recordId: '1' }
-            };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn()
-            };
+    it('should return 404 if no history found for user', () => {
+        const req = { params: { userId: 999 } };
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
 
-            historyService.deleteHistoryRecord.mockReturnValue({
-                status: 200,
-                message: 'History record deleted successfully'
-            });
+        historyService.getAllHistory.mockReturnValue([]);
 
-            await historyController.deleteHistoryRecord(req, res);
+        historyController.getHistory(req, res);
 
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-                message: 'History record deleted successfully'
-            }));
-        });
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.json).toHaveBeenCalledWith({ message: 'No history found for this user' });
+    });
 
-        it('should return 404 if record not found for deletion', async () => {
-            const req = {
-                userId: '1',
-                params: { recordId: '999' }
-            };
-            const res = {
-                status: jest.fn().mockReturnThis(),
-                json: jest.fn()
-            };
+    it('should return 401 if user is unauthorized to update a record', () => {
+        const req = { params: { id: 1 }, body: { participationStatus: 'Attended' }, userRole: null };
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
 
-            historyService.deleteHistoryRecord.mockReturnValue({
-                status: 404,
-                message: 'History record not found'
-            });
+        historyController.updateHistoryRecord(req, res);
 
-            await historyController.deleteHistoryRecord(req, res);
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.json).toHaveBeenCalledWith({ message: 'Unauthorized' });
+    });
 
-            expect(res.status).toHaveBeenCalledWith(404);
-            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-                message: 'History record not found'
-            }));
-        });
+    it('should return 403 if non-admin tries to update participation status', () => {
+        const req = { params: { id: 1 }, body: { participationStatus: 'Attended' }, userRole: 'user' };
+        const res = {
+            status: jest.fn().mockReturnThis(),
+            json: jest.fn()
+        };
+
+        historyController.updateHistoryRecord(req, res);
+
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.json).toHaveBeenCalledWith({ message: 'Only admins can update participation status' });
     });
 });

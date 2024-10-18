@@ -49,3 +49,8 @@ exports.loginUser = (email, password) => {
 
     return { status: 200, token, role: user.role };
 };
+
+// Using for volunteer history
+exports.getAllVolunteers = () => {
+    return users.filter(user => user.role === 'volunteer');
+};

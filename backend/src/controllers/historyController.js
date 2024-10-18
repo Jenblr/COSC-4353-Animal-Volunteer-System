@@ -1,31 +1,36 @@
-// historyController.js
-
 const historyService = require('../services/historyService');
 
-exports.getHistory = (req, res) => {
-  const userId = req.userId;
-  console.log('Controller: Fetching history for userId:', userId);
-  const history = historyService.getHistory(userId);
-  res.status(200).json(history);
+exports.getAllHistory = (req, res) => {
+    console.log('Controller: Fetching all history records');
+    const allHistory = historyService.getAllHistory();
+    res.status(200).json(allHistory);
 };
 
-exports.addHistoryRecord = (req, res) => {
-  const userId = req.userId;
-  const recordData = req.body;
-  const result = historyService.addHistoryRecord(userId, recordData);
-  res.status(result.status).json(result);
+exports.getHistory = (req, res) => {
+    const userId = parseInt(req.params.userId, 10);
+    console.log('Controller: Fetching history for userId:', userId);
+    const allHistory = historyService.getAllHistory();
+    const userHistory = allHistory.filter(record => record.volunteer === userId);
+    
+    if (userHistory.length === 0) {
+        return res.status(404).json({ message: 'No history found for this user' });
+    }
+    
+    res.status(200).json(userHistory);
 };
 
 exports.updateHistoryRecord = (req, res) => {
-  const userId = req.userId;
-  const { id, ...updateData } = req.body;
-  const result = historyService.updateHistoryRecord(userId, id, updateData);
-  res.status(result.status).json(result);
-};
+    const { id } = req.params;
+    const updateData = req.body;
 
-exports.deleteHistoryRecord = (req, res) => {
-  const userId = req.userId;
-  const { id } = req.params;
-  const result = historyService.deleteHistoryRecord(userId, id);
-  res.status(result.status).json(result);
+    if (!req.userRole) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (req.userRole !== 'admin' && updateData.participationStatus !== undefined) {
+        return res.status(403).json({ message: 'Only admins can update participation status' });
+    }
+
+    const result = historyService.updateHistoryRecord(id, updateData);
+    res.status(result.status).json(result);
 };

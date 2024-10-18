@@ -1,47 +1,48 @@
-//eventService.js
+const volunteerHistoryService = require('../services/historyService');
+const authService = require('../services/authService'); 
 
 const events = [
   {
-    id: 1,
+    id: '1',
     eventName: 'Animal Shelter Cleanup',
-    eventDescription: 'Join us for a day of cleaning and organizing the animal shelter. Help us provide a clean and comfortable space for the animals.',
-    address1: '1234 Paw Street',
-    city: 'Houston',
-    state: 'TX',
-    zipCode: '77001',
-    requiredSkills: ['Cleaning', 'Organizing shelter donations'],
+    eventDescription: 'Help clean and organize the animal shelter.',
+    address1: '123 Shelter Lane',
+    city: 'Anytown',
+    state: 'CA',
+    zipCode: '12345',
+    requiredSkills: ['Cleaning', 'Animal Care'],
     urgency: 'Medium',
-    eventDate: '2024-10-15',
+    eventDate: '2024-06-15',
     startTime: '09:00',
+    endTime: '14:00',
+  },
+  {
+    id: '2',
+    eventName: 'Dog Walking Day',
+    eventDescription: 'Volunteers needed to walk dogs from the shelter.',
+    address1: '456 Park Avenue',
+    city: 'Dogville',
+    state: 'NY',
+    zipCode: '67890',
+    requiredSkills: ['Dog Walking','Animal care'],
+    urgency: 'Low',
+    eventDate: '2024-07-01',
+    startTime: '10:00',
     endTime: '12:00',
   },
   {
-    id: 2,
-    eventName: 'Laundry Day for the Pups',
-    eventDescription: 'Help wash and fold bedding and towels to keep the animals comfortable and clean. Your help is greatly appreciated!',
-    address1: '7890 Fetch Drive',
-    city: 'El Paso',
+    id: '3',
+    eventName: 'Emergency Vet Assistance',
+    eventDescription: 'Assist veterinarians with emergency cases.',
+    address1: '789 Vet Clinic Road',
+    city: 'Petsburg',
     state: 'TX',
-    zipCode: '79901',
-    requiredSkills: ['Helping with laundry', 'Cleaning'],
-    urgency: 'Medium',
-    eventDate: '2024-11-10',
+    zipCode: '54321',
+    requiredSkills: ['Medication', 'Emergency Response'],
+    urgency: 'High',
+    eventDate: '2024-06-30',
     startTime: '08:00',
-    endTime: '12:00'
-  },
-  {
-    id: 3,
-    eventName: 'Adoption Drive',
-    eventDescription: 'Help potential adopters find their new best friend. Assist with paperwork, introduce the animals, and answer questions.',
-    address1: '3456 Purr Road',
-    city: 'San Antonio',
-    state: 'TX',
-    zipCode: '78201',
-    requiredSkills: ['Assisting potential adopters', 'Medication'],
-    urgency: 'Critical',
-    eventDate: '2024-11-01',
-    startTime: '09:00',
-    endTime: '17:00'
+    endTime: '20:00',
   }
 ];
 
@@ -109,7 +110,28 @@ exports.createEvent = (eventData) => {
     ...eventData,
     createdAt: new Date().toISOString()
   };
+  
   events.push(newEvent);
+
+  // Pull volunteers' info and add each event to their history
+  const allVolunteers = authService.getAllVolunteers();
+  allVolunteers.forEach(volunteer => {
+    const historyRecord = {
+      eventId: newEvent.id,
+      eventName: newEvent.eventName,
+      eventDescription: newEvent.eventDescription,
+      location: `${newEvent.address1}, ${newEvent.city}, ${newEvent.state} ${newEvent.zipCode}`,
+      requiredSkills: newEvent.requiredSkills,
+      urgency: newEvent.urgency,
+      eventDate: newEvent.eventDate,
+      startTime: newEvent.startTime,
+      endTime: newEvent.endTime,
+      participationStatus: 'Not Attended'
+    };
+
+    volunteerHistoryService.addHistoryRecord(volunteer.id, historyRecord);
+  });
+
   return {
     message: "Event created successfully",
     event: newEvent
@@ -120,16 +142,24 @@ exports.getAllEvents = () => {
   return events;
 };
 
+// exports.getEventById = (id) => {
+//   const event = events.find(e => e.id === parseInt(id));
+//   if (!event) {
+//     throw { status: 404, message: 'Event not found' };
+//   }
+//   return event;
+// };
 exports.getEventById = (id) => {
-  const event = events.find(e => e.id === parseInt(id));
+  //compare the event id as a string to match the stored event IDs
+  const event = events.find(e => e.id === String(id));
   if (!event) {
     throw { status: 404, message: 'Event not found' };
   }
   return event;
 };
-
 exports.updateEvent = (id, eventData) => {
-  const index = events.findIndex(e => e.id === parseInt(id));
+  // Compare the event id as a string to match the stored event IDs
+  const index = events.findIndex(e => e.id === String(id));
   if (index === -1) {
     throw { status: 404, message: 'Event not found' };
   }
@@ -148,13 +178,43 @@ exports.updateEvent = (id, eventData) => {
 };
 
 exports.deleteEvent = (id) => {
-  const index = events.findIndex(e => e.id === parseInt(id));
+  // Compare the event id as a string to match the stored event IDs
+  const index = events.findIndex(e => e.id === String(id));
   if (index === -1) {
     throw { status: 404, message: 'Event not found' };
   }
   events.splice(index, 1);
   return { message: "Event deleted successfully" };
 };
+
+
+// exports.updateEvent = (id, eventData) => {
+//   const index = events.findIndex(e => e.id === parseInt(id));
+//   if (index === -1) {
+//     throw { status: 404, message: 'Event not found' };
+//   }
+
+//   const errors = validateEventData(eventData);
+//   if (Object.keys(errors).length > 0) {
+//     throw { status: 400, errors };
+//   }
+
+//   const updatedEvent = { ...events[index], ...eventData, updatedAt: new Date().toISOString() };
+//   events[index] = updatedEvent;
+//   return {
+//     message: "Event updated successfully",
+//     event: updatedEvent
+//   };
+// };
+
+// exports.deleteEvent = (id) => {
+//   const index = events.findIndex(e => e.id === parseInt(id));
+//   if (index === -1) {
+//     throw { status: 404, message: 'Event not found' };
+//   }
+//   events.splice(index, 1);
+//   return { message: "Event deleted successfully" };
+// };
 
 exports.getFormOptions = () => {
   return {
@@ -166,7 +226,9 @@ exports.getFormOptions = () => {
       'Cleaning',
       'Medication',
       'Grooming',
-      'Assisting potential adopters'
+      'Assisting potential adopters',
+      'Animal care',
+      'Emergency Response'
     ],
     urgencyOptions: ['Low', 'Medium', 'High', 'Critical'],
     stateOptions: [

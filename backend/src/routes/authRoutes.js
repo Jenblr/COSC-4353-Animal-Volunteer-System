@@ -31,10 +31,6 @@ router.get('/manage-profile', verifyToken, (req, res) => {
     res.json('Manage Profile data');
 });
 
-router.get('/volunteer-history', verifyToken, (req, res) => {
-    res.json('Volunteer History data');
-});
-
 router.get('/notifications', verifyToken, (req, res) => {
     res.json('Notifications data');
 });
