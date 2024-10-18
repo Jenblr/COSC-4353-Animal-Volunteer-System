@@ -17,6 +17,7 @@ describe('Notification Controller', () => {
   test('should get all notifications', () => {
     notificationService.getAllNotifications.mockReturnValue([{ id: 1, type: 'Test', message: 'Message' }]);
     notificationController.getNotifications(req, res);
+    expect(notificationService.getAllNotifications).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ notifications: [{ id: 1, type: 'Test', message: 'Message' }] });
   });
@@ -35,7 +36,7 @@ describe('Notification Controller', () => {
 
   test('should add a notification', () => {
     req.body = { type: 'Test', message: 'Test Message' };
-    const newNotification = { id: 3, type: 'Test', message: 'Test Message' };
+    const newNotification = { id: 1, type: 'Test', message: 'Test Message' };
     notificationService.addNotification.mockReturnValue(newNotification);
     
     notificationController.addNotification(req, res);

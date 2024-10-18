@@ -1,5 +1,8 @@
 // Sample in-memory data (replace with database operations as needed)
-let notifications = [];
+let notifications = [
+  { id: 1, type: 'New Event', message: 'Shelter Maintenance has been added!', date: '09-23-2024' },
+  { id: 2, type: 'Reminder', message: 'Reminder: Pet Training Workshop on 10-01-2024!', date: '10-01-2024' }
+];
   
   // Get all notifications
   const getAllNotifications = () => {
