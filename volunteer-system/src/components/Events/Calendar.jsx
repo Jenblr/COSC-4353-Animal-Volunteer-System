@@ -32,17 +32,12 @@ const Calendar = ({ isAdmin }) => {
         // Process event data by date
         const eventsArray = Array.isArray(eventData) ? eventData : eventData.events || [];
         const eventsByDate = eventsArray.reduce((acc, event) => {
-          const dateString = event.eventDate; // Assuming 'eventDate' is in 'YYYY-MM-DD' format
-          if (!acc[dateString]) {
-            acc[dateString] = [];
-          }
-          acc[dateString].push({
-            id: event.id, 
-            title: event.eventName,
-            startTime: event.startTime,
-            endTime: event.endTime
-          });
-          return acc;
+          const dateString = event.eventDate;
+            if (!acc[dateString]) {
+              acc[dateString] = [];
+            }
+            acc[dateString].push(event);
+            return acc;
         }, {});
 
         setEvents(eventsByDate); // Update state with date-keyed object
@@ -102,12 +97,12 @@ const Calendar = ({ isAdmin }) => {
   
   //   // Group events by eventDate (e.g., '2024-06-15')
   //   const mockEventsByDate = mockEvents.reduce((acc, event) => {
-  //     const dateString = event.eventDate;
-  //     if (!acc[dateString]) {
-  //       acc[dateString] = [];
-  //     }
-  //     acc[dateString].push(event);
-  //     return acc;
+      // const dateString = event.eventDate;
+      // if (!acc[dateString]) {
+      //   acc[dateString] = [];
+      // }
+      // acc[dateString].push(event);
+      // return acc;
   //   }, {});
   
   //   console.log("Mocked events by date:", mockEventsByDate); // <-- Check if the events are grouped by date correctly

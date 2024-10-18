@@ -8,6 +8,7 @@ const router = express.Router();
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const { validateRegistration, validateLogin } = require('../utils/validators');
 const authController = require('../controllers/authController');
+const eventController = require('../controllers/eventController');
 
 // Public routes 
 router.get('/home', (req, res) => {
@@ -39,9 +40,7 @@ router.get('/notifications', verifyToken, (req, res) => {
 });
 
 // Protected admin-only routes
-router.get('/events', verifyToken, verifyAdmin, (req, res) => {
-    res.json('Events data');
-});
+router.get('/events', verifyToken, verifyAdmin, eventController.getAllEvents);
 
 router.get('/event-management', verifyToken, verifyAdmin, (req, res) => {
     res.json('Event Management data');
