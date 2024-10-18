@@ -5,15 +5,6 @@ import '../../styles/Calendar.css';
 const Calendar = ({ isAdmin }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState({});
-  const [showEventForm, setShowEventForm] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [newEvent, setNewEvent] = useState({ 
-    title: '', 
-    startHour: '09', 
-    startMinute: '00', 
-    endHour: '10', 
-    endMinute: '00' 
-  });
 
   // Fetch events from the backend when the component mounts
   useEffect(() => {
@@ -156,11 +147,6 @@ const Calendar = ({ isAdmin }) => {
             </div>
           ))}
 
-
-          {/* Admin can add new events */}
-          {isAdmin && (
-            <button className="add-event-btn" onClick={() => handleAddEventClick(date)}>+</button>
-          )}
         </div>
       );
     }
@@ -170,30 +156,6 @@ const Calendar = ({ isAdmin }) => {
 
   const changeMonth = (increment) => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + increment, 1));
-  };
-
-  const handleAddEventClick = (date) => {
-    setSelectedDate(date);
-    setShowEventForm(true);
-  };
-
-  const handleAddEvent = (e) => {
-    e.preventDefault();
-    if (newEvent.title.trim() !== '') {
-      const dateString = selectedDate.toISOString().split('T')[0];
-      setEvents(prevEvents => ({
-        ...prevEvents,
-        [dateString]: [...(prevEvents[dateString] || []), newEvent]
-      }));
-      setNewEvent({ 
-        title: '', 
-        startHour: '09', 
-        startMinute: '00', 
-        endHour: '10', 
-        endMinute: '00' 
-      });
-      setShowEventForm(false);
-    }
   };
 
   return (
@@ -216,24 +178,6 @@ const Calendar = ({ isAdmin }) => {
         <div className="calendar-day-header">Sat</div>
         {renderCalendarDays()}
       </div>
-      {showEventForm && (
-        <div className="event-form-overlay">
-          <div className="event-form">
-            <h4>Add Event for {selectedDate.toDateString()}</h4>
-            <form onSubmit={handleAddEvent}>
-              <input
-                type="text"
-                value={newEvent.title}
-                onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                placeholder="Enter event title"
-              />
-              {/* Time selection inputs... */}
-              <button type="submit">Add Event</button>
-              <button type="button" onClick={() => setShowEventForm(false)}>Cancel</button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
