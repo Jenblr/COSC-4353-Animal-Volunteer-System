@@ -23,33 +23,7 @@ exports.getMatchingVolunteers = async (eventId) => {
     throw error;
   }
 };
-//eta chilo git te
-// exports.matchVolunteerToEvent = async (eventId, volunteerId) => {
-//   try {
-//     const event = await eventService.getEventById(eventId);
-//     const volunteer = await profileService.getProfile(volunteerId);
 
-//     if (!volunteer) {
-//       throw { status: 400, message: 'Volunteer not found' };
-//     }
-
-//     if (!volunteer.availability.includes(event.eventDate)) {
-//       throw { status: 400, message: 'Volunteer is not available on the event date' };
-//     }
-
-//     if (volunteer.city !== event.city) {
-//       throw { status: 400, message: 'Volunteer is not in the same city as the event' };
-//     }
-
-//     if (!volunteer.skills.some(skill => event.requiredSkills.includes(skill))) {
-//       throw { status: 400, message: 'Volunteer does not have the required skills for this event' };
-//     }
-//     return { message: `Volunteer ${volunteer.fullName} successfully matched to event ${event.eventName}` };
-//   } catch (error) {
-//     console.error('Error in matchVolunteerToEvent:', error);
-//     throw error;
-//   }
-// };
 exports.matchVolunteerToEvent = async (eventId, volunteerIds) => {
   try {
     const event = await eventService.getEventById(eventId);

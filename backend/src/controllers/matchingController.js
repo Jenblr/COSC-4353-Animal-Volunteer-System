@@ -19,7 +19,7 @@ exports.getMatchingVolunteers = async (req, res) => {
       res.status(500).json({ message: 'Internal server error', error: error.message });
     }
   };
-  //notun sample time 7 am
+
   exports.matchVolunteerToEvent = async (req, res) => {
     try {
       const { eventId, volunteerIds } = req.body;
