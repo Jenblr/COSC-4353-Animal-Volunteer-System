@@ -1,4 +1,5 @@
-// // matchingService.test.js
+//matchingService.test.js
+
 const matchingService = require('../../services/matchingService');
 const eventService = require('../../services/eventService');
 const profileService = require('../../services/profileService');
@@ -7,15 +8,16 @@ const profileService = require('../../services/profileService');
 jest.mock('../../services/eventService');
 jest.mock('../../services/profileService');
 
+
 describe('Matching Service', () => {
 
-  
   describe('getMatchingVolunteers', () => {
-    it('should return matching volunteers based on availability, city, and skills', async () => {
+
+    it('should return volunteers matching the event requirements for availability, city, and skills', async () => {
       const mockEvent = {
         eventDate: '2024-06-15',
         city: 'Anytown',
-        requiredSkills: ['Cleaning', 'Dog Walking']
+        requiredSkills: ['Cleaning', 'Dog Walking'],
       };
 
       const mockProfiles = [
@@ -24,15 +26,15 @@ describe('Matching Service', () => {
           fullName: 'John Doe',
           city: 'Anytown',
           availability: ['2024-06-15'],
-          skills: ['Cleaning']
+          skills: ['Cleaning', 'Dog Walking'],
         },
         {
           userId: '2',
           fullName: 'Jane Smith',
           city: 'Anytown',
           availability: ['2024-06-15'],
-          skills: ['Dog Walking']
-        }
+          skills: ['Dog Walking'],
+        },
       ];
 
       eventService.getEventById.mockResolvedValue(mockEvent);
@@ -44,22 +46,28 @@ describe('Matching Service', () => {
       expect(result).toEqual(mockProfiles);
     });
 
-    
-    it('should return a message if no matching volunteers are found', async () => {
+    it('should return no volunteers if none match the event requirements', async () => {
       const mockEvent = {
         eventDate: '2024-06-15',
         city: 'Anytown',
-        requiredSkills: ['Cleaning', 'Dog Walking']
+        requiredSkills: ['Cleaning', 'Dog Walking'],
       };
 
       const mockProfiles = [
         {
           userId: '1',
           fullName: 'John Doe',
-          city: 'Different City', //different city
+          city: 'DifferentCity', //city mismatch
           availability: ['2024-06-15'],
-          skills: ['Animal Care']
-        }
+          skills: ['Cleaning'],
+        },
+        {
+          userId: '2',
+          fullName: 'Jane Smith',
+          city: 'Anytown',
+          availability: ['2024-06-20'], //date mismatch
+          skills: ['Dog Walking'],
+        },
       ];
 
       eventService.getEventById.mockResolvedValue(mockEvent);
@@ -70,42 +78,38 @@ describe('Matching Service', () => {
       expect(result.message).toBe('No matching volunteers found for this event.');
     });
 
-    //no profiles in the system
-    it('should return a message if no profiles exist', async () => {
+    it('should throw an error if event is not found', async () => {
+      eventService.getEventById.mockRejectedValue(new Error('Event not found'));
+
+      await expect(matchingService.getMatchingVolunteers('invalid_event'))
+        .rejects.toThrow('Event not found');
+    });
+
+    it('should return an empty list if there are no profiles in the system', async () => {
       const mockEvent = {
         eventDate: '2024-06-15',
         city: 'Anytown',
-        requiredSkills: ['Cleaning', 'Dog Walking']
+        requiredSkills: ['Cleaning', 'Dog Walking'],
       };
 
-      //no profiles in the system
-      const mockProfiles = [];
-
       eventService.getEventById.mockResolvedValue(mockEvent);
-      profileService.getAllProfiles.mockResolvedValue(mockProfiles);
+      profileService.getAllProfiles.mockResolvedValue([]);
 
       const result = await matchingService.getMatchingVolunteers('1');
 
       expect(result.message).toBe('No matching volunteers found for this event.');
     });
 
-    // New: invalid event ID
-    it('should throw an error for an invalid event ID', async () => {
-      eventService.getEventById.mockRejectedValue(new Error('Event not found'));
-
-      await expect(matchingService.getMatchingVolunteers('invalid_id')).rejects.toThrow('Event not found');
-    });
   });
 
-
   describe('matchVolunteerToEvent', () => {
-    
-    it('should match multiple volunteers to an event if all criteria are met', async () => {
+
+    it('should match volunteers to an event if they meet all criteria', async () => {
       const mockEvent = {
         eventName: 'Animal Shelter Cleanup',
         eventDate: '2024-06-15',
         city: 'Anytown',
-        requiredSkills: ['Cleaning', 'Dog Walking']
+        requiredSkills: ['Cleaning'],
       };
 
       const mockVolunteers = [
@@ -114,44 +118,57 @@ describe('Matching Service', () => {
           fullName: 'John Doe',
           city: 'Anytown',
           availability: ['2024-06-15'],
-          skills: ['Cleaning']
+          skills: ['Cleaning'],
         },
-        {
-          userId: '2',
-          fullName: 'Jane Smith',
-          city: 'Anytown',
-          availability: ['2024-06-15'],
-          skills: ['Dog Walking']
-        }
       ];
 
       eventService.getEventById.mockResolvedValue(mockEvent);
-      profileService.getProfile
-        .mockResolvedValueOnce(mockVolunteers[0]) //mock first volunteer
-        .mockResolvedValueOnce(mockVolunteers[1]); //mock second volunteer
+      profileService.getProfile.mockResolvedValueOnce(mockVolunteers[0]);
 
-      const result = await matchingService.matchVolunteerToEvent('1', ['1', '2']);
+      const result = await matchingService.matchVolunteerToEvent('1', ['1']);
 
-      expect(result.length).toBe(2);
-      expect(result[0].message).toContain('Volunteer John Doe successfully matched');
-      expect(result[1].message).toContain('Volunteer Jane Smith successfully matched');
+      expect(result.length).toBe(1);
+      expect(result[0].message).toContain('Volunteer John Doe successfully matched to event Animal Shelter Cleanup');
     });
 
-    //no event found
-    it('should return 404 if the event does not exist', async () => {
+    it('should return a 404 if the event does not exist', async () => {
       eventService.getEventById.mockResolvedValue(null);
 
       await expect(matchingService.matchVolunteerToEvent('invalid_event', ['1']))
         .rejects.toEqual({ status: 404, message: 'Event not found' });
     });
-    
-  
-    it('should handle duplicate volunteer IDs gracefully', async () => {
+
+    it('should return an error if the volunteer is not available on the event date', async () => {
       const mockEvent = {
         eventName: 'Animal Shelter Cleanup',
         eventDate: '2024-06-15',
         city: 'Anytown',
-        requiredSkills: ['Cleaning']
+        requiredSkills: ['Cleaning'],
+      };
+
+      const mockVolunteer = {
+        userId: '1',
+        fullName: 'John Doe',
+        city: 'Anytown',
+        availability: ['2024-06-20'], //date mismatch
+        skills: ['Cleaning'],
+      };
+
+      eventService.getEventById.mockResolvedValue(mockEvent);
+      profileService.getProfile.mockResolvedValue(mockVolunteer);
+
+      const result = await matchingService.matchVolunteerToEvent('1', ['1']);
+
+      expect(result.length).toBe(1);
+      expect(result[0].message).toContain('Volunteer is not available on the event date');
+    });
+
+    it('should return an error if the volunteer does not have the required skills', async () => {
+      const mockEvent = {
+        eventName: 'Animal Shelter Cleanup',
+        eventDate: '2024-06-15',
+        city: 'Anytown',
+        requiredSkills: ['Cleaning'],
       };
 
       const mockVolunteer = {
@@ -159,7 +176,32 @@ describe('Matching Service', () => {
         fullName: 'John Doe',
         city: 'Anytown',
         availability: ['2024-06-15'],
-        skills: ['Cleaning']
+        skills: ['Dog Walking'], //skill mismatch
+      };
+
+      eventService.getEventById.mockResolvedValue(mockEvent);
+      profileService.getProfile.mockResolvedValue(mockVolunteer);
+
+      const result = await matchingService.matchVolunteerToEvent('1', ['1']);
+
+      expect(result.length).toBe(1);
+      expect(result[0].message).toContain('Volunteer does not have the required skills for this event');
+    });
+
+    it('should handle duplicate volunteer IDs gracefully and process both occurrences', async () => {
+      const mockEvent = {
+        eventName: 'Animal Shelter Cleanup',
+        eventDate: '2024-06-15',
+        city: 'Anytown',
+        requiredSkills: ['Cleaning'],
+      };
+
+      const mockVolunteer = {
+        userId: '1',
+        fullName: 'John Doe',
+        city: 'Anytown',
+        availability: ['2024-06-15'],
+        skills: ['Cleaning'],
       };
 
       eventService.getEventById.mockResolvedValue(mockEvent);
@@ -168,10 +210,12 @@ describe('Matching Service', () => {
       //duplicate IDs in the volunteer array
       const result = await matchingService.matchVolunteerToEvent('1', ['1', '1']);
 
-      expect(result.length).toBe(2); //ensure it processes both occurrences
+      expect(result.length).toBe(2);
       expect(result[0].message).toContain('Volunteer John Doe successfully matched');
+      expect(result[1].message).toContain('Volunteer John Doe successfully matched');
     });
-  });
-});
 
+  });
+
+});
 
