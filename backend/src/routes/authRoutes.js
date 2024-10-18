@@ -8,6 +8,7 @@ const router = express.Router();
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const { validateRegistration, validateLogin } = require('../utils/validators');
 const authController = require('../controllers/authController');
+const eventController = require('../controllers/eventController');
 
 
 // Public routes 

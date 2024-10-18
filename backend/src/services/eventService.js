@@ -12,7 +12,7 @@ const events = [
     zipCode: '12345',
     requiredSkills: ['Cleaning', 'Animal Care'],
     urgency: 'Medium',
-    eventDate: '2024-06-15',
+    eventDate: '2024-10-15',
     startTime: '09:00',
     endTime: '14:00',
   },
@@ -40,7 +40,7 @@ const events = [
     zipCode: '54321',
     requiredSkills: ['Medication', 'Emergency Response'],
     urgency: 'High',
-    eventDate: '2024-06-30',
+    eventDate: '2024-10-30',
     startTime: '08:00',
     endTime: '20:00',
   }
@@ -139,6 +139,8 @@ exports.createEvent = (eventData) => {
 };
 
 exports.getAllEvents = () => {
+  console.log('Service: Returning all events'); // Log when this function is called
+  console.log('Service: Events data:', events); // Log the actual events being returned
   return events;
 };
 

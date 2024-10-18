@@ -21,7 +21,9 @@ exports.createEvent = async (req, res) => {
 //get all events
 exports.getAllEvents = async (req, res) => {
   try {
+    console.log('Controller: Calling eventService.getAllEvents');
     const events = await eventService.getAllEvents();
+    console.log('Controller: Events received from service:', events); // Log the actual events
     res.status(200).json(events);
   } catch (error) {
     console.error('Error fetching events:', error);

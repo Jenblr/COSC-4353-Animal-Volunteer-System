@@ -10,6 +10,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const matchingRoutes = require('./routes/matchingRoutes');
 const historyRoutes = require('./routes/historyRoutes');
@@ -33,6 +34,11 @@ app.use('/api/auth/events', eventRoutes);
 app.use('/api/auth/volunteer-matching', matchingRoutes); 
 
 app.use('/api/auth/history', historyRoutes);
+
+// Other routes (for everyone else's module) = this is our base url
+app.use('/api/notifications', notificationRoutes); 
+app.use('/api/auth/events', eventRoutes); 
+// app.use('/api');
 
 // Error handling middleware
 app.use((err, req, res, next) => {

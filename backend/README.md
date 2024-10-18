@@ -44,12 +44,19 @@
 - **Value:** application/json
 
 **Body**
+<<<<<<< HEAD
+- raw
+- input: 
+=======
 - **SELECT:** raw
 - **Input for User Registration + Login User requests:**
+>>>>>>> origin/JenniferN
 {
     "username": "testuser",
     "password": "password1234"
 }
+<<<<<<< HEAD
+=======
 - **Tests Tab Input for Login User requests:**
 const jsonData = pm.response.json();
 pm.environment.set("token", jsonData.token);
@@ -64,6 +71,7 @@ pm.environment.set("token", jsonData.token);
 const jsonData = pm.response.json();
 pm.environment.set("token", jsonData.token);
 
+>>>>>>> origin/JenniferN
 ---
 ### GET requests:
 **Requests**
