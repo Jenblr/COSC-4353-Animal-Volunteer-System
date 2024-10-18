@@ -40,7 +40,9 @@ router.get('/notifications', verifyToken, (req, res) => {
 });
 
 // Protected admin-only routes
-router.get('/events', verifyToken, verifyAdmin, eventController.getAllEvents);
+// router.get('/events', verifyToken, verifyAdmin, (req, res) => {
+//     res.json('Events data');
+// });
 
 router.get('/event-management', verifyToken, verifyAdmin, (req, res) => {
     res.json('Event Management data');
