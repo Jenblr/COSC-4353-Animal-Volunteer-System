@@ -3,13 +3,13 @@ const notificationService = require('../../services/notificationService');
 describe('Notification Service', () => {
   test('should fetch all notifications', () => {
     const notifications = notificationService.getAllNotifications();
-    expect(notifications.length).toBeGreaterThan(0); // Expect that there is at least one notification
+    expect(notifications.length).toBeGreaterThan(0); 
   });
 
   test('should fetch notification by ID', () => {
     const notification = notificationService.getNotificationById(1);
-    expect(notification).toBeDefined(); // Expect the notification to exist
-    expect(notification.id).toBe(1); // Expect the correct ID
+    expect(notification).toBeDefined(); 
+    expect(notification.id).toBe(1); 
   });
 
   test('should add a new notification', () => {

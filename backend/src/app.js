@@ -9,7 +9,7 @@ const matchingRoutes = require('./routes/matchingRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const historyRoutes = require('./routes/historyRoutes');
 
-const app = express(); // Initializes Express app
+const app = express(); 
 
 // Middleware
 app.use(bodyParser.json());
@@ -37,12 +37,10 @@ app.use((err, req, res, next) => {
 const cron = require('node-cron');
 const authService = require('./services/authService');
 
-// Run cleanup every hour
 cron.schedule('0 * * * *', () => {
     authService.cleanupIncompleteRegistrations();
 });
 
-// Start the server
 if (process.env.NODE_ENV !== 'test') {
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {

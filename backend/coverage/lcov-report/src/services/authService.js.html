@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">91.52% </span>
+                <span class="strong">88.33% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>54/59</span>
+                <span class='fraction'>53/60</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">78.57% </span>
+                <span class="strong">75% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>11/14</span>
+                <span class='fraction'>9/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">80% </span>
+                <span class="strong">66.66% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>12/15</span>
+                <span class='fraction'>10/15</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">92.45% </span>
+                <span class="strong">90.74% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>49/53</span>
+                <span class='fraction'>49/54</span>
             </div>
         
             
@@ -170,7 +170,15 @@
 <a name='L105'></a><a href='#L105'>105</a>
 <a name='L106'></a><a href='#L106'>106</a>
 <a name='L107'></a><a href='#L107'>107</a>
-<a name='L108'></a><a href='#L108'>108</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">18x</span>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -182,12 +190,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">18x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -225,6 +234,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -232,7 +245,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">18x</span>
-<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
@@ -261,6 +273,10 @@
 <span class="cline-any cline-yes">66x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">9x</span>
@@ -281,7 +297,7 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 &nbsp;
-const users = [
+const adminUsers = [
     {
         id: 1,
         email: 'admin@example.com',
@@ -289,17 +305,18 @@ const users = [
         role: 'admin'
     }
 ];
+&nbsp;
+const volunteerUsers = [];
 const temporaryUsers = [];
-let lastUserId = 1; 
+let lastUserId = 1;
 &nbsp;
 exports.registerUser = (email, password, role) =&gt; {
-    const userExists = users.find(user =&gt; user.email === email) || 
-                       temporaryUsers.find(user =&gt; user.email === email);
+    const userExists = [...adminUsers, ...volunteerUsers, ...temporaryUsers].find(user =&gt; user.email === email);
     if (userExists) {
         return { status: 400, message: 'User already exists' };
     }
 &nbsp;
-    lastUserId++; 
+    lastUserId++;
     const hashedPassword = bcrypt.hashSync(password, 8);
 &nbsp;
     const token = crypto.randomBytes(20).toString('hex');
@@ -325,14 +342,18 @@ exports.verifyTemporaryUserByToken = (token) =&gt; {
     return temporaryUsers.find(user =&gt; user.token === token);
 };
 &nbsp;
-exports.finalizeRegistration = (userId) =&gt; {
+exports.finalizeRegistration = (userId, profileData) =&gt; {
     const tempUserIndex = temporaryUsers.findIndex(user =&gt; user.id === userId);
     if (tempUserIndex === -1) {
         return { status: 404, message: 'Temporary user not found' };
     }
 &nbsp;
-    const user = temporaryUsers[tempUserIndex];
-    users.push(user);
+    const user = {
+        ...temporaryUsers[tempUserIndex],
+        ...profileData,
+        isRegistered: true
+    };
+    volunteerUsers.push(user);
     temporaryUsers.splice(tempUserIndex, 1);
 &nbsp;
     return { status: 200, message: 'Registration finalized successfully' };
@@ -340,9 +361,8 @@ exports.finalizeRegistration = (userId) =&gt; {
 &nbsp;
 exports.loginUser = (email, password) =&gt; {
     console.log('Attempting login for email:', email);
-    console.log('Current users:', users);
 &nbsp;
-    const user = users.find(user =&gt; user.email === email);
+    const user = [...adminUsers, ...volunteerUsers].find(user =&gt; user.email === email);
     if (!user) {
         console.log('User not found for email:', email);
         return { status: 404, message: 'User not found' };
@@ -365,14 +385,18 @@ exports.loginUser = (email, password) =&gt; {
 };
 &nbsp;
 exports.getAllVolunteers = () =&gt; {
-    return users.filter(user =&gt; user.role === 'volunteer');
+    return volunteerUsers;
+};
+&nbsp;
+exports.getRegisteredVolunteers = <span class="fstat-no" title="function not covered" >()</span> =&gt; {
+<span class="cstat-no" title="statement not covered" >    return volunteerUsers.filter(<span class="fstat-no" title="function not covered" >us</span>er =&gt; <span class="cstat-no" title="statement not covered" >user.isRegistered)</span>;</span>
 };
 &nbsp;
 // Helper functions for testing
 exports.clearUsers = () =&gt; {
-    users.length = 1; // Keep the admin user
+    volunteerUsers.length = 0;
     temporaryUsers.length = 0;
-    lastUserId = 1;
+    lastUserId = adminUsers.length;
 };
 &nbsp;
 exports.getTemporaryUsers = <span class="fstat-no" title="function not covered" >()</span> =&gt; {
@@ -391,7 +415,7 @@ exports.setTemporaryUserCreatedAt = <span class="fstat-no" title="function not c
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2024-10-19T01:34:47.187Z
+                at 2024-10-19T03:31:26.654Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

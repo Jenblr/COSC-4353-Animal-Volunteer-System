@@ -1,5 +1,4 @@
-const notificationService = require('../services/notificationService'); // Import your service file
-// Get all notifications
+const notificationService = require('../services/notificationService'); 
 
 const getNotifications = (req, res) => {
   const notifications = notificationService.getAllNotifications();

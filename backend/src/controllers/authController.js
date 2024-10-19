@@ -32,9 +32,26 @@ exports.login = (req, res) => {
 
 exports.getAllVolunteers = (req, res) => {
     try {
-        const volunteers = authService.getAllVolunteers();  
-        return res.status(200).json(volunteers);            
+        const volunteers = authService.getAllVolunteers();
+        return res.status(200).json(volunteers.map(v => ({
+            id: v.id,
+            email: v.email,
+            fullName: v.fullName || v.email 
+        })));
     } catch (error) {
         return res.status(500).json({ message: 'Error fetching volunteers', error });
+    }
+};
+
+exports.getRegisteredVolunteers = (req, res) => {
+    try {
+        const volunteers = authService.getRegisteredVolunteers();
+        return res.status(200).json(volunteers.map(v => ({
+            id: v.id,
+            email: v.email,
+            fullName: v.fullName || v.email 
+        })));
+    } catch (error) {
+        return res.status(500).json({ message: 'Error fetching registered volunteers', error });
     }
 };

@@ -1,11 +1,9 @@
-
 const request = require('supertest');
 const express = require('express');
 const eventRoutes = require('../../routes/eventRoutes');
 const { verifyToken, verifyAdmin } = require('../../middleware/authMiddleware');
 const eventService = require('../../services/eventService');
 
-//mock the auth middleware
 jest.mock('../../middleware/authMiddleware', () => ({
   verifyToken: jest.fn((req, res, next) => next()),
   verifyAdmin: jest.fn((req, res, next) => next())

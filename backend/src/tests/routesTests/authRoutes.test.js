@@ -67,8 +67,8 @@ describe('Auth Routes', () => {
 
     it('should return all volunteers for GET /api/auth/volunteers', async () => {
         const mockVolunteers = [{ id: 1, name: 'Volunteer 1' }, { id: 2, name: 'Volunteer 2' }];
-        authService.getAllVolunteers.mockReturnValue(mockVolunteers);
-
+        authService.getAllVolunteers.mockResolvedValue(mockVolunteers);
+    
         const response = await request(app).get('/api/auth/volunteers');
         expect(response.status).toBe(200);
         expect(response.body).toEqual(mockVolunteers);

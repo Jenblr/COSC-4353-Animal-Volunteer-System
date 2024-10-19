@@ -49,7 +49,6 @@ const RegistrationPage = () => {
 				});
 		
 				if (response.status === 201) {
-				// Store the token in localStorage
 				localStorage.setItem('registrationToken', response.data.token);
 				navigate('/profile-form');
 				}

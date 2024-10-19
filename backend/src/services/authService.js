@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
-const users = [
+const adminUsers = [
     {
         id: 1,
         email: 'admin@example.com',
@@ -10,17 +10,18 @@ const users = [
         role: 'admin'
     }
 ];
+
+const volunteerUsers = [];
 const temporaryUsers = [];
-let lastUserId = 1; 
+let lastUserId = 1;
 
 exports.registerUser = (email, password, role) => {
-    const userExists = users.find(user => user.email === email) || 
-                       temporaryUsers.find(user => user.email === email);
+    const userExists = [...adminUsers, ...volunteerUsers, ...temporaryUsers].find(user => user.email === email);
     if (userExists) {
         return { status: 400, message: 'User already exists' };
     }
 
-    lastUserId++; 
+    lastUserId++;
     const hashedPassword = bcrypt.hashSync(password, 8);
 
     const token = crypto.randomBytes(20).toString('hex');
@@ -46,14 +47,18 @@ exports.verifyTemporaryUserByToken = (token) => {
     return temporaryUsers.find(user => user.token === token);
 };
 
-exports.finalizeRegistration = (userId) => {
+exports.finalizeRegistration = (userId, profileData) => {
     const tempUserIndex = temporaryUsers.findIndex(user => user.id === userId);
     if (tempUserIndex === -1) {
         return { status: 404, message: 'Temporary user not found' };
     }
 
-    const user = temporaryUsers[tempUserIndex];
-    users.push(user);
+    const user = {
+        ...temporaryUsers[tempUserIndex],
+        ...profileData,
+        isRegistered: true
+    };
+    volunteerUsers.push(user);
     temporaryUsers.splice(tempUserIndex, 1);
 
     return { status: 200, message: 'Registration finalized successfully' };
@@ -61,9 +66,8 @@ exports.finalizeRegistration = (userId) => {
 
 exports.loginUser = (email, password) => {
     console.log('Attempting login for email:', email);
-    console.log('Current users:', users);
 
-    const user = users.find(user => user.email === email);
+    const user = [...adminUsers, ...volunteerUsers].find(user => user.email === email);
     if (!user) {
         console.log('User not found for email:', email);
         return { status: 404, message: 'User not found' };
@@ -86,14 +90,18 @@ exports.loginUser = (email, password) => {
 };
 
 exports.getAllVolunteers = () => {
-    return users.filter(user => user.role === 'volunteer');
+    return volunteerUsers;
+};
+
+exports.getRegisteredVolunteers = () => {
+    return volunteerUsers.filter(user => user.isRegistered);
 };
 
 // Helper functions for testing
 exports.clearUsers = () => {
-    users.length = 1; // Keep the admin user
+    volunteerUsers.length = 0;
     temporaryUsers.length = 0;
-    lastUserId = 1;
+    lastUserId = adminUsers.length;
 };
 
 exports.getTemporaryUsers = () => {

@@ -1,4 +1,3 @@
-// Middleware to validate notification data
 const validateNotification = (req, res, next) => {
     const { type, message } = req.body;
   

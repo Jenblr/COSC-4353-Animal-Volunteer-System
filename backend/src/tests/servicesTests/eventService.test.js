@@ -1,6 +1,3 @@
-// eventService.test.js
-
-
 const eventService = require('../../services/eventService');
 
 let originalEvents;

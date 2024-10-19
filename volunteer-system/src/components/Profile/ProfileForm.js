@@ -98,7 +98,7 @@ const ProfileForm = () => {
 
         if (response.status === 201) {
           console.log('Profile created successfully');
-          localStorage.removeItem('registrationToken'); // Clear the token after use
+          localStorage.removeItem('registrationToken'); 
           navigate('/home');
         }
       } catch (error) {

@@ -10,7 +10,6 @@ jest.mock('crypto');
 describe('AuthService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock crypto.randomBytes to return a predictable value
     crypto.randomBytes.mockReturnValue({
       toString: jest.fn().mockReturnValue('mockedToken')
     });

@@ -10,10 +10,10 @@ const NotificationDisplay = ({ isAdmin }) => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+        const token = localStorage.getItem('token');
         const response = await axios.get('http://localhost:5000/api/notifications', {
           headers: {
-            Authorization: `Bearer ${token}`, // Include the token in the request headers
+            Authorization: `Bearer ${token}`,
           },
         });
         setNotifications(response.data.notifications);
@@ -34,10 +34,10 @@ const NotificationDisplay = ({ isAdmin }) => {
       };
   
       try {
-        const token = localStorage.getItem('token'); // Retrieve the token
+        const token = localStorage.getItem('token'); 
         const response = await axios.post('http://localhost:5000/api/notifications/add', updateNotification, {
           headers: {
-            Authorization: `Bearer ${token}`, // Include the token in the request headers
+            Authorization: `Bearer ${token}`, 
           },
         });
         setNotifications(prev => [response.data.newNotification, ...prev]);
@@ -48,7 +48,6 @@ const NotificationDisplay = ({ isAdmin }) => {
     }
   };
 
-  // Handle admin adding a new reminder
   const handleAddReminder = async () => {
     if (newReminder.trim()) {
       const reminderNotification = {
@@ -60,7 +59,7 @@ const NotificationDisplay = ({ isAdmin }) => {
         const token = localStorage.getItem('token');
         const response = await axios.post('http://localhost:5000/api/notifications/add', reminderNotification, {
           headers: {
-            Authorization: `Bearer ${token}`, // Add Authorization header
+            Authorization: `Bearer ${token}`, 
           },
         });
         setNotifications(prev => [response.data.newNotification, ...prev]);

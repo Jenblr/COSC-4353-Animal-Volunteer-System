@@ -1,5 +1,3 @@
-//matchingController.js
-
 const volunteerMatchingService = require('../services/matchingService');
 
 exports.getMatchingVolunteers = async (req, res) => {

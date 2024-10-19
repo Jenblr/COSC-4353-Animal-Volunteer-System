@@ -29,6 +29,6 @@ describe('Notification Middleware', () => {
   test('should pass the request if type and message are valid', () => {
     req.body = { type: 'Test', message: 'Test Message' };
     validateNotification(req, res, next);
-    expect(next).toHaveBeenCalled(); // Middleware should call next() for valid data
+    expect(next).toHaveBeenCalled(); 
   });
 });

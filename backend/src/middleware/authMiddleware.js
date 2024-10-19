@@ -1,7 +1,3 @@
-/* 'authMiddleware' file:
-- Protects routes by verifying the JWT tokens
-*/
-
 const jwt = require('jsonwebtoken');
 
 // 'verifyToken' = Ensures the user is authenticated by verifying the JWT token

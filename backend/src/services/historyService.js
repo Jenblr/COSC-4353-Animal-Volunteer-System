@@ -1,19 +1,19 @@
 const eventService = require('../services/eventService');
 const authService = require('../services/authService');
 
-let volunteerHistory = []; // Define volunteerHistory at the top level
+let volunteerHistory = []; 
 
 const initializeHistory = () => {
     console.log('Initializing history records');
     const allEvents = eventService.getAllEvents();
     const allVolunteers = authService.getAllVolunteers();
     
-    volunteerHistory = []; // Reset the history array
+    volunteerHistory = []; 
 
     allVolunteers.forEach(volunteer => {
         allEvents.forEach(event => {
             const historyRecord = {
-                id: `${volunteer.id}-${event.id}`, // Unique ID for each history record
+                id: `${volunteer.id}-${event.id}`, 
                 volunteer: volunteer.id,
                 eventId: event.id,
                 eventName: event.eventName,
@@ -24,7 +24,7 @@ const initializeHistory = () => {
                 eventDate: event.eventDate,
                 startTime: event.startTime,
                 endTime: event.endTime,
-                participationStatus: 'Not Attended' // Default status
+                participationStatus: 'Not Attended' 
             };
             volunteerHistory.push(historyRecord);
         });

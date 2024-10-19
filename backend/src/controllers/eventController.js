@@ -1,6 +1,3 @@
-
-//eventController.js
-
 const eventService = require('../services/eventService');
 
 //create a new event

@@ -31,7 +31,7 @@ const Calendar = ({ isAdmin }) => {
             return acc;
         }, {});
 
-        setEvents(eventsByDate); // Update state with date-keyed object
+        setEvents(eventsByDate); 
       } catch (error) {
         console.error('Error fetching events:', error.response ? error.response.data : error.message);
     }
@@ -110,22 +110,19 @@ const Calendar = ({ isAdmin }) => {
     "July", "August", "September", "October", "November", "December"
   ];
 
-  // Render days of the calendar
   const renderCalendarDays = () => {
     const days = [];
     const totalDays = daysInMonth(currentDate);
     const firstDay = firstDayOfMonth(currentDate);
 
-    // Empty divs for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
       days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
     }
 
-    // Add days of the month with events
     for (let day = 1; day <= totalDays; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-      const dateString = date.toISOString().split('T')[0]; // 'YYYY-MM-DD'
-      const dayEvents = events[dateString] || []; // Fetch events for the specific date
+      const dateString = date.toISOString().split('T')[0]; 
+      const dayEvents = events[dateString] || []; 
 
       days.push(
         <div key={day} className="calendar-day">
@@ -134,10 +131,10 @@ const Calendar = ({ isAdmin }) => {
           {/* Display events for the current day */}
           {dayEvents.map(event => (
             <div
-              key={event.id} // Ensure unique key for each event
+              key={event.id}
               className="event-item"
             >
-              <span className="event-title">{event.eventName}</span> {/* Display eventName */}
+              <span className="event-title">{event.eventName}</span>
               <span className="event-time">{`${event.startTime} - ${event.endTime}`}</span>
               <div className="event-tooltip">
                 <strong>{event.eventName}</strong>

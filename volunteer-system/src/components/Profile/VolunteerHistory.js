@@ -8,19 +8,33 @@ const VolunteerHistory = () => {
   const [selectedVolunteer, setSelectedVolunteer] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-      const fetchVolunteers = async () => {
-          try {
-              const response = await axios.get('/api/auth/volunteers');
-              setVolunteers(response.data);
-          } catch (error) {
-              console.error('Error fetching volunteers:', error);
-          }
-      };
-
-      fetchVolunteers();
+    fetchVolunteers();
+    checkAdminStatus();
   }, []);
+
+  const checkAdminStatus = () => {
+    const role = localStorage.getItem('role');
+    setIsAdmin(role === 'admin');
+  };
+
+  const fetchVolunteers = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:5000/api/auth/registered-volunteers', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setVolunteers(response.data);
+    } catch (error) {
+      console.error('Error fetching volunteers:', error);
+      setError('Failed to fetch volunteers. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchVolunteerHistory = async (userId) => {
     setLoading(true);
@@ -50,12 +64,27 @@ const VolunteerHistory = () => {
     }
   };
 
+  const updateEventStatus = async (historyId, newStatus) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`http://localhost:5000/api/auth/history/${historyId}`, 
+        { participationStatus: newStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Refresh the volunteer history after updating
+      fetchVolunteerHistory(selectedVolunteer);
+    } catch (error) {
+      console.error('Error updating event status:', error);
+      setError('Failed to update event status. Please try again.');
+    }
+  };
+
   return (
     <div className="volunteer-history-container">
       <h2>Volunteer Participation History</h2>
 
       <div className="volunteer-selection">
-        <label htmlFor="volunteer-dropdown">History for: </label>
+        <label htmlFor="volunteer-dropdown">Select Volunteer: </label>
         <select
           id="volunteer-dropdown"
           value={selectedVolunteer}
@@ -64,7 +93,7 @@ const VolunteerHistory = () => {
           <option value="">-- Select Volunteer --</option>
           {volunteers.map((volunteer) => (
             <option key={volunteer.id} value={volunteer.id}>
-              {volunteer.name || volunteer.email}
+              {volunteer.fullName || volunteer.email}
             </option>
           ))}
         </select>
@@ -86,6 +115,7 @@ const VolunteerHistory = () => {
               <th>Start Time</th>
               <th>End Time</th>
               <th>Participation Status</th>
+              {isAdmin && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -101,11 +131,23 @@ const VolunteerHistory = () => {
                   <td>{history.startTime}</td>
                   <td>{history.endTime}</td>
                   <td>{history.participationStatus}</td>
+                  {isAdmin && (
+                    <td>
+                      <select
+                        value={history.participationStatus}
+                        onChange={(e) => updateEventStatus(history.id, e.target.value)}
+                      >
+                        <option value="Not Attended">Not Attended</option>
+                        <option value="Attended">Attended</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
+                    </td>
+                  )}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="9">No history available for this volunteer</td>
+                <td colSpan={isAdmin ? 10 : 9}>No history available for this volunteer</td>
               </tr>
             )}
           </tbody>
