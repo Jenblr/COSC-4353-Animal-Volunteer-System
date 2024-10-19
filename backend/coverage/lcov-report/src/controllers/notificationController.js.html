@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">64.28% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>18/28</span>
+                <span class='fraction'>28/28</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>6/12</span>
+                <span class='fraction'>12/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">75% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>3/4</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">64.28% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>18/28</span>
+                <span class='fraction'>28/28</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -119,10 +119,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
@@ -135,9 +135,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -145,16 +145,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span></td><td class="text"><pre class="prettyprint lang-js">const notificationService = require('../services/notificationService'); // Import your service file
@@ -168,8 +168,8 @@ const getNotifications = (req, res) =&gt; {
 const getNotification = (req, res) =&gt; {
   const id = parseInt(req.params.id, 10);
   
-  <span class="missing-if-branch" title="if path not taken" >I</span>if (isNaN(id)) {
-<span class="cstat-no" title="statement not covered" >    return res.status(400).json({ message: 'Invalid ID' });</span>
+  if (isNaN(id)) {
+    return res.status(400).json({ message: 'Invalid ID' });
   }
 &nbsp;
   const notification = notificationService.getNotificationById(id);
@@ -183,25 +183,25 @@ const getNotification = (req, res) =&gt; {
 // Add a new notification
 const addNotification = (req, res) =&gt; {
   const { type, message } = req.body;
-  <span class="missing-if-branch" title="if path not taken" >I</span>if (!type || !message) {
-<span class="cstat-no" title="statement not covered" >    return res.status(400).json({ error: "Type and message are required fields" });</span>
+  if (!type || !message) {
+    return res.status(400).json({ error: "Type and message are required fields" });
   }
   const newNotification = notificationService.addNotification(type, message);
   res.status(201).json({ message: "Notification added successfully", newNotification });
 };
 &nbsp;
 // Delete a notification by ID
-const deleteNotification = <span class="fstat-no" title="function not covered" >(r</span>eq, res) =&gt; {
-  const { id } = <span class="cstat-no" title="statement not covered" >req.params;</span>
-  const notificationId = <span class="cstat-no" title="statement not covered" >parseInt(id, 10);</span>
-<span class="cstat-no" title="statement not covered" >  if (isNaN(notificationId)) {</span>
-<span class="cstat-no" title="statement not covered" >    return res.status(400).json({ error: "Invalid notification ID" });</span>
+const deleteNotification = (req, res) =&gt; {
+  const { id } = req.params;
+  const notificationId = parseInt(id, 10);
+  if (isNaN(notificationId)) {
+    return res.status(400).json({ error: "Invalid notification ID" });
   }
-  const deletedNotification = <span class="cstat-no" title="statement not covered" >notificationService.deleteNotification(notificationId);</span>
-<span class="cstat-no" title="statement not covered" >  if (!deletedNotification) {</span>
-<span class="cstat-no" title="statement not covered" >    return res.status(404).json({ message: 'Notification not found' });</span>
+  const deletedNotification = notificationService.deleteNotification(notificationId);
+  if (!deletedNotification) {
+    return res.status(404).json({ message: 'Notification not found' });
   }
-<span class="cstat-no" title="statement not covered" >  res.status(200).json({ message: 'Notification deleted successfully', deletedNotification });</span>
+  res.status(200).json({ message: 'Notification deleted successfully', deletedNotification });
 };
 &nbsp;
 module.exports = { getNotifications, addNotification, deleteNotification, getNotification };</pre></td></tr></table></pre>
@@ -211,7 +211,7 @@ module.exports = { getNotifications, addNotification, deleteNotification, getNot
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2024-10-19T01:15:41.687Z
+                at 2024-10-19T01:34:47.187Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

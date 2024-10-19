@@ -114,7 +114,6 @@ exports.updateProfile = async (userId, profileData) => {
 };
 
 exports.finalizeRegistration = async (token, profileData) => {
-    // Verify the temporary user
     const tempUser = authService.verifyTemporaryUserByToken(token);
     if (!tempUser) {
         console.log('Temporary user not found');
@@ -129,8 +128,8 @@ exports.finalizeRegistration = async (token, profileData) => {
     const parsedAvailability = profileData.availability.map(date => new Date(date));
 
     const newProfile = { 
-        userId: tempUser.id, // Use the id from the temporary user
-        email: tempUser.email, // Use the email from the temporary user
+        userId: tempUser.id, 
+        email: tempUser.email, 
         ...profileData,
         availability: parsedAvailability
     };
@@ -143,3 +142,7 @@ exports.finalizeRegistration = async (token, profileData) => {
 
     return { status: 201, message: 'Registration finalized and profile created successfully', profile: newProfile };
 };
+
+exports.getAllProfiles = async () => {
+    return profiles;
+}; 
