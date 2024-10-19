@@ -1,8 +1,3 @@
-/* 'authController.js' file:
-- Handles HTTP requests and responses
-- Calls on service functions
-*/
-
 const authService = require('../services/authService');
 
 exports.register = (req, res) => {
@@ -14,7 +9,11 @@ exports.register = (req, res) => {
 
     const response = authService.registerUser(email, password, role);
     if (response.status === 201) {
-        return res.status(201).json({ message: 'User registered successfully', user: response.user });
+        return res.status(201).json({
+            message: response.message,
+            token: response.token, 
+            needsProfile: response.needsProfile
+        });
     } else {
         return res.status(response.status).json({ message: response.message });
     }
@@ -28,5 +27,14 @@ exports.login = (req, res) => {
         return res.status(200).json({ token: response.token, role: response.role });
     } else {
         return res.status(response.status).json({ message: response.message });
+    }
+};
+
+exports.getAllVolunteers = (req, res) => {
+    try {
+        const volunteers = authService.getAllVolunteers();  
+        return res.status(200).json(volunteers);            
+    } catch (error) {
+        return res.status(500).json({ message: 'Error fetching volunteers', error });
     }
 };

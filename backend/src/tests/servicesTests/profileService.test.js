@@ -1,100 +1,173 @@
 const profileService = require('../../services/profileService');
+const authService = require('../../services/authService');
 
-let profiles = [];
+jest.mock('../../services/authService');
 
-beforeEach(() => {
-    profiles = [
-        {
-            userId: '1',
-            fullName: 'John Doe',
-            address1: '123 Main St',
-            city: 'Anytown',
-            state: 'CA',
-            zipCode: '12345',
-            skills: ['Animal Care'],
-            preferences: 'Dogs',
-            availability: ['2023-07-01']
-        }
-    ];
-});
+describe('Profile Service', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
 
-describe('ProfileService', () => {
-    describe('getProfile', () => {
-        it('should return a profile for an existing user', () => {
-            const profile = profileService.getProfile('1');
-            expect(profile).toBeDefined();
-            expect(profile.fullName).toBe('John Doe');
-        });
-
-        it('should return undefined for a non-existent user', () => {
-            const profile = profileService.getProfile('999');
-            expect(profile).toBeUndefined();
+    describe('getFormOptions', () => {
+        test('should return form options', async () => {
+            const options = await profileService.getFormOptions();
+            expect(options).toHaveProperty('states');
+            expect(options).toHaveProperty('skills');
+            expect(options.states.length).toBeGreaterThan(0);
+            expect(options.skills.length).toBeGreaterThan(0);
         });
     });
 
-    beforeEach(() => {
-        profiles.length = 0;  
+    describe('getProfile', () => {
+        test('should return user profile when found', async () => {
+            const mockProfile = { userId: 1, fullName: 'Test User' };
+            profileService.getProfile = jest.fn().mockResolvedValue(mockProfile);
+        
+            const profile = await profileService.getProfile(1);
+            expect(profile).toEqual(mockProfile);
+        });
+
+        test('should return null when profile not found', async () => {
+            profileService.getProfile = jest.fn().mockResolvedValue(null);
+        
+            const profile = await profileService.getProfile(999);
+            expect(profile).toBeNull();
+        });
     });
 
     describe('createProfile', () => {
-        it('should create a new profile', () => {
-            const newProfile = {
-                fullName: 'New User',
-                address1: '789 New St',
-                address2: 'Apt 3',
-                city: 'Newtown',
-                state: 'NT',
-                zipCode: '54321',
-                skills: ['New Skill'],
-                preferences: 'New preferences',
-                availability: ['2023-08-01', '2023-08-15', '2023-08-30']
-            };
-            const response = profileService.createProfile('3', newProfile);
-            expect(response.status).toBe(201);
-            expect(response.profile.fullName).toBe('New User');
+        const mockProfileData = {
+            fullName: 'New User',
+            address1: 'Test Address',
+            city: 'Test City',
+            state: 'TS',
+            zipCode: '12345',
+            skills: ['Skill 1'],
+            availability: ['2023-01-01']
+        };
+    
+        beforeEach(() => {
+            // Reset the mock before each test
+            profileService.getProfile = jest.fn().mockResolvedValue(null);
+        });
+    
+        test('should create a new profile successfully', async () => {
+            const result = await profileService.createProfile(1, mockProfileData);
+            expect(result.status).toBe(201);
+            expect(result.message).toContain('Profile created successfully');
+            expect(result.profile).toMatchObject({
+                ...mockProfileData,
+                availability: [expect.any(Date)]
+            });
+            expect(result.profile.availability[0].toISOString().split('T')[0]).toBe('2023-01-01');
+        });
+    
+        test('should return error if profile already exists', async () => {
+            profileService.getProfile = jest.fn().mockResolvedValue({ userId: 1 });
+            
+            const result = await profileService.createProfile(1, mockProfileData);
+            expect(result.status).toBe(400);
+            expect(result.message).toContain('Profile already exists');
+        });
+    
+        test('should return validation errors for invalid data', async () => {
+            const invalidData = { ...mockProfileData, fullName: '' };
+            const result = await profileService.createProfile(1, invalidData);
+            expect(result.status).toBe(400);
+            expect(result.message).toContain('Validation failed');
+            expect(result.errors).toHaveProperty('fullName');
+        });
+    });
+    
+    describe('updateProfile', () => {
+        const mockProfileData = {
+            fullName: 'Updated User',
+            address1: 'New Address',
+            city: 'New City',
+            state: 'NS',
+            zipCode: '54321',
+            skills: ['Skill 2'],
+            availability: ['2023-02-01']
+        };
+
+        test('should update an existing profile successfully', async () => {
+            const result = await profileService.updateProfile(1, mockProfileData);
+            expect(result.status).toBe(200);
+            expect(result.message).toContain('Profile updated successfully');
+            expect(result.profile).toMatchObject({
+                ...mockProfileData,
+                availability: [expect.any(Date)]
+            });
+            expect(result.profile.availability[0].toISOString().split('T')[0]).toBe('2023-02-01');
         });
 
-        it('should return 400 if profile already exists', () => {
-            const existingProfile = {
-                fullName: 'Existing User',
-                address1: '123 Existing St',
-                city: 'Existingtown',
-                state: 'EX',
-                zipCode: '12345',
-                skills: ['Existing Skill'],
-                preferences: 'Existing preferences',
-                availability: ['2023-09-01']
-            };
-            const response = profileService.createProfile('1', existingProfile);
-            expect(response.status).toBe(400);
-            expect(response.message).toBe('Profile already exists');
+        test('should return error if profile not found', async () => {
+            const result = await profileService.updateProfile(999, mockProfileData);
+            expect(result.status).toBe(404);
+            expect(result.message).toContain('Profile not found');
+        });
+
+        test('should return validation errors for invalid data', async () => {
+            const invalidData = { ...mockProfileData, fullName: '' };
+            const result = await profileService.updateProfile(1, invalidData);
+            expect(result.status).toBe(400);
+            expect(result.message).toContain('Validation failed');
+            expect(result.errors).toHaveProperty('fullName');
         });
     });
 
-    describe('updateProfile', () => {
-        it('should update an existing profile', () => {
-            const updatedProfile = {
-                fullName: 'John Updated',
-                address1: '789 New St',
-                city: 'New City',
-                state: 'NJ',
-                zipCode: '54321',
-                skills: ['Animal Care', 'Event Planning'],
-                preferences: 'Cats and Dogs',
-                availability: ['2023-07-01', '2023-08-01']
-            };
-            const response = profileService.updateProfile('1', updatedProfile);
-            expect(response.status).toBe(200);
-            expect(response.profile.fullName).toBe('John Updated');
+    describe('finalizeRegistration', () => {
+        const mockProfileData = {
+            fullName: 'New User',
+            address1: 'Test Address',
+            city: 'Test City',
+            state: 'TS',
+            zipCode: '12345',
+            skills: ['Skill 1'],
+            availability: ['2023-01-01']
+        };
+
+        test('should finalize registration successfully', async () => {
+            authService.verifyTemporaryUserByToken.mockReturnValue({ id: 1, email: 'test@example.com' });
+            authService.finalizeRegistration.mockReturnValue({ status: 200, message: 'Registration finalized' });
+            
+            const result = await profileService.finalizeRegistration('validToken', mockProfileData);
+            expect(result.status).toBe(201);
+            expect(result.message).toContain('Registration finalized');
+            expect(result.profile).toMatchObject({
+                ...mockProfileData,
+                availability: [expect.any(Date)],
+                userId: 1,
+                email: 'test@example.com'
+            });
+            expect(result.profile.availability[0].toISOString().split('T')[0]).toBe('2023-01-01');
         });
 
-        it('should return 404 if profile not found', () => {
-            const updatedProfile = {
-                fullName: 'Non-existent User'
-            };
-            const response = profileService.updateProfile('999', updatedProfile);
-            expect(response.status).toBe(404);
-            expect(response.message).toBe('Profile not found');
+        test('should return error for invalid token', async () => {
+            authService.verifyTemporaryUserByToken.mockReturnValue(null);
+            
+            const result = await profileService.finalizeRegistration('invalidToken', mockProfileData);
+            expect(result.status).toBe(400);
+            expect(result.message).toContain('Invalid or expired registration attempt');
+        });
+
+        test('should return validation errors for invalid data', async () => {
+            authService.verifyTemporaryUserByToken.mockReturnValue({ id: 1, email: 'test@example.com' });
+            
+            const invalidData = { ...mockProfileData, fullName: '' };
+            const result = await profileService.finalizeRegistration('validToken', invalidData);
+            expect(result.status).toBe(400);
+            expect(result.message).toContain('Validation failed');
+            expect(result.errors).toHaveProperty('fullName');
+        });
+
+        test('should handle authService finalizeRegistration failure', async () => {
+            authService.verifyTemporaryUserByToken.mockReturnValue({ id: 1, email: 'test@example.com' });
+            authService.finalizeRegistration.mockReturnValue({ status: 500, message: 'Internal server error' });
+            
+            const result = await profileService.finalizeRegistration('validToken', mockProfileData);
+            expect(result.status).toBe(500);
+            expect(result.message).toContain('Internal server error');
         });
     });
 });

@@ -1,82 +1,76 @@
 const request = require('supertest');
 const app = require('../../app');
 const authService = require('../../services/authService');
+const profileController = require('../../controllers/profileController');
+
+jest.mock('../../services/authService');
+jest.mock('../../controllers/profileController');
 
 describe('Auth Routes', () => {
-    /* Testing if after sending a user registration request, user is successfully registered */
-    describe('POST /api/auth/register', () => {
-        it('should register a new user', async () => {
-            const response = await request(app)
-                .post('/api/auth/register')
-                .send({
-                    email: 'newUser@example.com',
-                    password: 'password1234',
-                    role: 'volunteer'
-                });
-
-            expect(response.status).toBe(201);
-            expect(response.body).toHaveProperty('message', 'User registered successfully');
-        });
-
-        // User already registered
-        it('should return 400 if user already exists', async () => {
-            await authService.registerUser('newUser@example.com', 'password1234', 'volunteer');
-
-            const response = await request(app)
-                .post('/api/auth/register')
-                .send({
-                    email: 'newUser@example.com',
-                    password: 'password1234',
-                    role: 'volunteer'
-                });
-
-            expect(response.status).toBe(400);
-            expect(response.body).toHaveProperty('message', 'User already exists');
-        });
+    it('should return home data for GET /api/auth/home', async () => {
+        const response = await request(app).get('/api/auth/home');
+        expect(response.status).toBe(200);
+        expect(response.body).toBe('Home data');
     });
 
-    /* Test if after sending a user's login credentials, they are successfully logged in */
-    describe('POST /api/auth/login', () => {
-        it('should login a user and return a token', async () => {
-            await authService.registerUser('testUser@example.com', 'password1234', 'volunteer');
-
-            const response = await request(app)
-                .post('/api/auth/login')
-                .send({
-                    email: 'testUser@example.com',
-                    password: 'password1234'
-                });
-
-            expect(response.status).toBe(200);
-            expect(response.body).toHaveProperty('token');
+    it('should register a new user', async () => {
+        authService.registerUser.mockReturnValue({
+            status: 201,
+            message: 'Temporary user created. Please complete your profile.',
+            token: 'mockToken',
+            needsProfile: true
         });
 
-        // User not found = doesn't exist
-        it('should return 404 if user not found', async () => {
-            const response = await request(app)
-                .post('/api/auth/login')
-                .send({
-                    email: 'nonExistentUser@example.com',
-                    password: 'password1234'
-                });
+        const response = await request(app)
+            .post('/api/auth/register')
+            .send({
+                email: 'newUser@example.com',
+                password: 'password1234',
+                role: 'volunteer'
+            });
 
-            expect(response.status).toBe(404);
-            expect(response.body).toHaveProperty('message', 'User not found');
+        expect(response.status).toBe(201);
+        expect(response.body).toHaveProperty('message', 'Temporary user created. Please complete your profile.');
+        expect(response.body).toHaveProperty('token');
+        expect(response.body).toHaveProperty('needsProfile', true);
+    });
+
+    it('should login a user and return a token', async () => {
+        authService.loginUser.mockReturnValue({
+            status: 200,
+            token: 'mockToken',
+            role: 'volunteer'
         });
 
-        // Incorrect password used
-        it('should return 401 if password is incorrect', async () => {
-            await authService.registerUser('testUser@example.com', 'password1234', 'volunteer');
+        const response = await request(app)
+            .post('/api/auth/login')
+            .send({
+                email: 'testUser@example.com',
+                password: 'password1234'
+            });
 
-            const response = await request(app)
-                .post('/api/auth/login')
-                .send({
-                    email: 'testUser@example.com',
-                    password: 'wrongpassword'
-                });
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('token');
+        expect(response.body).toHaveProperty('role', 'volunteer');
+    });
 
-            expect(response.status).toBe(401);
-            expect(response.body).toHaveProperty('message', 'Invalid credentials');
+    it('should return form options for GET /api/auth/profile', async () => {
+        const mockOptions = { states: ['CA', 'NY'], skills: ['Skill1', 'Skill2'] };
+        profileController.getFormOptions.mockImplementation((req, res) => {
+            res.status(200).json(mockOptions);
         });
+
+        const response = await request(app).get('/api/auth/profile');
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual(mockOptions);
+    });
+
+    it('should return all volunteers for GET /api/auth/volunteers', async () => {
+        const mockVolunteers = [{ id: 1, name: 'Volunteer 1' }, { id: 2, name: 'Volunteer 2' }];
+        authService.getAllVolunteers.mockReturnValue(mockVolunteers);
+
+        const response = await request(app).get('/api/auth/volunteers');
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual(mockVolunteers);
     });
 });

@@ -1,89 +1,112 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '../../tests/.env.test') });
-
-const authService = require('../../services/authService');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const authService = require('../../services/authService');
 
-// Define the users array
-let users = [];
-
-beforeEach(() => {
-    // Reset the users array before each test
-    users = [
-        {
-            email: 'admin@example.com',
-            password: bcrypt.hashSync('adminpassword', 8),
-            role: 'admin'
-        }
-    ];
-});
+jest.mock('bcryptjs');
+jest.mock('jsonwebtoken');
+jest.mock('crypto');
 
 describe('AuthService', () => {
-    /* Testing user registration = validate as new user versus existing user */
-    describe('registerUser', () => {
-        it('should register a new user', () => {
-            const email = 'newUser@example.com';
-            const password = 'password1234';
-            const role = 'volunteer';
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Mock crypto.randomBytes to return a predictable value
+    crypto.randomBytes.mockReturnValue({
+      toString: jest.fn().mockReturnValue('mockedToken')
+    });
+    authService.clearUsers();
+  });
 
-            const response = authService.registerUser(email, password, role);
-
-            expect(response.status).toBe(201);
-            expect(response.user).toHaveProperty('email', email);
-            expect(response.user).toHaveProperty('role', role);
-            expect(bcrypt.compareSync(password, response.user.password)).toBe(true);
-        });
-
-        // If user is already registered
-        it('should return 400 if user already exists', () => {
-            const email = 'newUser@example.com';
-            const password = 'password1234';
-            const role = 'volunteer';
-
-            authService.registerUser(email, password, role);
-            
-            const response = authService.registerUser(email, password, role);
-            expect(response.status).toBe(400);
-            expect(response.message).toBe('User already exists');
-        });
+  describe('registerUser', () => {
+    it('should register a new user successfully', () => {
+      const result = authService.registerUser('newuser@example.com', 'password123', 'volunteer');
+      
+      expect(result.status).toBe(201);
+      expect(result.message).toBe('Temporary user created. Please complete your profile.');
+      expect(result.token).toBe('mockedToken');
+      expect(result.needsProfile).toBe(true);
     });
 
-    /* Testing user login */
-    describe('loginUser', () => {
-        it('should login a user and return a token', () => {
-            const email = 'testUser@example.com';
-            const password = 'password1234';
-            const role = 'volunteer';
-
-            authService.registerUser(email, password, role); // Register our test user first to then test the login
-
-            const response = authService.loginUser(email, password);
-
-            expect(response.status).toBe(200);
-            expect(response.token).toBeDefined();
-            const decoded = jwt.verify(response.token, process.env.JWT_SECRET);
-            expect(decoded).toHaveProperty('email', email);
-            expect(decoded).toHaveProperty('role', role);
-        });
-
-        // Non-existent user
-        it('should return 404 if user not found', () => {
-            const response = authService.loginUser('nonexistentuser@example.com', 'password1234');
-            expect(response.status).toBe(404);
-            expect(response.message).toBe('User not found');
-        });
-
-        // Incorrect password
-        it('should return 401 if password is incorrect', () => {
-            const email = 'testUser@example.com';
-            const password = 'password1234';
-            const role = 'volunteer';
-
-            authService.registerUser(email, password, role);
-
-            const response = authService.loginUser(email, 'wrongpassword');
-            expect(response.status).toBe(401);
-            expect(response.message).toBe('Invalid credentials');
-        });
+    it('should return error if user already exists', () => {
+      authService.registerUser('existinguser@example.com', 'password123', 'volunteer');
+      const result = authService.registerUser('existinguser@example.com', 'password123', 'volunteer');
+      
+      expect(result.status).toBe(400);
+      expect(result.message).toBe('User already exists');
     });
+  });
+
+  describe('loginUser', () => {
+    it('should login a user successfully', () => {
+      authService.registerUser('testuser@example.com', 'password123', 'volunteer');
+      const tempUser = authService.verifyTemporaryUserByToken('mockedToken');
+      authService.finalizeRegistration(tempUser.id);
+      
+      bcrypt.compareSync.mockReturnValue(true);
+      jwt.sign.mockReturnValue('jwtToken');
+
+      const result = authService.loginUser('testuser@example.com', 'password123');
+      
+      expect(result.status).toBe(200);
+      expect(result.token).toBe('jwtToken');
+      expect(result.role).toBe('volunteer');
+    });
+
+    it('should return error if user not found', () => {
+      const result = authService.loginUser('nonexistent@example.com', 'password123');
+      
+      expect(result.status).toBe(404);
+      expect(result.message).toBe('User not found');
+    });
+
+    it('should return error if password is incorrect', () => {
+      authService.registerUser('testuser@example.com', 'password123', 'volunteer');
+      const tempUser = authService.verifyTemporaryUserByToken('mockedToken');
+      authService.finalizeRegistration(tempUser.id);
+      
+      bcrypt.compareSync.mockReturnValue(false);
+
+      const result = authService.loginUser('testuser@example.com', 'wrongpassword');
+      
+      expect(result.status).toBe(401);
+      expect(result.message).toBe('Invalid credentials');
+    });
+  });
+
+  describe('verifyTemporaryUserByToken', () => {
+    it('should verify a temporary user successfully', () => {
+      authService.registerUser('tempuser@example.com', 'password123', 'volunteer');
+      
+      const result = authService.verifyTemporaryUserByToken('mockedToken');
+      
+      expect(result).toBeDefined();
+      expect(result.email).toBe('tempuser@example.com');
+    });
+
+    it('should return undefined for non-existent token', () => {
+      const result = authService.verifyTemporaryUserByToken('nonexistenttoken');
+      
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('finalizeRegistration', () => {
+    it('should finalize registration successfully', () => {
+      authService.registerUser('finaluser@example.com', 'password123', 'volunteer');
+      const tempUser = authService.verifyTemporaryUserByToken('mockedToken');
+      
+      const result = authService.finalizeRegistration(tempUser.id);
+      
+      expect(result.status).toBe(200);
+      expect(result.message).toBe('Registration finalized successfully');
+    });
+
+    it('should return error if temporary user not found', () => {
+      const result = authService.finalizeRegistration(999);
+      
+      expect(result.status).toBe(404);
+      expect(result.message).toBe('Temporary user not found');
+    });
+  });
+
 });

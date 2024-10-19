@@ -129,7 +129,7 @@ exports.createEvent = (eventData) => {
       participationStatus: 'Not Attended'
     };
 
-    volunteerHistoryService.addHistoryRecord(volunteer.id, historyRecord);
+    volunteerHistoryService.updateHistoryRecord(volunteer.id, historyRecord);
   });
 
   return {
