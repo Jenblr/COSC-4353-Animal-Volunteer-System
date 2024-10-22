@@ -8,7 +8,7 @@ const initializeHistory = () => {
     const allEvents = eventService.getAllEvents();
     const allVolunteers = authService.getAllVolunteers();
     
-    volunteerHistory = []; 
+    const newHistory = [];
 
     allVolunteers.forEach(volunteer => {
         allEvents.forEach(event => {
@@ -26,11 +26,23 @@ const initializeHistory = () => {
                 endTime: event.endTime,
                 participationStatus: 'Not Attended' 
             };
-            volunteerHistory.push(historyRecord);
+            newHistory.push(historyRecord);
         });
     });
 
-    console.log('Current volunteerHistory:', JSON.stringify(volunteerHistory, null, 2));
+    volunteerHistory = newHistory;
+    console.log('History records initialized:', volunteerHistory.length);
+    return newHistory;
+};
+
+const ensureHistoryExists = (volunteerId, eventId) => {
+    const recordId = `${volunteerId}-${eventId}`;
+    const existingRecord = volunteerHistory.find(record => record.id === recordId);
+    
+    if (!existingRecord) {
+        console.log('History record not found, initializing records...');
+        initializeHistory();
+    }
 };
 
 exports.getAllHistory = () => {
@@ -55,4 +67,40 @@ exports.updateHistoryRecord = (recordId, updateData) => {
 
     volunteerHistory[recordIndex] = { ...volunteerHistory[recordIndex], ...updateData };
     return { status: 200, record: volunteerHistory[recordIndex] };
+};
+
+exports.updateVolunteerEventStatus = (volunteerId, eventId, newStatus) => {
+    try {
+        console.log(`Updating status for volunteer ${volunteerId} and event ${eventId}`);
+
+        ensureHistoryExists(volunteerId, eventId);
+        
+        // Find the specific history record
+        const recordId = `${volunteerId}-${eventId}`;
+        const recordIndex = volunteerHistory.findIndex(record => 
+            record.id === recordId
+        );
+
+        if (recordIndex === -1) {
+            console.log('No history record found for:', { volunteerId, eventId });
+            throw { status: 404, message: 'History record not found' };
+        }
+
+        // Update the status
+        volunteerHistory[recordIndex] = {
+            ...volunteerHistory[recordIndex],
+            participationStatus: newStatus,
+            matchedAt: new Date().toISOString()
+        };
+
+        console.log('Updated history record:', volunteerHistory[recordIndex]);
+        return { 
+            status: 200, 
+            message: 'Status updated successfully',
+            record: volunteerHistory[recordIndex]
+        };
+    } catch (error) {
+        console.error('Error updating volunteer event status:', error);
+        throw error;
+    }
 };

@@ -34,3 +34,28 @@ exports.updateHistoryRecord = (req, res) => {
     const result = historyService.updateHistoryRecord(id, updateData);
     res.status(result.status).json(result);
 };
+
+exports.updateVolunteerEventStatus = async (req, res) => {
+    try {
+        const { volunteerId, eventId } = req.body;
+        
+        if (!volunteerId || !eventId) {
+            return res.status(400).json({ 
+                message: 'Volunteer ID and Event ID are required' 
+            });
+        }
+
+        const result = historyService.updateVolunteerEventStatus(
+            volunteerId, 
+            eventId, 
+            'Matched - Pending Attendance'
+        );
+        
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Error updating volunteer status:', error);
+        res.status(error.status || 500).json({ 
+            message: error.message || 'Error updating volunteer status' 
+        });
+    }
+};

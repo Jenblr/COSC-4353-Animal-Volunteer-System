@@ -6,7 +6,6 @@ const Calendar = ({ isAdmin }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState({});
 
-  // Fetch events from the backend when the component mounts
   useEffect(() => {
     const token = localStorage.getItem('token');
     const fetchEvents = async () => {
@@ -20,7 +19,6 @@ const Calendar = ({ isAdmin }) => {
         const eventData = response.data;
         console.log('Fetched event data:', eventData);
 
-        // Process event data by date
         const eventsArray = Array.isArray(eventData) ? eventData : eventData.events || [];
         const eventsByDate = eventsArray.reduce((acc, event) => {
           const dateString = event.eventDate;
@@ -39,66 +37,6 @@ const Calendar = ({ isAdmin }) => {
 
     fetchEvents();
   }, []);
-
-  // useEffect(() => {
-  //   const mockEvents = [
-  //     {
-  //       id: '1',
-  //       eventName: 'Animal Shelter Cleanup',
-  //       eventDescription: 'Help clean and organize the animal shelter.',
-  //       address1: '123 Shelter Lane',
-  //       city: 'Anytown',
-  //       state: 'CA',
-  //       zipCode: '12345',
-  //       requiredSkills: ['Cleaning', 'Animal Care'],
-  //       urgency: 'Medium',
-  //       eventDate: '2024-06-15',
-  //       startTime: '09:00',
-  //       endTime: '14:00',
-  //     },
-  //     {
-  //       id: '2',
-  //       eventName: 'Dog Walking Day',
-  //       eventDescription: 'Volunteers needed to walk dogs from the shelter.',
-  //       address1: '456 Park Avenue',
-  //       city: 'Dogville',
-  //       state: 'NY',
-  //       zipCode: '67890',
-  //       requiredSkills: ['Dog Walking','Animal care'],
-  //       urgency: 'Low',
-  //       eventDate: '2024-10-01',
-  //       startTime: '10:00',
-  //       endTime: '12:00',
-  //     },
-  //     {
-  //       id: '3',
-  //       eventName: 'Emergency Vet Assistance',
-  //       eventDescription: 'Assist veterinarians with emergency cases.',
-  //       address1: '789 Vet Clinic Road',
-  //       city: 'Petsburg',
-  //       state: 'TX',
-  //       zipCode: '54321',
-  //       requiredSkills: ['Medication', 'Emergency Response'],
-  //       urgency: 'High',
-  //       eventDate: '2024-10-30',
-  //       startTime: '08:00',
-  //       endTime: '20:00',
-  //     }
-  //   ];
-  
-  //   // Group events by eventDate (e.g., '2024-06-15')
-  //   const mockEventsByDate = mockEvents.reduce((acc, event) => {
-      // const dateString = event.eventDate;
-      // if (!acc[dateString]) {
-      //   acc[dateString] = [];
-      // }
-      // acc[dateString].push(event);
-      // return acc;
-  //   }, {});
-  
-  //   console.log("Mocked events by date:", mockEventsByDate); // <-- Check if the events are grouped by date correctly
-  //   setEvents(mockEventsByDate); // Set the processed mock events into the state
-  // }, []);
 
   // Helper to calculate the number of days in the current month
   const daysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();

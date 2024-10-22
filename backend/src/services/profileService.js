@@ -33,20 +33,20 @@ const formOptions = {
     
     skills: [
         { value: 'Animal Care', label: 'Animal Care' },
-        { value: 'Feeding', label: 'Feeding' },
-        { value: 'Exercise', label: 'Exercise' },
-        { value: 'Grooming', label: 'Grooming' },
-        { value: 'Potty and Leash Training', label: 'Potty and Leash Training' },
-        { value: 'Event Coordination', label: 'Event Coordination' },
-        { value: 'Temporary Foster Care', label: 'Temporary Foster Care' },
-        { value: 'Dog Walking', label: 'Dog Walking' },
-        { value: 'Taking Photos of Animals', label: 'Taking Photos of Animals' },
-        { value: 'Organizing Shelter Donations', label: 'Organizing Shelter Donations' },
-        { value: 'Helping with Laundry', label: 'Helping with Laundry' },
-        { value: 'Cleaning', label: 'Cleaning' },
-        { value: 'Medication', label: 'Medication' },
         { value: 'Assisting Potential Adopters', label: 'Assisting Potential Adopters' },
-        { value: 'Emergency Response', label: 'Emergency Response' }
+        { value: 'Cleaning', label: 'Cleaning' },
+        { value: 'Dog Walking', label: 'Dog Walking' },
+        { value: 'Emergency Response', label: 'Emergency Response' },
+        { value: 'Event Coordination', label: 'Event Coordination' },
+        { value: 'Exercise', label: 'Exercise' },
+        { value: 'Feeding', label: 'Feeding' },
+        { value: 'Grooming', label: 'Grooming' },
+        { value: 'Helping with Laundry', label: 'Helping with Laundry' },
+        { value: 'Medication', label: 'Medication' },
+        { value: 'Organizing Shelter Donations', label: 'Organizing Shelter Donations' },
+        { value: 'Potty and Leash Training', label: 'Potty and Leash Training' },
+        { value: 'Taking Photos of Animals', label: 'Taking Photos of Animals' },
+        { value: 'Temporary Foster Care', label: 'Temporary Foster Care' }
     ]
 };
 

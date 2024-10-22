@@ -9,6 +9,12 @@ const VolunteerHistory = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const participationStatuses = [
+    { value: 'Not Attended', label: 'Not Attended' },
+    { value: 'Matched - Pending Attendance', label: 'Matched - Pending Attendance' },
+    { value: 'Attended', label: 'Attended' },
+    { value: 'Cancelled', label: 'Cancelled' }
+  ];
 
   useEffect(() => {
     fetchVolunteers();
@@ -79,6 +85,19 @@ const VolunteerHistory = () => {
     }
   };
 
+  const getStatusClassName = (status) => {
+    switch (status) {
+      case 'Matched - Pending Attendance':
+        return 'status-matched';
+      case 'Attended':
+        return 'status-attended';
+      case 'Cancelled':
+        return 'status-cancelled';
+      default:
+        return 'status-not-attended';
+    }
+  };
+
   return (
     <div className="volunteer-history-container">
       <h2>Volunteer Participation History</h2>
@@ -130,16 +149,24 @@ const VolunteerHistory = () => {
                   <td>{history.eventDate}</td>
                   <td>{history.startTime}</td>
                   <td>{history.endTime}</td>
-                  <td>{history.participationStatus}</td>
+                  <td className={getStatusClassName(history.participationStatus)}>
+                    {history.participationStatus}
+                  </td>
                   {isAdmin && (
                     <td>
                       <select
                         value={history.participationStatus}
                         onChange={(e) => updateEventStatus(history.id, e.target.value)}
+                        className={getStatusClassName(history.participationStatus)}
                       >
-                        <option value="Not Attended">Not Attended</option>
-                        <option value="Attended">Attended</option>
-                        <option value="Cancelled">Cancelled</option>
+                        {participationStatuses.map(status => (
+                          <option 
+                            key={status.value} 
+                            value={status.value}
+                          >
+                            {status.label}
+                          </option>
+                        ))}
                       </select>
                     </td>
                   )}

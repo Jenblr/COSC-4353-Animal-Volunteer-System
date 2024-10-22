@@ -105,8 +105,9 @@ exports.createEvent = (eventData) => {
     throw { status: 400, errors };
   }
 
+  // Convert ID to string to match existing event format
   const newEvent = {
-    id: events.length + 1,
+    id: (events.length + 1).toString(), // Convert to string to match existing events
     ...eventData,
     createdAt: new Date().toISOString()
   };
@@ -117,7 +118,7 @@ exports.createEvent = (eventData) => {
   const allVolunteers = authService.getAllVolunteers();
   allVolunteers.forEach(volunteer => {
     const historyRecord = {
-      eventId: newEvent.id,
+      eventId: newEvent.id, // This will now be a string
       eventName: newEvent.eventName,
       eventDescription: newEvent.eventDescription,
       location: `${newEvent.address1}, ${newEvent.city}, ${newEvent.state} ${newEvent.zipCode}`,
@@ -142,21 +143,20 @@ exports.getAllEvents = () => {
   return events;
 };
 
-// exports.getEventById = (id) => {
-//   const event = events.find(e => e.id === parseInt(id));
-//   if (!event) {
-//     throw { status: 404, message: 'Event not found' };
-//   }
-//   return event;
-// };
 exports.getEventById = (id) => {
-  //compare the event id as a string to match the stored event IDs
-  const event = events.find(e => e.id === String(id));
+  console.log('Looking for event with ID:', id);
+  
+  const event = events.find(e => e.id === id.toString());
+  
   if (!event) {
+    console.log('No event found with ID:', id);
     throw { status: 404, message: 'Event not found' };
   }
+  
+  console.log('Found event:', event);
   return event;
 };
+
 exports.updateEvent = (id, eventData) => {
   // Compare the event id as a string to match the stored event IDs
   const index = events.findIndex(e => e.id === String(id));
@@ -187,48 +187,24 @@ exports.deleteEvent = (id) => {
   return { message: "Event deleted successfully" };
 };
 
-
-// exports.updateEvent = (id, eventData) => {
-//   const index = events.findIndex(e => e.id === parseInt(id));
-//   if (index === -1) {
-//     throw { status: 404, message: 'Event not found' };
-//   }
-
-//   const errors = validateEventData(eventData);
-//   if (Object.keys(errors).length > 0) {
-//     throw { status: 400, errors };
-//   }
-
-//   const updatedEvent = { ...events[index], ...eventData, updatedAt: new Date().toISOString() };
-//   events[index] = updatedEvent;
-//   return {
-//     message: "Event updated successfully",
-//     event: updatedEvent
-//   };
-// };
-
-// exports.deleteEvent = (id) => {
-//   const index = events.findIndex(e => e.id === parseInt(id));
-//   if (index === -1) {
-//     throw { status: 404, message: 'Event not found' };
-//   }
-//   events.splice(index, 1);
-//   return { message: "Event deleted successfully" };
-// };
-
 exports.getFormOptions = () => {
   return {
     skillOptions: [
-      'Dog walking',
-      'Taking photos of animals',
-      'Organizing shelter donations',
-      'Helping with laundry',
+      'Animal Care',
+      'Assisting Potential Adopters',
       'Cleaning',
-      'Medication',
+      'Dog Walking',
+      'Emergency Response',
+      'Event Coordination',
+      'Exercise',
+      'Feeding',
       'Grooming',
-      'Assisting potential adopters',
-      'Animal care',
-      'Emergency Response'
+      'Helping with Laundry',
+      'Medication',
+      'Organizing Shelter Donations',
+      'Potty and Leash Training',
+      'Taking Photos of Animals',
+      'Temporary Foster Care'
     ],
     urgencyOptions: ['Low', 'Medium', 'High', 'Critical'],
     stateOptions: [

@@ -1,38 +1,52 @@
-const volunteerMatchingService = require('../services/matchingService');
+const matchingService = require('../services/matchingService');
 
 exports.getMatchingVolunteers = async (req, res) => {
     try {
-      const { eventId } = req.params;
-      const result = await volunteerMatchingService.getMatchingVolunteers(eventId);
-      
-      if ('message' in result) {
-        //no matching volunteers found
-        return res.status(404).json(result);
-      }
-      
-      //matching volunteers found
-      res.status(200).json(result);
+        const { eventId } = req.params;
+        const matchedVolunteers = await matchingService.matchVolunteersToEvent(eventId);
+        res.status(200).json(matchedVolunteers); 
     } catch (error) {
-      console.error('Error fetching matching volunteers:', error);
-      res.status(500).json({ message: 'Internal server error', error: error.message });
+        console.error('Error matching volunteer:', error);
+        res.status(error.status || 500).json({
+            message: error.message || 'Error finding matching volunteers.'
+        });
     }
-  };
+};
 
-  exports.matchVolunteerToEvent = async (req, res) => {
+exports.getFutureEvents = async (req, res) => {
     try {
-      const { eventId, volunteerIds } = req.body;
-  
-      if (!eventId || !volunteerIds || volunteerIds.length === 0) {
-        return res.status(400).json({ message: 'Event ID or volunteer IDs are missing or invalid' });
-      }
-  
-      // Call the service to match multiple volunteers
-      const result = await volunteerMatchingService.matchVolunteerToEvent(eventId, volunteerIds);
-  
-      // Return the result for all volunteers
-      res.status(200).json(result);
+        const futureEvents = await matchingService.getFutureEvents(); 
+        res.status(200).json(futureEvents);
     } catch (error) {
-      console.error('Error matching volunteers to event:', error);
-      res.status(500).json({ message: 'Internal server error', error: error.message });
+        console.error('Error fetching future events:', error);
+        res.status(500).json({ 
+            message: 'Error fetching future events' 
+        });
     }
-  };
+};
+
+exports.matchVolunteerToEvent = async (req, res) => {
+    try {
+        const { volunteerId, eventId } = req.body;
+        
+        if (!volunteerId || !eventId) {
+            return res.status(400).json({ message: 'Volunteer ID and Event ID are required' });
+        }
+        
+        const historyService = require('../services/historyService');
+        historyService.ensureHistoryExists(volunteerId, eventId);
+
+        const result = await historyService.updateVolunteerEventStatus(
+            volunteerId, 
+            eventId, 
+            'Matched - Pending Attendance'
+        );
+        
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Error matching volunteer to event:', error);
+        res.status(error.status || 500).json({ 
+            message: error.message || 'Error matching volunteer to event' 
+        });
+    }
+};
