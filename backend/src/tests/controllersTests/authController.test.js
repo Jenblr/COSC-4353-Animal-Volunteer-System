@@ -1,104 +1,179 @@
-const request = require('supertest');
-const app = require('../../app');
+const authController = require('../../controllers/authController');
 const authService = require('../../services/authService');
+
+const mockRequest = (body = {}) => ({
+    body
+});
+
+const mockResponse = () => {
+    const res = {};
+    res.status = jest.fn().mockReturnValue(res);
+    res.json = jest.fn().mockReturnValue(res);
+    return res;
+};
 
 jest.mock('../../services/authService');
 
 describe('AuthController', () => {
-    describe('POST /api/auth/register', () => {
-        it('should register a new user', async () => {
+    afterEach(() => {
+        jest.clearAllMocks(); 
+    });
+
+    describe('register', () => {
+        it('should return 201 and token when registration is successful', () => {
+            const req = mockRequest({ email: 'test@example.com', password: 'password123', role: 'volunteer' });
+            const res = mockResponse();
+
             authService.registerUser.mockReturnValue({
                 status: 201,
-                message: 'Temporary user created. Please complete your profile.',
-                token: 'mockToken',
+                message: 'User registered successfully',
+                token: 'test-token',
                 needsProfile: true
             });
 
-            const response = await request(app)
-                .post('/api/auth/register')
-                .send({
-                    email: 'newUser@example.com',
-                    password: 'password1234',
-                    role: 'volunteer'
-                });
+            authController.register(req, res);
 
-            expect(response.status).toBe(201);
-            expect(response.body).toHaveProperty('message', 'Temporary user created. Please complete your profile.');
-            expect(response.body).toHaveProperty('token');
-            expect(response.body).toHaveProperty('needsProfile', true);
+            expect(res.status).toHaveBeenCalledWith(201);
+            expect(res.json).toHaveBeenCalledWith({
+                message: 'User registered successfully',
+                token: 'test-token',
+                needsProfile: true
+            });
         });
 
-        it('should return 400 if user already exists', async () => {
+        it('should return 400 when email or password is missing', () => {
+            const req = mockRequest({ email: '', password: '' });
+            const res = mockResponse();
+
+            authController.register(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith({ message: 'Email and password are required' });
+        });
+
+        it('should return the correct error status and message from the service', () => {
+            const req = mockRequest({ email: 'test@example.com', password: 'password123' });
+            const res = mockResponse();
+
             authService.registerUser.mockReturnValue({
-                status: 400,
-                message: 'User already exists'
+                status: 500,
+                message: 'Registration failed'
             });
 
-            const response = await request(app)
-                .post('/api/auth/register')
-                .send({
-                    email: 'existingUser@example.com',
-                    password: 'password1234',
-                    role: 'volunteer'
-                });
+            authController.register(req, res);
 
-            expect(response.status).toBe(400);
-            expect(response.body).toHaveProperty('message', 'User already exists');
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({ message: 'Registration failed' });
         });
     });
 
-    describe('POST /api/auth/login', () => {
-        it('should login a user and return a token', async () => {
+    describe('login', () => {
+        it('should return 200 and token when login is successful', () => {
+            const req = mockRequest({ email: 'test@example.com', password: 'password123' });
+            const res = mockResponse();
+
             authService.loginUser.mockReturnValue({
                 status: 200,
-                token: 'mockToken',
+                token: 'test-token',
                 role: 'volunteer'
             });
 
-            const response = await request(app)
-                .post('/api/auth/login')
-                .send({
-                    email: 'testUser@example.com',
-                    password: 'password1234'
-                });
+            authController.login(req, res);
 
-            expect(response.status).toBe(200);
-            expect(response.body).toHaveProperty('token');
-            expect(response.body).toHaveProperty('role', 'volunteer');
-        });
-
-        it('should return 404 if user not found', async () => {
-            authService.loginUser.mockReturnValue({
-                status: 404,
-                message: 'User not found'
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith({
+                token: 'test-token',
+                role: 'volunteer'
             });
-
-            const response = await request(app)
-                .post('/api/auth/login')
-                .send({
-                    email: 'nonExistentUser@example.com',
-                    password: 'password1234'
-                });
-
-            expect(response.status).toBe(404);
-            expect(response.body).toHaveProperty('message', 'User not found');
         });
 
-        it('should return 401 if password is incorrect', async () => {
+        it('should return the correct error status and message when login fails', () => {
+            const req = mockRequest({ email: 'test@example.com', password: 'wrongpassword' });
+            const res = mockResponse();
+
             authService.loginUser.mockReturnValue({
                 status: 401,
                 message: 'Invalid credentials'
             });
 
-            const response = await request(app)
-                .post('/api/auth/login')
-                .send({
-                    email: 'testUser@example.com',
-                    password: 'wrongpassword'
-                });
+            authController.login(req, res);
 
-            expect(response.status).toBe(401);
-            expect(response.body).toHaveProperty('message', 'Invalid credentials');
+            expect(res.status).toHaveBeenCalledWith(401);
+            expect(res.json).toHaveBeenCalledWith({ message: 'Invalid credentials' });
+        });
+    });
+
+    describe('getAllVolunteers', () => {
+        it('should return 200 and a list of volunteers', () => {
+            const req = mockRequest();
+            const res = mockResponse();
+
+            const mockVolunteers = [
+                { id: 1, email: 'volunteer1@example.com', fullName: 'Volunteer One' },
+                { id: 2, email: 'volunteer2@example.com', fullName: 'Volunteer Two' }
+            ];
+
+            authService.getAllVolunteers.mockReturnValue(mockVolunteers);
+
+            authController.getAllVolunteers(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(mockVolunteers.map(v => ({
+                id: v.id,
+                email: v.email,
+                fullName: v.fullName
+            })));
+        });
+
+        it('should return 500 if there is an error fetching volunteers', () => {
+            const req = mockRequest();
+            const res = mockResponse();
+
+            authService.getAllVolunteers.mockImplementation(() => {
+                throw new Error('Error fetching volunteers');
+            });
+
+            authController.getAllVolunteers(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({ message: 'Error fetching volunteers', error: expect.any(Error) });
+        });
+    });
+
+    describe('getRegisteredVolunteers', () => {
+        it('should return 200 and a list of registered volunteers', () => {
+            const req = mockRequest();
+            const res = mockResponse();
+
+            const mockRegisteredVolunteers = [
+                { id: 1, email: 'registered1@example.com', fullName: 'Registered One' },
+                { id: 2, email: 'registered2@example.com', fullName: 'Registered Two' }
+            ];
+
+            authService.getRegisteredVolunteers.mockReturnValue(mockRegisteredVolunteers);
+
+            authController.getRegisteredVolunteers(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(mockRegisteredVolunteers.map(v => ({
+                id: v.id,
+                email: v.email,
+                fullName: v.fullName
+            })));
+        });
+
+        it('should return 500 if there is an error fetching registered volunteers', () => {
+            const req = mockRequest();
+            const res = mockResponse();
+
+            authService.getRegisteredVolunteers.mockImplementation(() => {
+                throw new Error('Error fetching registered volunteers');
+            });
+
+            authController.getRegisteredVolunteers(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({ message: 'Error fetching registered volunteers', error: expect.any(Error) });
         });
     });
 });

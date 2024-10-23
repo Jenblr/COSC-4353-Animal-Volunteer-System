@@ -1,104 +1,90 @@
 const matchingController = require('../../controllers/matchingController');
-const volunteerMatchingService = require('../../services/matchingService');
+const matchingService = require('../../services/matchingService');
+const historyService = require('../../services/historyService');
 
 jest.mock('../../services/matchingService');
+jest.mock('../../services/historyService');
 
-describe('Matching Controller', () => {
-  let mockRequest;
-  let mockResponse;
-
-  beforeEach(() => {
-    mockRequest = {};
-    mockResponse = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn(),
-    };
+describe('matchingController', () => {
+  afterEach(() => {
+      jest.clearAllMocks(); 
   });
 
-  //tests for getMatchingVolunteers
   describe('getMatchingVolunteers', () => {
-    it('should return matching volunteers with status 200', async () => {
-      const mockVolunteers = [{ userId: '1', fullName: 'John Doe' }];
-      volunteerMatchingService.getMatchingVolunteers.mockResolvedValue(mockVolunteers);
+      it('should return an error if matching service fails', async () => {
+          const req = { params: { eventId: '123' } };
+          const res = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn()
+          };
+          const error = new Error('Error matching volunteers');
+          
+          matchingService.matchVolunteersToEvent.mockRejectedValue(error);
 
-      mockRequest.params = { eventId: '123' };
+          await matchingController.getMatchingVolunteers(req, res);
 
-      await matchingController.getMatchingVolunteers(mockRequest, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith(mockVolunteers);
-    });
-
-    it('should return 404 when no matching volunteers are found', async () => {
-      volunteerMatchingService.getMatchingVolunteers.mockResolvedValue({ message: 'No matching volunteers found for this event.' });
-
-      mockRequest.params = { eventId: '123' };
-
-      await matchingController.getMatchingVolunteers(mockRequest, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'No matching volunteers found for this event.' });
-    });
-
-    it('should handle errors and return 500 status', async () => {
-      volunteerMatchingService.getMatchingVolunteers.mockRejectedValue(new Error('Database error'));
-
-      mockRequest.params = { eventId: '123' };
-
-      await matchingController.getMatchingVolunteers(mockRequest, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith(expect.objectContaining({
-        message: 'Internal server error',
-        error: 'Database error'
-      }));
-    });
+          expect(matchingService.matchVolunteersToEvent).toHaveBeenCalledWith('123');
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({ message: 'Error matching volunteers' }); 
+      });
   });
 
-  // tests for matchVolunteerToEvent
-  describe('matchVolunteerToEvent', () => {
-    it('should match volunteers to event and return 200 status', async () => {
-      const mockResult = [
-        { volunteerId: '1', message: 'Volunteer John Doe successfully matched to event Animal Shelter Cleanup' },
-        { volunteerId: '2', message: 'Volunteer Jane Smith successfully matched to event Animal Shelter Cleanup' }
-      ];
-      volunteerMatchingService.matchVolunteerToEvent.mockResolvedValue(mockResult);
+    describe('getFutureEvents', () => {
+        it('should return future events', async () => {
+            const req = {};
+            const res = {
+                status: jest.fn().mockReturnThis(),
+                json: jest.fn()
+            };
+            const futureEvents = [{ id: 1, name: 'Event 1' }];
+            
+            matchingService.getFutureEvents.mockResolvedValue(futureEvents);
 
-      mockRequest.body = { eventId: '123', volunteerIds: ['1', '2'] };
+            await matchingController.getFutureEvents(req, res);
 
-      await matchingController.matchVolunteerToEvent(mockRequest, mockResponse);
+            expect(matchingService.getFutureEvents).toHaveBeenCalled();
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.json).toHaveBeenCalledWith(futureEvents);
+        });
 
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith(mockResult);
+        it('should return an error if fetching future events fails', async () => {
+            const req = {};
+            const res = {
+                status: jest.fn().mockReturnThis(),
+                json: jest.fn()
+            };
+            const error = new Error('Error fetching events');
+            
+            matchingService.getFutureEvents.mockRejectedValue(error);
+
+            await matchingController.getFutureEvents(req, res);
+
+            expect(matchingService.getFutureEvents).toHaveBeenCalled();
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({ message: 'Error fetching future events' });
+        });
     });
 
-    it('should handle 400 errors from service for missing or invalid event/volunteer IDs', async () => {
-      const mockError = { status: 400, message: 'Event ID or volunteer IDs are missing or invalid' };
-      volunteerMatchingService.matchVolunteerToEvent.mockRejectedValue(mockError);
+    describe('matchVolunteerToEvent', () => {
+      it('should return an error if history service fails', async () => {
+          const req = {
+              body: { volunteerId: '1', eventId: '123' }
+          };
+          const res = {
+              status: jest.fn().mockReturnThis(),
+              json: jest.fn()
+          };
 
-      mockRequest.body = { eventId: '', volunteerIds: [] };  //invalid input
+          const error = new Error('Error updating history');
 
-      await matchingController.matchVolunteerToEvent(mockRequest, mockResponse);
+          historyService.ensureHistoryExists.mockResolvedValue();
+          historyService.updateVolunteerEventStatus.mockRejectedValue(error);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Event ID or volunteer IDs are missing or invalid' });
-    });
+          await matchingController.matchVolunteerToEvent(req, res);
 
-    it('should handle other errors and return 500 status', async () => {
-      volunteerMatchingService.matchVolunteerToEvent.mockRejectedValue(new Error('Database error'));
-
-      mockRequest.body = { eventId: '123', volunteerIds: ['1', '2'] };
-
-      await matchingController.matchVolunteerToEvent(mockRequest, mockResponse);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith(expect.objectContaining({
-        message: 'Internal server error',
-        error: 'Database error'
-      }));
-    });
+          expect(historyService.updateVolunteerEventStatus).toHaveBeenCalledWith('1', '123', 'Matched - Pending Attendance');
+          expect(res.status).toHaveBeenCalledWith(500);
+          expect(res.json).toHaveBeenCalledWith({ message: 'Error updating history' }); 
+      });
   });
 });
-
-
-

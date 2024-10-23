@@ -18,7 +18,6 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Check if the user is logged in by looking for a token in localStorage
   useEffect(() => {
     const token = localStorage.getItem('token'); 
     const userRole = localStorage.getItem('role'); 

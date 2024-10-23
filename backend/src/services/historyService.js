@@ -1,9 +1,14 @@
 const eventService = require('../services/eventService');
 const authService = require('../services/authService');
 
-let volunteerHistory = []; 
+let volunteerHistory = [];
+let isInitialized = false;
 
 const initializeHistory = () => {
+    if (isInitialized) {
+        return volunteerHistory;
+    }
+
     console.log('Initializing history records');
     const allEvents = eventService.getAllEvents();
     const allVolunteers = authService.getAllVolunteers();
@@ -31,28 +36,31 @@ const initializeHistory = () => {
     });
 
     volunteerHistory = newHistory;
+    isInitialized = true;
     console.log('History records initialized:', volunteerHistory.length);
     return newHistory;
 };
 
 const ensureHistoryExists = (volunteerId, eventId) => {
-    const recordId = `${volunteerId}-${eventId}`;
-    const existingRecord = volunteerHistory.find(record => record.id === recordId);
-    
-    if (!existingRecord) {
-        console.log('History record not found, initializing records...');
+    if (!isInitialized) {
         initializeHistory();
     }
+    
+    const recordId = `${volunteerId}-${eventId}`;
+    return volunteerHistory.find(record => record.id === recordId);
 };
 
 exports.getAllHistory = () => {
-    if (volunteerHistory.length === 0) {
+    if (!isInitialized) {
         initializeHistory();
     }
     return volunteerHistory;
 };
 
 exports.getHistory = (userId) => {
+    if (!isInitialized) {
+        initializeHistory();
+    }
     console.log('Fetching history for userId:', userId);
     return volunteerHistory.filter(record => record.volunteer === userId);
 };
@@ -69,38 +77,31 @@ exports.updateHistoryRecord = (recordId, updateData) => {
     return { status: 200, record: volunteerHistory[recordIndex] };
 };
 
-exports.updateVolunteerEventStatus = (volunteerId, eventId, newStatus) => {
+exports.updateVolunteerEventStatus = async (volunteerId, eventId, newStatus) => {
     try {
         console.log(`Updating status for volunteer ${volunteerId} and event ${eventId}`);
-
-        ensureHistoryExists(volunteerId, eventId);
         
-        // Find the specific history record
-        const recordId = `${volunteerId}-${eventId}`;
-        const recordIndex = volunteerHistory.findIndex(record => 
-            record.id === recordId
-        );
-
-        if (recordIndex === -1) {
+        const existingRecord = ensureHistoryExists(volunteerId, eventId);
+        if (!existingRecord) {
             console.log('No history record found for:', { volunteerId, eventId });
-            throw { status: 404, message: 'History record not found' };
+            throw new Error('History record not found');
         }
 
-        // Update the status
-        volunteerHistory[recordIndex] = {
-            ...volunteerHistory[recordIndex],
+        const recordId = `${volunteerId}-${eventId}`;
+        return this.updateHistoryRecord(recordId, {
             participationStatus: newStatus,
             matchedAt: new Date().toISOString()
-        };
-
-        console.log('Updated history record:', volunteerHistory[recordIndex]);
-        return { 
-            status: 200, 
-            message: 'Status updated successfully',
-            record: volunteerHistory[recordIndex]
-        };
+        });
     } catch (error) {
         console.error('Error updating volunteer event status:', error);
         throw error;
     }
 };
+
+// For testing purposes
+exports._reset = () => {
+    volunteerHistory = [];
+    isInitialized = false;
+};
+
+exports.ensureHistoryExists = ensureHistoryExists;

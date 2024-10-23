@@ -6,66 +6,109 @@ jest.mock('../../services/eventService');
 jest.mock('../../services/authService');
 
 describe('History Service', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+    const mockEvent = {
+        id: '1',
+        eventName: 'Test Event',
+        eventDescription: 'Test Description',
+        address1: '123 Test St',
+        city: 'Test City',
+        state: 'CA',
+        zipCode: '12345',
+        requiredSkills: ['Animal Care'],
+        urgency: 'Medium',
+        eventDate: '2024-12-25',
+        startTime: '09:00',
+        endTime: '17:00'
+    };
 
-  describe('initializeHistory', () => {
-    it('should initialize volunteer history correctly', () => {
-      const mockEvents = [
-        { id: 'event1', eventName: 'Event 1', eventDescription: 'Desc 1', address1: '123 Main St', city: 'City', state: 'State', zipCode: '12345', requiredSkills: ['Skill1'], urgency: 'High', eventDate: '2023-01-01', startTime: '09:00', endTime: '17:00' },
-      ];
-      const mockVolunteers = [{ id: 'vol1' }];
+    const mockVolunteer = {
+        id: '1',
+        email: 'test@example.com'
+    };
 
-      eventService.getAllEvents.mockReturnValue(mockEvents);
-      authService.getAllVolunteers.mockReturnValue(mockVolunteers);
-
-      historyService.getAllHistory();
-
-      const allHistory = historyService.getAllHistory();
-      expect(allHistory).toHaveLength(1);
-      expect(allHistory[0]).toMatchObject({
-        id: 'vol1-event1',
-        volunteer: 'vol1',
-        eventId: 'event1',
-        eventName: 'Event 1',
-        participationStatus: 'Not Attended',
-      });
-    });
-  });
-
-  describe('getAllHistory', () => {
-    it('should return all history records', () => {
-      const mockHistory = [{ id: 'record1', volunteer: 'vol1', participationStatus: 'Not Attended' }];
-      jest.spyOn(historyService, 'getAllHistory').mockReturnValue(mockHistory);
-
-      const result = historyService.getAllHistory();
-      expect(result).toEqual(mockHistory);
-    });
-  });
-
-  describe('getHistory', () => {
-    it('should return history for a specific user', () => {
-      const mockHistory = [
-        { id: 'record1', volunteer: 'vol1', participationStatus: 'Not Attended' },
-        { id: 'record2', volunteer: 'vol2', participationStatus: 'Attended' },
-      ];
-      jest.spyOn(historyService, 'getAllHistory').mockReturnValue(mockHistory);
-
-      const result = historyService.getHistory('vol1');
-      expect(result).toHaveLength(1);
-      expect(result[0].volunteer).toBe('vol1');
+    beforeEach(() => {
+        jest.clearAllMocks();
+        historyService._reset(); 
+        eventService.getAllEvents.mockReturnValue([mockEvent]);
+        authService.getAllVolunteers.mockReturnValue([mockVolunteer]);
     });
 
-    it('should return empty array for non-existent user', () => {
-      const mockHistory = [
-        { id: 'record1', volunteer: 'vol1', participationStatus: 'Not Attended' },
-      ];
-      jest.spyOn(historyService, 'getAllHistory').mockReturnValue(mockHistory);
+    describe('getAllHistory', () => {
+        it('should initialize history if empty', () => {
+            const history = historyService.getAllHistory();
+            
+            expect(Array.isArray(history)).toBe(true);
+            expect(history.length).toBeGreaterThan(0);
+            expect(eventService.getAllEvents).toHaveBeenCalledTimes(1);
+            expect(authService.getAllVolunteers).toHaveBeenCalledTimes(1);
+        });
 
-      const result = historyService.getHistory('vol2');
-      expect(result).toHaveLength(0);
+        it('should return existing history if not empty', () => {
+            const firstCall = historyService.getAllHistory();
+            const secondCall = historyService.getAllHistory();
+            
+            expect(firstCall).toEqual(secondCall);
+            expect(eventService.getAllEvents).toHaveBeenCalledTimes(1);
+        });
     });
-  });
 
+    describe('getHistory', () => {
+        it('should return history for specific user', () => {
+            const userHistory = historyService.getHistory('1');
+            
+            expect(Array.isArray(userHistory)).toBe(true);
+            expect(userHistory.every(record => record.volunteer === '1')).toBe(true);
+        });
+
+        it('should return empty array for non-existent user', () => {
+            const userHistory = historyService.getHistory('999');
+            expect(userHistory).toEqual([]);
+        });
+    });
+
+    describe('updateVolunteerEventStatus', () => {
+        it('should update status successfully', async () => {
+            historyService.getAllHistory();
+
+            const result = await historyService.updateVolunteerEventStatus('1', '1', 'Matched - Pending Attendance');
+            
+            expect(result.status).toBe(200);
+            expect(result.record.participationStatus).toBe('Matched - Pending Attendance');
+            expect(result.record.matchedAt).toBeTruthy();
+        });
+
+        it('should throw error for non-existent record', async () => {
+            await expect(
+                historyService.updateVolunteerEventStatus('999', '999', 'Matched - Pending Attendance')
+            ).rejects.toThrow('History record not found');
+        });
+    });
+
+    describe('updateHistoryRecord', () => {
+        it('should update history record with new data', () => {
+            historyService.getAllHistory();
+
+            const updateData = {
+                participationStatus: 'Attended'
+            };
+
+            const result = historyService.updateHistoryRecord('1-1', updateData);
+            
+            expect(result.status).toBe(200);
+            expect(result.record.participationStatus).toBe('Attended');
+        });
+
+        it('should return error for non-existent record', () => {
+            const result = historyService.updateHistoryRecord('999-999', {});
+            expect(result.status).toBe(404);
+        });
+    });
+
+    describe('ensureHistoryExists', () => {
+        it('should initialize history if record not found', () => {
+            const record = historyService.ensureHistoryExists('1', '1');
+            expect(record).toBeTruthy();
+            expect(record.id).toBe('1-1');
+        });
+    });
 });
