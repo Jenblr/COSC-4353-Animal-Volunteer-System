@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">81.81% </span>
+                <span class="strong">79.41% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>27/33</span>
+                <span class='fraction'>27/34</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">25% </span>
+                <span class="strong">33.33% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>1/4</span>
+                <span class='fraction'>2/6</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">81.81% </span>
+                <span class="strong">79.41% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>27/33</span>
+                <span class='fraction'>27/34</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -113,7 +113,13 @@
 <a name='L48'></a><a href='#L48'>48</a>
 <a name='L49'></a><a href='#L49'>49</a>
 <a name='L50'></a><a href='#L50'>50</a>
-<a name='L51'></a><a href='#L51'>51</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
@@ -149,11 +155,13 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
@@ -173,54 +181,58 @@ const eventRoutes = require('./routes/eventRoutes');
 const matchingRoutes = require('./routes/matchingRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const historyRoutes = require('./routes/historyRoutes');
+const cronManager = require('./services/cronManager');
+const authService = require('./services/authService');
 &nbsp;
-const app = express(); 
+const app = express();
 &nbsp;
 // Middleware
 app.use(bodyParser.json());
 app.use(cors());
 &nbsp;
-// Root Route for http://localhost:5000/
+// Root Route
 app.get('/', (req, res) =&gt; {
-    res.send('Animal Volunteer System Backend');
+	res.send('Animal Volunteer System Backend');
 });
 &nbsp;
-// Authentication Routes = User needs to be logged in to access certain routes
-app.use('/api/auth', authRoutes); 
-app.use('/api/notifications', notificationRoutes); 
-app.use('/api/auth/events', eventRoutes); 
-app.use('/api/auth/volunteer-matching', matchingRoutes); 
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/auth/events', eventRoutes);
+app.use('/api/auth/volunteer-matching', matchingRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/auth/history', historyRoutes);
 &nbsp;
 // Error handling middleware
 app.use(<span class="fstat-no" title="function not covered" >(e</span>rr, req, res, next) =&gt; {
-<span class="cstat-no" title="statement not covered" >    console.error(err.stack);</span>
-<span class="cstat-no" title="statement not covered" >    res.status(500).json({ message: 'Something went wrong!' });</span>
-})
-&nbsp;
-const cron = require('node-cron');
-const authService = require('./services/authService');
-&nbsp;
-cron.schedule('0 * * * *', <span class="fstat-no" title="function not covered" >()</span> =&gt; {
-<span class="cstat-no" title="statement not covered" >    authService.cleanupIncompleteRegistrations();</span>
+<span class="cstat-no" title="statement not covered" >	console.error(err.stack);</span>
+<span class="cstat-no" title="statement not covered" >	res.status(500).json({ message: 'Something went wrong!' });</span>
 });
 &nbsp;
+// Schedule cron jobs only in non-test environment
 <span class="missing-if-branch" title="if path not taken" >I</span>if (process.env.NODE_ENV !== 'test') {
-    const PORT = <span class="cstat-no" title="statement not covered" >process.env.PORT || 5000;</span>
-<span class="cstat-no" title="statement not covered" >    app.listen(PORT, <span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      console.log(`Server running on port ${PORT}`);</span>
-    });
-}  
+<span class="cstat-no" title="statement not covered" >	cronManager.schedule(</span>
+		'cleanup-registrations',
+		'0 * * * *',
+<span class="fstat-no" title="function not covered" >		()</span> =&gt; <span class="cstat-no" title="statement not covered" >authService.cleanupIncompleteRegistrations()</span>
+	);
+}
 &nbsp;
-module.exports = app;</pre></td></tr></table></pre>
+<span class="missing-if-branch" title="if path not taken" >I</span>if (process.env.NODE_ENV !== 'test') {
+	const PORT = <span class="cstat-no" title="statement not covered" >process.env.PORT || 5000;</span>
+<span class="cstat-no" title="statement not covered" >	app.listen(PORT, <span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >		console.log(`Server running on port ${PORT}`);</span>
+	});
+}
+&nbsp;
+module.exports = { app, cronManager };</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2024-10-23T23:17:37.177Z
+                at 2024-10-25T00:33:51.156Z
             </div>
         <script src="../prettify.js"></script>
         <script>

@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>22/25</span>
+                <span class='fraction'>25/25</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>22/25</span>
+                <span class='fraction'>25/25</span>
             </div>
         
             
@@ -117,13 +117,13 @@
 <a name='L52'></a><a href='#L52'>52</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -142,23 +142,23 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -171,7 +171,7 @@ exports.getMatchingVolunteers = async (req, res) =&gt; {
     try {
         const { eventId } = req.params;
         const matchedVolunteers = await matchingService.matchVolunteersToEvent(eventId);
-<span class="cstat-no" title="statement not covered" >        res.status(200).json(matchedVolunteers); </span>
+        res.status(200).json(matchedVolunteers); 
     } catch (error) {
         console.error('Error matching volunteer:', error);
         res.status(error.status || 500).json({
@@ -196,8 +196,8 @@ exports.matchVolunteerToEvent = async (req, res) =&gt; {
     try {
         const { volunteerId, eventId } = req.body;
         
-        <span class="missing-if-branch" title="if path not taken" >I</span>if (!volunteerId || !eventId) {
-<span class="cstat-no" title="statement not covered" >            return res.status(400).json({ message: 'Volunteer ID and Event ID are required' });</span>
+        if (!volunteerId || !eventId) {
+            return res.status(400).json({ message: 'Volunteer ID and Event ID are required' });
         }
         
         const historyService = require('../services/historyService');
@@ -209,10 +209,10 @@ exports.matchVolunteerToEvent = async (req, res) =&gt; {
             'Matched - Pending Attendance'
         );
         
-<span class="cstat-no" title="statement not covered" >        res.status(200).json(result);</span>
+        res.status(200).json(result);
     } catch (error) {
         console.error('Error matching volunteer to event:', error);
-        res.status(error.status || 500).json({ 
+        res.status(error.status || <span class="branch-1 cbranch-no" title="branch not covered" >500)</span>.json({ 
             message: error.message || <span class="branch-1 cbranch-no" title="branch not covered" >'Error matching volunteer to event' </span>
         });
     }
@@ -223,7 +223,7 @@ exports.matchVolunteerToEvent = async (req, res) =&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2024-10-23T23:17:37.177Z
+                at 2024-10-25T00:33:51.156Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
