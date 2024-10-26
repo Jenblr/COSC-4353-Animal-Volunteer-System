@@ -1,39 +1,26 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import '../../styles/Taskbar.css';
 import logo from '../../images/AnimalShelterLogo.png'; 
 
-const Taskbar = ({ isAdmin, isLoggedIn, setIsLoggedIn, setIsAdmin }) => {
+const Taskbar = () => {
     const navigate = useNavigate();
+    const { isLoggedIn, isAdmin, logout } = useAuth();
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        const role = localStorage.getItem('role');
-        if (token) {
-            setIsLoggedIn(true);
-            setIsAdmin(role === 'admin');
-        } else {
-            setIsLoggedIn(false);
-            setIsAdmin(false);
-        }
-    }, [setIsLoggedIn, setIsAdmin]);
-
-    {/* For user specific links, non-logged in users cannot access unless logged in first */}
+    // For user specific links, non-logged in users cannot access unless logged in first
     const handleAuthenticatedLink = (event, path) => {
         if (!isLoggedIn) {
             event.preventDefault();
             navigate('/login');
         }
-    }
+    };
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        setIsLoggedIn(false);
-        setIsAdmin(false);
+        logout();
         navigate('/login');
-    }
-
+    };
+    
     return (
         <nav className="navbar">
             <div className="logo-container">

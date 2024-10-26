@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import Select from 'react-select';
 import DatePicker from 'react-datepicker';
@@ -21,254 +22,330 @@ const Dashboard = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [formOptions, setFormOptions] = useState({
+    states: [],
+    skills: []
+  });
   const navigate = useNavigate();
+  const { logout, isAdmin } = useAuth();
 
-  const states = [
-    { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' },
-    { value: 'AR', label: 'Arkansas' }, { value: 'CA', label: 'California' }, { value: 'CO', label: 'Colorado' },
-    { value: 'CT', label: 'Connecticut' }, { value: 'DE', label: 'Delaware' }, { value: 'FL', label: 'Florida' },
-    { value: 'GA', label: 'Georgia' }, { value: 'HI', label: 'Hawaii' }, { value: 'ID', label: 'Idaho' },
-    { value: 'IL', label: 'Illinois' }, { value: 'IN', label: 'Indiana' }, { value: 'IA', label: 'Iowa' },
-    { value: 'KS', label: 'Kansas' }, { value: 'KY', label: 'Kentucky' }, { value: 'LA', label: 'Louisiana' },
-    { value: 'ME', label: 'Maine' }, { value: 'MD', label: 'Maryland' }, { value: 'MA', label: 'Massachusetts' },
-    { value: 'MI', label: 'Michigan' }, { value: 'MN', label: 'Minnesota' }, { value: 'MS', label: 'Mississippi' },
-    { value: 'MO', label: 'Missouri' }, { value: 'MT', label: 'Montana' }, { value: 'NE', label: 'Nebraska' },
-    { value: 'NV', label: 'Nevada' }, { value: 'NH', label: 'New Hampshire' }, { value: 'NJ', label: 'New Jersey' },
-    { value: 'NM', label: 'New Mexico' }, { value: 'NY', label: 'New York' }, { value: 'NC', label: 'North Carolina' },
-    { value: 'ND', label: 'North Dakota' }, { value: 'OH', label: 'Ohio' }, { value: 'OK', label: 'Oklahoma' },
-    { value: 'OR', label: 'Oregon' }, { value: 'PA', label: 'Pennsylvania' }, { value: 'RI', label: 'Rhode Island' },
-    { value: 'SC', label: 'South Carolina' }, { value: 'SD', label: 'South Dakota' }, { value: 'TN', label: 'Tennessee' },
-    { value: 'TX', label: 'Texas' }, { value: 'UT', label: 'Utah' }, { value: 'VT', label: 'Vermont' },
-    { value: 'VA', label: 'Virginia' }, { value: 'WA', label: 'Washington' }, { value: 'WV', label: 'West Virginia' },
-    { value: 'WI', label: 'Wisconsin' }, { value: 'WY', label: 'Wyoming' }
-  ];
+  useEffect(() => {
+    console.log('Current isEditing state:', isEditing);
+  }, [isEditing]); 
 
-  const skillOptions = [
-    { value: 'Animal Care', label: 'Animal Care' },
-    { value: 'Feeding', label: 'Feeding' },
-    { value: 'Exercise', label: 'Exercise' },
-    { value: 'Medication Administration', label: 'Medication Administration' },
-    { value: 'Grooming', label: 'Grooming' },
-    { value: 'Potty and Leash Training', label: 'Potty and Leash Training' },
-    { value: 'Event Coordination', label: 'Event Coordination' },
-    { value: 'Temporary Foster Care', label: 'Temporary Foster Care' }
-  ];
+  // Fetch form options = states and skills
+  useEffect(() => {
+    const fetchFormOptions = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/profile/form-options');
+        setFormOptions(response.data);
+      } catch (error) {
+        console.error('Error fetching form options:', error);
+        setError('Failed to load form options');
+      }
+    };
 
+    fetchFormOptions();
+  }, []);
+
+  // Fetch user profile data
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        setIsLoading(true);
         const token = localStorage.getItem('token');
         if (!token) {
           navigate('/login');
           return;
         }
 
+        // Use the same endpoint for both admin and regular users
         const response = await axios.get('http://localhost:5000/api/profile', {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { 
+            Authorization: `Bearer ${token}`
+          }
         });
 
-        setUserData({
-          ...response.data,
-          availability: response.data.availability.map(date => new Date(date))
-        });
-        setIsLoading(false);
+        if (response.data) {
+          const profile = response.data;
+          // Only convert availability dates for regular users since admins don't have them
+          if (!isAdmin && profile.availability) {
+            profile.availability = profile.availability.map(date => new Date(date));
+          }
+          
+          setUserData(profile);
+        }
+        setLoading(false);
       } catch (error) {
-        console.error('Error fetching user data:', error);
-        setError('Failed to load user data. Please try again later.');
-        setIsLoading(false);
+        console.error('Error fetching user data:', error.response || error);
+        setError(
+          error.response?.data?.message || 
+          'Failed to load user data. Please try again later.'
+        );
+        setLoading(false);
       }
     };
 
     fetchUserData();
-  }, [navigate]);
+  }, [navigate, isAdmin]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setUserData({ ...userData, [name]: value });
+    setUserData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSkillChange = (selectedOptions) => {
-    const selectedSkills = selectedOptions.map(option => option.value);
-    setUserData({ ...userData, skills: selectedSkills });
+    setUserData(prev => ({
+      ...prev,
+      skills: selectedOptions.map(option => option.value)
+    }));
   };
 
   const handleDateChange = (date) => {
-    setUserData({ 
-      ...userData, 
-      availability: [...userData.availability, date]
+    if (!userData.availability.some(d => d.getTime() === date.getTime())) {
+      setUserData(prev => ({
+        ...prev,
+        availability: [...prev.availability, date]
+      }));
+    }
+  };
+
+  const handleRemoveDate = (dateToRemove) => {
+    setUserData(prev => ({
+      ...prev,
+      availability: prev.availability.filter(date => 
+        date.getTime() !== dateToRemove.getTime()
+      )
+    }));
+  };
+
+  const handleEditClick = (e) => {
+    e.preventDefault(); 
+    console.log('Edit button clicked, current isEditing state:', isEditing);
+    setIsEditing(prevState => {
+      console.log('Setting isEditing from', prevState, 'to true');
+      return true;
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Form submitted, current editing state:', isEditing);
+    setLoading(true);
+    setError(null);
+
     try {
       const token = localStorage.getItem('token');
-      await axios.put('http://localhost:5000/api/profile', {
-        ...userData,
+      
+      const updatedData = {
+        skills: userData.skills,
+        preferences: userData.preferences,
         availability: userData.availability.map(date => date.toISOString())
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      };
+      
+      console.log('Sending update data:', updatedData);
+
+      await axios.put(
+        'http://localhost:5000/api/profile',
+        updatedData,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
       setIsEditing(false);
-      // Optionally, show a success message to the user
     } catch (error) {
       console.error('Error updating profile:', error);
       setError('Failed to update profile. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
-  };
-
-  if (isLoading) return <div>Loading...</div>;
+  if (loading) return <div>Loading...</div>;
   if (error) return <div className="error-message">{error}</div>;
 
   return (
     <div className="dashboard-container">
-      <h2>User Dashboard</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Full Name:</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="fullName"
-              value={userData.fullName}
-              onChange={handleInputChange}
-            />
-          ) : (
+      <h2>Profile Dashboard</h2>
+      {isAdmin ? (
+        // Admin View - Now using database values
+        <div className="admin-profile">
+          <div className="form-group">
+            <label>Full Name:</label>
+            <span>{userData.fullName || 'Not set'}</span>
+          </div>
+  
+          <div className="form-group">
+            <label>Email:</label>
+            <span>{userData.email}</span>
+          </div>
+  
+          <div className="form-group">
+            <label>Role:</label>
+            <span className="admin-badge">Administrator</span>
+          </div>
+  
+          <div className="admin-note">
+            <p>Administrator Account</p>
+          </div>
+  
+          <button onClick={logout} className="logout-button">
+            Logout
+          </button>
+        </div>
+      ) : (
+        // Regular User View remains the same
+        <form onSubmit={handleSubmit}>
+          {/* Read-only fields */}
+          <div className="form-group">
+            <label>Full Name:</label>
             <span>{userData.fullName}</span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label>Email:</label>
-          <span>{userData.email}</span>
-        </div>
-
-        <div className="form-group">
-          <label>Address 1:</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="address1"
-              value={userData.address1}
-              onChange={handleInputChange}
-            />
-          ) : (
+          </div>
+  
+          <div className="form-group">
+            <label>Email:</label>
+            <span>{userData.email}</span>
+          </div>
+  
+          <div className="form-group">
+            <label>Address:</label>
             <span>{userData.address1}</span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label>Address 2:</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="address2"
-              value={userData.address2}
-              onChange={handleInputChange}
-            />
-          ) : (
+          </div>
+  
+          <div className="form-group">
+            <label>Address 2:</label>
             <span>{userData.address2}</span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label>City:</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="city"
-              value={userData.city}
-              onChange={handleInputChange}
-            />
-          ) : (
+          </div>
+  
+          <div className="form-group">
+            <label>City:</label>
             <span>{userData.city}</span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label>State:</label>
-          {isEditing ? (
-            <Select
-              options={states}
-              value={states.find(state => state.value === userData.state)}
-              onChange={(selectedOption) => setUserData({ ...userData, state: selectedOption.value })}
-            />
-          ) : (
+          </div>
+  
+          <div className="form-group">
+            <label>State:</label>
             <span>{userData.state}</span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label>Zip Code:</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="zipCode"
-              value={userData.zipCode}
-              onChange={handleInputChange}
-            />
-          ) : (
+          </div>
+  
+          <div className="form-group">
+            <label>ZIP Code:</label>
             <span>{userData.zipCode}</span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label>Skills:</label>
-          {isEditing ? (
-            <Select
-              isMulti
-              options={skillOptions}
-              value={skillOptions.filter(option => userData.skills.includes(option.value))}
-              onChange={handleSkillChange}
-            />
-          ) : (
-            <span>{userData.skills.join(', ')}</span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label>Preferences:</label>
-          {isEditing ? (
-            <textarea
-              name="preferences"
-              value={userData.preferences}
-              onChange={handleInputChange}
-            />
-          ) : (
-            <span>{userData.preferences}</span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label>Availability:</label>
-          {isEditing ? (
-            <DatePicker
-              selected={null}
-              onChange={handleDateChange}
-              minDate={new Date()}
-              inline
-            />
-          ) : (
-            <span>{userData.availability.map(date => date.toDateString()).join(', ')}</span>
-          )}
-        </div>
-
-        {isEditing ? (
-          <button type="submit">Save Changes</button>
-        ) : (
-          <button type="button" onClick={() => setIsEditing(true)}>Edit Profile</button>
-        )}
-      </form>
-      <button onClick={handleLogout}>Logout</button>
+          </div>
+  
+          {/* Editable fields */}
+          <div className="form-group">
+            <label>Skills:</label>
+            {isEditing ? (
+              <div className="skills-section">
+                <Select
+                  isMulti
+                  options={formOptions.skills}
+                  value={formOptions.skills.filter(skill => 
+                    userData.skills.includes(skill.value)
+                  )}
+                  onChange={handleSkillChange}
+                  className="skills-select"
+                  placeholder="Select or add more skills..."
+                />
+                <small className="help-text">You can select multiple skills</small>
+              </div>
+            ) : (
+              <div className="skills-display">
+                {userData.skills.map((skill, index) => (
+                  <span key={index} className="skill-tag">{skill}</span>
+                ))}
+              </div>
+            )}
+          </div>
+  
+          {/* Update the Preferences section */}
+          <div className="form-group">
+            <label>Preferences:</label>
+            {isEditing ? (
+              <div className="preferences-section">
+                <textarea
+                  name="preferences"
+                  value={userData.preferences || ''}
+                  onChange={handleInputChange}
+                  className="preferences-textarea"
+                  placeholder="Enter your preferences..."
+                  rows="4"
+                />
+              </div>
+            ) : (
+              <span>{userData.preferences || 'No preferences specified'}</span>
+            )}
+          </div>
+  
+          {/* Update the Availability section */}
+          <div className="form-group">
+            <label>Availability:</label>
+            {isEditing ? (
+              <div className="availability-section">
+                <DatePicker
+                  selected={null}
+                  onChange={handleDateChange}
+                  minDate={new Date()}
+                  inline
+                />
+                <div className="selected-dates">
+                  {userData.availability.map((date, index) => (
+                    <div key={index} className="date-tag">
+                      <span>{new Date(date).toLocaleDateString()}</span>
+                      <button 
+                        type="button" 
+                        onClick={() => handleRemoveDate(date)}
+                        className="remove-date"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="dates-display">
+                {userData.availability.map((date, index) => (
+                  <span key={index} className="date-tag">
+                    {new Date(date).toLocaleDateString()}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+  
+          {/* Update the action buttons */}
+          <div className="dashboard-actions">
+            {isEditing ? (
+              <>
+                <button type="submit" className="save-button" disabled={loading}>
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setIsEditing(false)} 
+                  className="cancel-button"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button 
+                type="button" 
+                onClick={handleEditClick}
+                className="edit-button"
+              >
+                Edit Profile
+              </button>
+            )}
+          </div>
+        </form>
+      )}
     </div>
-  );
-};
-
+  )};
+  
 export default Dashboard;

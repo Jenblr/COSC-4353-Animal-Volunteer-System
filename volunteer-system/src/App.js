@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/Routes/ProtectedRoute';
+import AdminRoute from './components/Routes/AdminRoute';
 import Home from './components/Main/Home';
 import Taskbar from './components/Main/Taskbar';
 import Calendar from './components/Events/Calendar';
@@ -15,49 +18,42 @@ import NotificationDisplay from './components/Notifications/NotificationDisplay'
 import './App.css'
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+	return (
+		<AuthProvider>
+			<Router>
+				<div>
+					<Taskbar />
+					<Routes>
+						<Route path="/" element={<Navigate to="/home" />} />
+						<Route path="/home" element={<Home />} />
+						<Route path="/calendar" element={<Calendar />} />
 
-  useEffect(() => {
-    const token = localStorage.getItem('token'); 
-    const userRole = localStorage.getItem('role'); 
+						{/* Auth Routes */}
+						<Route path="/register" element={<Registration />} />
+						<Route path="/login" element={<LoginPage />} />
+						<Route path="/admin-login" element={<AdminLoginPage />} />
 
-    if (token) {
-      setIsLoggedIn(true);
-      if (userRole === 'admin') {
-        setIsAdmin(true);  
-      }
-    }
-    
-  }, []); 
+						{/* Protected Routes - Require Authentication */}
+						<Route element={<ProtectedRoute />}>
+							<Route path="/profile" element={<Navigate to="/manage-profile" />} />
+							<Route path="/manage-profile" element={<Profile />} />
+							<Route path="/volunteer-history" element={<VolunteerHistory />} />
+							<Route path="/notifications" element={<NotificationDisplay />} />
+						</Route>
 
-  return (
-    <Router>
-      <div>
-        <Taskbar isAdmin={isAdmin} isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} setIsAdmin={setIsAdmin} />
-        <Routes>
-          <Route path="/" element={<Navigate to="/home" />} />
-          <Route path="/home" element={<Home />} />
+						{/* Admin Routes */}
+						<Route element={<AdminRoute />}>
+							<Route path="/event-management" element={<EventManagementForm />} />
+							<Route path="/volunteer-event-match" element={<VolunteerMatchForm />} />
+						</Route>
 
-          <Route path="/calendar" element={<Calendar isAdmin={isAdmin} />} />
-          <Route path="/events" element={<Navigate to="/event-management" />} />
-          <Route path="/event-management" element={<EventManagementForm />} />
-          <Route path="/volunteer-event-match" element={<VolunteerMatchForm />} />
-
-          <Route path="/profile" element={<Navigate to="/manage-profile" />} />
-          <Route path="/manage-profile" element={<Profile />} />
-          <Route path="/profile-form" element={<ProfileForm />} />
-          <Route path="/volunteer-history" element={<VolunteerHistory />} />
-
-          <Route path="/register" element={<Registration />} />
-          <Route path="/login" element={<LoginPage setIsLoggedIn={setIsLoggedIn} setIsAdmin={setIsAdmin} />} />
-          <Route path="/admin-login" element={<AdminLoginPage setIsLoggedIn={setIsLoggedIn} setIsAdmin={setIsAdmin} />} />
-
-          <Route path="/notifications" element={<NotificationDisplay isAdmin={isAdmin} />} />
-        </Routes>
-      </div>
-    </Router>
-  );
+						{/* Profile Completion Route */}
+						<Route path="/profile-form" element={<ProfileForm />} />
+					</Routes>
+				</div>
+			</Router>
+		</AuthProvider>
+	);
 }
 
 export default App;

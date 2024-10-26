@@ -30,6 +30,10 @@
 **Unit Testing**
 - npm install --save-dev jest supertest
 
+**Database**
+- npm install sequelize pg pg-hstore bcryptjs
+- npm install --save-dev sequelize-cli
+- npx sequelize-cli init // To create our basic db folders
 ---
 # Installation
 - **Requirements:**

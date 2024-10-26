@@ -1,6 +1,6 @@
-import React, { useState  } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
 import '../../styles/RegistrationPage.css';
 
 const RegistrationPage = () => {
@@ -9,91 +9,160 @@ const RegistrationPage = () => {
 	const [confirmPassword, setConfirmPassword] = useState('');
 	const [emailError, setEmailError] = useState('');
 	const [passwordError, setPasswordError] = useState('');
-	const [error, setError] = useState('');
+	const [confirmPasswordError, setConfirmPasswordError] = useState('');
 	const [loading, setLoading] = useState(false);
 	const navigate = useNavigate();
+	const { register } = useAuth();
 
 	const validateEmail = (email) => {
-		const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+		const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 		return re.test(String(email).toLowerCase());
 	};
 
 	const handleEmailChange = (e) => {
-		setEmail(e.target.value);
-		if (!validateEmail(e.target.value)) {
-		setEmailError('Please enter a valid email address');
+		const newEmail = e.target.value;
+		setEmail(newEmail);
+		if (!validateEmail(newEmail)) {
+			setEmailError('Please enter a valid email address');
 		} else {
-		setEmailError('');
+			setEmailError('');
 		}
 	};
 
+	const validatePassword = (password) => {
+		const errors = [];
+		if (password.length < 8) {
+			errors.push('Password must be at least 8 characters long');
+		}
+		if (!/[A-Z]/.test(password)) {
+			errors.push('Password must contain at least one uppercase letter');
+		}
+		if (!/[a-z]/.test(password)) {
+			errors.push('Password must contain at least one lowercase letter');
+		}
+		if (!/[0-9]/.test(password)) {
+			errors.push('Password must contain at least one number');
+		}
+		return errors;
+	};
+
 	const handlePasswordChange = (e) => {
-		setPassword(e.target.value);
-		if (e.target.value.length < 8) {
-		setPasswordError('Password must be at least 8 characters long');
+		const newPassword = e.target.value;
+		setPassword(newPassword);
+		const errors = validatePassword(newPassword);
+		setPasswordError(errors.length > 0 ? errors : '');
+
+		if (confirmPassword && newPassword !== confirmPassword) {
+			setConfirmPasswordError('Passwords do not match');
 		} else {
-		setPasswordError('');
+			setConfirmPasswordError('');
+		}
+	};
+
+	const handleConfirmPasswordChange = (e) => {
+		const newConfirmPassword = e.target.value;
+		setConfirmPassword(newConfirmPassword);
+		if (newConfirmPassword !== password) {
+			setConfirmPasswordError('Passwords do not match');
+		} else {
+			setConfirmPasswordError('');
 		}
 	};
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setLoading(true);
-		setError('');
-	  
-		if (validateEmail(email) && password.length >= 8 && password === confirmPassword) {
-			try {
-				const response = await axios.post('http://localhost:5000/api/auth/register', {
-				email: email, 
-				password,
-				});
-		
-				if (response.status === 201) {
-				localStorage.setItem('registrationToken', response.data.token);
-				navigate('/profile-form');
+
+		const passwordErrors = validatePassword(password);
+		if (!validateEmail(email)) {
+			setEmailError('Please enter a valid email address');
+			setLoading(false);
+			return;
+		}
+
+		if (passwordErrors.length > 0) {
+			setPasswordError(passwordErrors);
+			setLoading(false);
+			return;
+		}
+
+		if (password !== confirmPassword) {
+			setConfirmPasswordError('Passwords do not match');
+			setLoading(false);
+			return;
+		}
+
+		try {
+			const result = await register(email, password);
+
+			if (result.success) {
+				if (result.needsProfile) {
+					navigate('/profile-form');
+				} else {
+					navigate('/login');
 				}
-			} catch (error) {
-				setError(error.response?.data?.message || 'Registration failed');
-			} finally {
-				setLoading(false);
-			}
 			} else {
-			if (!validateEmail(email)) {
-				setEmailError('Please enter a valid email address');
+				setPasswordError([result.message || 'Registration failed']);
 			}
-			if (password.length < 8) {
-				setPasswordError('Password must be at least 8 characters long');
-			}
-			if (password !== confirmPassword) {
-				setPasswordError('Passwords do not match');
-			}
+		} catch (error) {
+			console.error('Registration error:', error);
+			setPasswordError([error.response?.data?.message || 'Registration failed']);
+		} finally {
 			setLoading(false);
 		}
 	};
 
 	return (
 		<div className="registration-container">
-		<form className="registration-form" onSubmit={handleSubmit}>
-			<h2>Volunteer Registration</h2>
-			<div className="form-group">
-			<label htmlFor="email">Email:</label>
-			<input type="email" id="email" value={email} onChange={handleEmailChange} required />
-			{emailError && <span className="error-message">{emailError}</span>}
-			</div>
-			<div className="form-group">
-			<label htmlFor="password">Password:</label>
-			<input type="password" id="password" value={password} onChange={handlePasswordChange} required />
-			</div>
-			<div className="form-group">
-			<label htmlFor="confirm-password">Confirm Password:</label>
-			<input type="password" id="confirm-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-			{passwordError && <span className="error-message">{passwordError}</span>}
-			</div>
-			{error && <div className="error-message">{error}</div>}
-			<button type="submit" className="register-button" disabled={loading}>
-			{loading ? 'Registering...' : 'Register'}
-			</button>
-		</form>
+			<form className="registration-form" onSubmit={handleSubmit}>
+				<h2>Volunteer Registration</h2>
+
+				<div className="form-group">
+					<label htmlFor="email">Email:</label>
+					<input
+						type="email"
+						id="email"
+						value={email}
+						onChange={handleEmailChange}
+						required
+					/>
+					{emailError && <div className="error-message">{emailError}</div>}
+				</div>
+
+				<div className="form-group">
+					<label htmlFor="password">Password:</label>
+					<input
+						type="password"
+						id="password"
+						value={password}
+						onChange={handlePasswordChange}
+						required
+					/>
+					{passwordError && Array.isArray(passwordError) && passwordError.map((error, index) => (
+						<div key={index} className="error-message">{error}</div>
+					))}
+				</div>
+
+				<div className="form-group">
+					<label htmlFor="confirm-password">Confirm Password:</label>
+					<input
+						type="password"
+						id="confirm-password"
+						value={confirmPassword}
+						onChange={handleConfirmPasswordChange}
+						required
+					/>
+					{confirmPasswordError && <div className="error-message">{confirmPasswordError}</div>}
+				</div>
+
+				<button
+					type="submit"
+					className="register-button"
+					disabled={loading || !!emailError || !!passwordError || !!confirmPasswordError}
+				>
+					{loading ? 'Registering...' : 'Register'}
+				</button>
+			</form>
 		</div>
 	);
 };

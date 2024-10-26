@@ -1,126 +1,179 @@
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { User } = require('../../models');
+const { Op } = require('sequelize');
 
-const adminUsers = [
-	{
-		id: 1,
-		email: 'admin@example.com',
-		password: bcrypt.hashSync('adminpassword', 8),
-		role: 'admin'
-	}
-];
+const authService = {
+	registerUser: async (email, password, role) => {
+		try {
+			const userExists = await User.findOne({ where: { email } });
+			if (userExists) {
+				return { status: 400, message: 'User already exists' };
+			}
 
-const volunteerUsers = [];
-const temporaryUsers = [];
-let lastUserId = 1;
+			const token = crypto.randomBytes(20).toString('hex');
+			const tokenExpiresAt = new Date();
+			tokenExpiresAt.setMinutes(tokenExpiresAt.getMinutes() + 10); 
 
-exports.registerUser = (email, password, role) => {
-	const userExists = [...adminUsers, ...volunteerUsers, ...temporaryUsers].find(user => user.email === email);
-	if (userExists) {
-		return { status: 400, message: 'User already exists' };
-	}
+			const newUser = await User.create({
+				email,
+				password, // Password = hashed by model hooks
+				role: role || 'volunteer',
+				registrationToken: token,
+				tokenExpiresAt,
+				isRegistered: false
+			});
 
-	lastUserId++;
-	const hashedPassword = bcrypt.hashSync(password, 8);
+			if (!newUser) {
+				return { status: 500, message: 'Error creating temporary user' };
+			}
 
-	const token = crypto.randomBytes(20).toString('hex');
-	const newUser = { 
-		id: lastUserId, 
-		email, 
-		password: hashedPassword, 
-		role: role || 'volunteer',
-		token: token,
-		createdAt: new Date()
-	};
-	temporaryUsers.push(newUser);
+			return {
+				status: 201,
+				message: 'Temporary user created. Please complete your profile.',
+				token: token, 
+				needsProfile: true
+			};
+		} catch (error) {
+			console.error('Error in registerUser:', error);
+			return { status: 500, message: 'Error creating user' };
+		}
+	},
 
-	return { 
-		status: 201, 
-		message: 'Temporary user created. Please complete your profile.',
-		token: token,
-		needsProfile: true 
-	};
-};
+	verifyTemporaryUserByToken: async (token) => {
+		try {
+			const tempUser = await User.findOne({
+				where: {
+					registrationToken: token,
+					tokenExpiresAt: { [Op.gt]: new Date() }, 
+					isRegistered: false
+				}
+			});
 
-exports.verifyTemporaryUserByToken = (token) => {
-	return temporaryUsers.find(user => user.token === token);
-};
+			if (!tempUser) {
+				console.log('No temporary user found for token or token expired');
+				return null;
+			}
 
-exports.finalizeRegistration = (userId, profileData) => {
-	const tempUserIndex = temporaryUsers.findIndex(user => user.id === userId);
-	if (tempUserIndex === -1) {
-		return { status: 404, message: 'Temporary user not found' };
-	}
+			return tempUser;
+		} catch (error) {
+			console.error('Error verifying temporary user:', error);
+			return null;
+		}
+	},
 
-	const user = {
-		...temporaryUsers[tempUserIndex],
-		...profileData,
-		isRegistered: true
-	};
-	volunteerUsers.push(user);
-	temporaryUsers.splice(tempUserIndex, 1);
+	finalizeRegistration: async (userId, profileData) => {
+		try {
+			const user = await User.findOne({
+				where: {
+					id: userId,
+					isRegistered: false 
+				}
+			});
 
-	return { status: 200, message: 'Registration finalized successfully' };
-};
+			if (!user) {
+				return { status: 404, message: 'Temporary user not found' };
+			}
 
-exports.loginUser = (email, password) => {
-	console.log('Attempting login for email:', email);
+			if (user.tokenExpiresAt < new Date()) {
+				return { status: 400, message: 'Registration token has expired' };
+			}
 
-	const user = [...adminUsers, ...volunteerUsers].find(user => user.email === email);
-	if (!user) {
-		console.log('User not found for email:', email);
-		return { status: 404, message: 'User not found' };
-	}
+			await user.update({
+				isRegistered: true,
+				registrationToken: null,
+				tokenExpiresAt: null
+			});
 
-	const validPassword = bcrypt.compareSync(password, user.password);
-	if (!validPassword) {
-		console.log('Invalid password for email:', email);
-		return { status: 401, message: 'Invalid credentials' };
-	}
+			return {
+				status: 200,
+				message: 'Registration finalized successfully',
+				userId: user.id
+			};
+		} catch (error) {
+			console.error('Error finalizing registration:', error);
+			return { status: 500, message: 'Error finalizing registration' };
+		}
+	},
 
-	const token = jwt.sign(
-		{ id: user.id, email: user.email, role: user.role },
-		process.env.JWT_SECRET,
-		{ expiresIn: '1h' }
-    );
+	loginUser: async (email, password) => {
+		try {
+			console.log('Attempting login for email:', email);
 
-	console.log('Login successful for email:', email);
-	return { status: 200, token, role: user.role }; 
-};
+			const user = await User.findOne({ where: { email } });
+			if (!user) {
+				console.log('User not found for email:', email);
+				return { status: 404, message: 'User not found' };
+			}
 
-exports.getAllVolunteers = () => {
-	return volunteerUsers;
-};
+			if (!user.isRegistered) {
+				console.log('User has not completed registration:', email);
+				return { status: 401, message: 'Please complete your registration first' };
+			}
 
-exports.getRegisteredVolunteers = () => {
-	return volunteerUsers.filter(user => user.isRegistered);
-};
+			const validPassword = await user.validatePassword(password);
+			if (!validPassword) {
+				console.log('Invalid password for email:', email);
+				return { status: 401, message: 'Invalid credentials' };
+			}
 
-exports.clearUsers = () => {
-	volunteerUsers.length = 0;
-	temporaryUsers.length = 0;
-	lastUserId = adminUsers.length;
-};
+			const token = jwt.sign(
+				{ id: user.id, email: user.email, role: user.role },
+				process.env.JWT_SECRET,
+				{ expiresIn: '1h' }
+			);
 
-exports.getTemporaryUsers = () => {
-	return temporaryUsers;
-};
+			console.log('Login successful for email:', email);
+			return { status: 200, token, role: user.role };
+		} catch (error) {
+			console.error('Error in loginUser:', error);
+			return { status: 500, message: 'Error during login' };
+		}
+	},
 
-exports.setTemporaryUserCreatedAt = (token, date) => {
-	const user = temporaryUsers.find(u => u.token === token);
-	if (user) {
-		user.createdAt = date;
-	}
-};
+	getAllVolunteers: async () => {
+		try {
+			return await User.findAll({
+				where: {
+					role: 'volunteer',
+					isRegistered: true
+				},
+				attributes: ['id', 'email']
+			});
+		} catch (error) {
+			console.error('Error getting all volunteers:', error);
+			return [];
+		}
+	},
 
-exports.removeExpiredTemporaryUsers = () => {
-	const expirationTime = 10 * 60 * 1000; // If user doesn't complete profile form = remove their creds after 10 min
-	const now = new Date();
+	getRegisteredVolunteers: async () => {
+		try {
+			return await User.findAll({
+				where: {
+					role: 'volunteer',
+					isRegistered: true
+				},
+				attributes: ['id', 'email']
+			});
+		} catch (error) {
+			console.error('Error getting registered volunteers:', error);
+			return [];
+		}
+	},
 
-	for (let i = temporaryUsers.length - 1; i >= 0; i--) {
-		if (now - temporaryUsers[i].createdAt >= expirationTime) {
-			temporaryUsers.splice(i, 1);
+	removeExpiredTemporaryUsers: async () => {
+		try {
+			const deletedCount = await User.destroy({
+				where: {
+					isRegistered: false,
+					tokenExpiresAt: { [Op.lt]: new Date() }
+				}
+			});
+			console.log(`Removed ${deletedCount} expired temporary users`);
+		} catch (error) {
+			console.error('Error removing expired temporary users:', error);
 		}
 	}
 };
+
+module.exports = authService;
