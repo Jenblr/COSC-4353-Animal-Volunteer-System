@@ -1,310 +1,235 @@
-// import React from 'react'
-
-// const VolunteerMatchingForm = () => {
-//   return (
-//     <div>VolunteerMatchingForm</div>
-//   )
-// }
 import React, { useState, useEffect } from 'react';
-import api from '../../utils/api';
+import axios from 'axios';
 import '../../styles/MatchingForm.css';
 
-const VolunteerMatching = () => {
-  const [events, setEvents] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState('');
-  const [matchingVolunteers, setMatchingVolunteers] = useState([]);
-  const [selectedVolunteers, setSelectedVolunteers] = useState([]);
-  const [message, setMessage] = useState('');
+const VolunteerMatchingForm = () => {
+	const [events, setEvents] = useState([]);
+	const [selectedEvent, setSelectedEvent] = useState(null);
+	const [matchedVolunteers, setMatchedVolunteers] = useState([]);
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState(null);
+	const [selectedVolunteer, setSelectedVolunteer] = useState(null);
 
-  //fetch all events on component mount
-  useEffect(() => {
-    async function fetchEvents() {
-      try {
-        console.log('Fetching events...'); 
-        const response = await api.get('/events');
-        setEvents(response.data); 
-      } catch (error) {
-        console.error('Error fetching events:', error.response ? error.response.data : error); 
-        setMessage('Error fetching events');
-      }
-    }
-    fetchEvents();
-  }, []);
+	useEffect(() => {
+		const fetchEvents = async () => {
+		try {
+			setLoading(true);
+			const token = localStorage.getItem('token');
+			const response = await axios.get('http://localhost:5000/api/auth/volunteer-matching/future-events', {
+			headers: { Authorization: `Bearer ${token}` }
+			});
+			console.log('Fetched events:', response.data);
+			setEvents(response.data);
+			setError(null);
+		} catch (error) {
+			console.error('Error fetching events:', error);
+			setError(error.response?.data?.message || 'Failed to load events');
+		} finally {
+			setLoading(false);
+		}
+		};
 
-  //fetch matching volunteers when 'Search Volunteers' button is clicked
-  const searchVolunteers = async () => {
-    if (!selectedEvent) {
-      setMessage('Please select an event');
-      return;
-    }
-    
-    try {
-      const response = await api.get(`/volunteer-matching/${selectedEvent}`);
-      if (response.data.message) {
-        setMessage(response.data.message);
-        setMatchingVolunteers([]); 
-      } else {
-        setMatchingVolunteers(response.data); 
-        setMessage('');
-      }
-    } catch (error) {
-      console.error('Error fetching matching volunteers:', error); 
-      setMessage('Error fetching matching volunteers');
-    }
-  };
+		fetchEvents();
+	}, []);
 
-  //handle the selection of volunteers
-  const handleVolunteerSelection = (volunteerId) => {
-    setSelectedVolunteers((prev) => {
-      if (prev.includes(volunteerId)) {
-        return prev.filter(id => id !== volunteerId); 
-      } else {
-        return [...prev, volunteerId]; 
-      }
-    });
-  };
+	useEffect(() => {
+		const fetchMatchingVolunteers = async () => {
+		if (!selectedEvent) return;
+		
+		setLoading(true);
+		setError(null);
+		
+		try {
+			console.log('Fetching volunteers for event:', selectedEvent);
+			const token = localStorage.getItem('token');
+			const response = await axios.get(
+			`http://localhost:5000/api/auth/volunteer-matching/${selectedEvent.id}`,
+			{
+				headers: { Authorization: `Bearer ${token}` }
+			}
+			);
+			console.log('Matching volunteers response:', response.data);
+			setMatchedVolunteers(response.data);
+		} catch (error) {
+			console.error('Error fetching matching volunteers:', error);
+			setError(
+			error.response?.data?.message || 
+			'Failed to load matching volunteers. Please try again.'
+			);
+			setMatchedVolunteers([]);
+		} finally {
+			setLoading(false);
+		}
+		};
 
-  //match selected volunteers to the event
-  const matchVolunteers = async () => {
-    if (selectedVolunteers.length === 0) {
-      setMessage('No volunteers selected for matching');
-      return;
-    }
-  
-    try {
-      const response = await api.post('/volunteer-matching', {
-        eventId: selectedEvent,
-        volunteerIds: selectedVolunteers,
-      });
-      setMessage(response.data.map(r => `${r.message}`).join(', '));
-    } catch (error) {
-      console.error('Error matching volunteers to the event:', error);
-      setMessage('Error matching volunteers to the event');
-    }
-  };
+		fetchMatchingVolunteers();
+	}, [selectedEvent]);
 
-  return (
-    <div className="volunteer-matching-form">
-      <div className="form-header">
-        <h2>Volunteer Matching</h2>
-      </div>
-      <div className="form-content">
-        {message && <p className="message">{message}</p>} 
+	const formatDate = (dateString) => {
+		const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+		return new Date(dateString).toLocaleDateString(undefined, options);
+	  };
 
-        <div className="form-group">
-          <label htmlFor="event">Select Event:</label>
-          <select
-            id="event"
-            value={selectedEvent}
-            onChange={(e) => setSelectedEvent(e.target.value)} 
-          >
-            <option value="">--Select Event--</option>
-            {events.map(event => (
-              <option key={event.id} value={event.id}>
-                {event.eventName} - {event.eventDate}
-              </option>
-            ))}
-          </select>
-          <button className="search-volunteers-btn" onClick={searchVolunteers}>
-            Search Volunteers
-          </button>
-        </div>
+	const handleEventSelect = (event) => {
+		console.log('Selected event:', event);
+		setSelectedEvent(event);
+		setSelectedVolunteer(null);
+		setError(null);
+	};
 
-        {matchingVolunteers.length > 0 && (
-          <div className="volunteer-list">
-            <h3>Matching Volunteers:</h3>
-            <ul>
-              {matchingVolunteers.map(volunteer => (
-                <li key={volunteer.userId} className="volunteer-item">
-                  <input
-                    type="checkbox"
-                    onChange={() => handleVolunteerSelection(volunteer.userId)} 
-                    checked={selectedVolunteers.includes(volunteer.userId)}
-                  />
-                  <label>{volunteer.fullName} ({volunteer.skills.join(', ')})</label>
-                </li>
-              ))}
-            </ul>
-            <div className="submit-container">
-              <button className="match-volunteers-button" onClick={matchVolunteers}>
-                Match Volunteers
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+	const handleVolunteerSelect = (volunteer) => {
+		console.log('Selected volunteer:', volunteer);
+		setSelectedVolunteer(volunteer);
+	};
+
+
+	const handleMatch = async () => {
+		if (!selectedEvent || !selectedVolunteer) {
+			setError('Please select both an event and a volunteer');
+			return;
+		}
+	
+		try {
+			setLoading(true);
+			const token = localStorage.getItem('token');
+		  
+		  // Update to use the new match-status endpoint
+		  await axios.post(
+			'http://localhost:5000/api/auth/history/match-status',
+			{
+				volunteerId: selectedVolunteer.id,
+				eventId: selectedEvent.id
+			},
+			{
+				headers: { Authorization: `Bearer ${token}` }
+			}
+		  );
+	
+		  // Remove the matched volunteer from the list
+		  setMatchedVolunteers(prev => prev.filter(v => v.id !== selectedVolunteer.id));
+		  setSelectedVolunteer(null);
+		  setError(null);
+	
+		  alert(`${selectedVolunteer.fullName} has been matched to ${selectedEvent.eventName}! Their status is now "Matched - Pending Attendance".`);
+		} catch (error) {
+			console.error('Error matching volunteer:', error);
+			setError(
+				error.response?.data?.message || 
+				'Failed to match volunteer to event. Please try again.'
+		  );
+		} finally {
+			setLoading(false);
+		}
+	  };	
+
+	const getEventUrgencyClass = (urgency) => {
+		switch (urgency.toLowerCase()) {
+		case 'high':
+			return 'urgency-high';
+		case 'medium':
+			return 'urgency-medium';
+		case 'low':
+			return 'urgency-low';
+		default:
+			return '';
+		}
+	};
+
+	return (
+		<div className="volunteer-matching-form">
+		<h2>Volunteer Matching</h2>
+		
+		{error && (
+			<div className="error-message">
+			<p>{error}</p>
+			<button onClick={() => setError(null)}>Dismiss</button>
+			</div>
+		)}
+
+		{loading && (
+			<div className="loading-spinner">
+			<p>Loading...</p>
+			</div>
+		)}
+
+		<div className="event-selection">
+			<h3>Available Upcoming Events</h3>
+			<div className="events-grid">
+			{events.length > 0 ? (
+				events.map(event => (
+				<div 
+					key={event.id}
+					className={`event-card ${selectedEvent?.id === event.id ? 'selected' : ''} ${getEventUrgencyClass(event.urgency)}`}
+					onClick={() => handleEventSelect(event)}
+				>
+					<div className="event-header">
+					<h4>{event.eventName}</h4>
+					<span className="urgency-badge">{event.urgency}</span>
+					</div>
+					<p className="event-date">📅 {formatDate(event.eventDate)}</p>
+					<p className="event-time">⏰ {event.startTime} - {event.endTime}</p>
+					<p className="event-location">📍 {event.city}</p>
+					<div className="event-skills">
+					<p>Required Skills:</p>
+					<div className="skills-tags">
+						{event.requiredSkills.map((skill, index) => (
+						<span key={index} className="skill-tag">{skill}</span>
+						))}
+					</div>
+					</div>
+				</div>
+				))
+			) : (
+				<p className="no-events">No upcoming events available</p>
+			)}
+			</div>
+		</div>
+
+		{selectedEvent && (
+			<div className="matching-volunteers">
+			<h3>Available Matching Volunteers</h3>
+			{loading ? (
+				<div className="loading-spinner">Loading matching volunteers...</div>
+			) : matchedVolunteers.length > 0 ? (
+				<div className="volunteers-grid">
+				{matchedVolunteers.map(volunteer => (
+					<div
+					key={volunteer.id}
+					className={`volunteer-card ${selectedVolunteer?.id === volunteer.id ? 'selected' : ''}`}
+					onClick={() => handleVolunteerSelect(volunteer)}
+					>
+					<h4>{volunteer.fullName}</h4>
+					<p>📧 {volunteer.email}</p>
+					<div className="volunteer-skills">
+						<p>Matching Skills:</p>
+						<div className="skills-tags">
+						{volunteer.skills.map((skill, index) => (
+							<span key={index} className="skill-tag">{skill}</span>
+						))}
+						</div>
+					</div>
+					<p className="volunteer-location">📍 {volunteer.city}</p>
+					</div>
+				))}
+				</div>
+			) : (
+				<p className="no-volunteers">No matching volunteers found for this event</p>
+			)}
+			</div>
+		)}
+
+		{selectedEvent && selectedVolunteer && (
+			<div className="matching-action">
+			<button 
+				onClick={handleMatch}
+				className="match-button"
+			>
+				Match Volunteer to Event
+			</button>
+			</div>
+		)}
+		</div>
+	);
 };
 
-export default VolunteerMatching;
-
-
-// export default VolunteerMatchingForm
-
-// import '../../styles/MatchingForm.css';
-
-// import React, { useState, useEffect, useMemo } from 'react';
-
-
-// const VolunteerMatchingForm = () => {
-//   const [selectedEvent, setSelectedEvent] = useState('');
-//   const [selectedVolunteer, setSelectedVolunteer] = useState('');
-//   const [eventSearch, setEventSearch] = useState('');
-//   const [volunteerSearch, setVolunteerSearch] = useState('');
-//   const [matchedVolunteers, setMatchedVolunteers] = useState([]);
-
-//   const events = useMemo(() => [
-//     {
-//       name: "Vaccination",
-//       date: "23 Sep 2024",
-//       time: "9:00 am - 12:00 pm",
-//       skills: ["special care", "medication"],
-//       urgency: "high"
-//     },
-//     {
-//       name: "Adoption Day",
-//       date: "24 Sep 2024",
-//       time: "2:00 pm - 4:00 pm",
-//       skills: ["communication", "cleaning", "animal care"],
-//       urgency: "low"
-//     },
-//     {
-//       name: "Pet Therapy",
-//       date: "1 Oct 2024",
-//       time: "10:00 am - 12:00 pm",
-//       skills: ["supervising", "time-management", "interacting with people"],
-//       urgency: "medium"
-//     }
-//   ], []);
-
-//   const volunteers = useMemo(() => [
-//     {
-//       name: "Claire Smith",
-//       availableDates: ["24 Sep 2024", "2 Oct 2024"],
-//       availableTime: "10:00 am - 4:00 pm",
-//       skills: ["communication", "animal care"]
-//     },
-//     {
-//       name: "Adam Larson",
-//       availableDates: ["23 Sep 2024", "5 Oct 2024"],
-//       availableTime: "10:00 am - 5:00 pm",
-//       skills: ["special care", "medication"]
-//     },
-//     {
-//       name: "Mara Kelly",
-//       availableDates: ["1 Oct 2024", "5 Oct 2024"],
-//       availableTime: "10:00 am - 4:00 pm",
-//       skills: ["supervising", "time-management"]
-//     }
-//   ], []);
-
-//   useEffect(() => {
-//     if (selectedEvent) {
-//       const event = events.find(e => e.name === selectedEvent);
-//       const matching = volunteers.filter(volunteer => 
-//         volunteer.availableDates.includes(event.date) &&
-//         volunteer.skills.some(skill => event.skills.includes(skill))
-//       );
-//       setMatchedVolunteers(matching);
-//     } else {
-//       setMatchedVolunteers([]);
-//     }
-//   }, [selectedEvent, events, volunteers]);
-
-//   const handleEventSearch = (e) => {
-//     setEventSearch(e.target.value);
-//     const event = events.find(event => event.name.toLowerCase().includes(e.target.value.toLowerCase()));
-//     if (event) {
-//       setSelectedEvent(event.name);
-//     } else {
-//       setSelectedEvent('');
-//     }
-//   };
-
-//   const handleVolunteerSearch = (e) => {
-//     setVolunteerSearch(e.target.value);
-//     const volunteer = matchedVolunteers.find(vol => vol.name.toLowerCase().includes(e.target.value.toLowerCase()));
-//     if (volunteer) {
-//       setSelectedVolunteer(volunteer.name);
-//     } else {
-//       setSelectedVolunteer('');
-//     }
-//   };
-
-//   const handleSubmit = (e) => {
-//     e.preventDefault();
-//     if (selectedEvent && selectedVolunteer) {
-//       alert(`Matched: ${selectedVolunteer} to ${selectedEvent}`);
-//     } else {
-//       alert('Please select both an event and a volunteer.');
-//     }
-//   };
-
-//   return (
-//     <div className="volunteer-matching-form">
-//       <div className="form-header">
-//         <h2>Volunteer Matching</h2>
-//       </div>
-//       <div className="form-content">
-//         <form onSubmit={handleSubmit}>
-//           <div className="form-group">
-//             <label htmlFor="eventSearch">Search Event:</label>
-//             <input
-//               type="text"
-//               id="eventSearch"
-//               value={eventSearch}
-//               onChange={handleEventSearch}
-//               list="eventList"
-//               placeholder="Start typing event name..."
-//             />
-//             <datalist id="eventList">
-//               {events.map((event, index) => (
-//                 <option key={index} value={event.name} />
-//               ))}
-//             </datalist>
-//           </div>
-          
-//           {selectedEvent && (
-//             <div className="form-group">
-//               <label htmlFor="volunteerSearch">Search Matching Volunteer:</label>
-//               <input
-//                 type="text"
-//                 id="volunteerSearch"
-//                 value={volunteerSearch}
-//                 onChange={handleVolunteerSearch}
-//                 list="volunteerList"
-//                 placeholder="Start typing volunteer name..."
-//               />
-//               <datalist id="volunteerList">
-//                 {matchedVolunteers.map((volunteer, index) => (
-//                   <option key={index} value={volunteer.name} />
-//                 ))}
-//               </datalist>
-//             </div>
-//           )}
-          
-//           {selectedEvent && selectedVolunteer && (
-//             <div className="event-details">
-//               <h3>Event Details:</h3>
-//               <p><strong>Event:</strong> {selectedEvent}</p>
-//               <p><strong>Date:</strong> {events.find(e => e.name === selectedEvent).date}</p>
-//               <p><strong>Time:</strong> {events.find(e => e.name === selectedEvent).time}</p>
-//               <p><strong>Skills Required:</strong> {events.find(e => e.name === selectedEvent).skills.join(', ')}</p>
-//               <p><strong>Urgency:</strong> {events.find(e => e.name === selectedEvent).urgency}</p>
-//             </div>
-//           )}
-
-//           <div className="submit-container">
-//             <button type="submit">Match Volunteer</button>
-//           </div>
-//         </form>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default VolunteerMatchingForm;
-
-
-
+export default VolunteerMatchingForm;

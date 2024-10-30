@@ -1,14 +1,10 @@
-/* 'authRoutes.js' file:
-- Defines routes for user registration and login
-- Uses authController for handling
-*/
-
 const express = require('express');
 const router = express.Router();
-const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const { validateRegistration, validateLogin } = require('../utils/validators');
+const profileController = require('../controllers/profileController');
 const authController = require('../controllers/authController');
-
+const authMiddleware = require('../middleware/authMiddleware');
+const authService = require('../services/authService');
 
 // Public routes 
 router.get('/home', (req, res) => {
@@ -18,39 +14,11 @@ router.get('/home', (req, res) => {
 router.post('/register', validateRegistration, authController.register);
 router.post('/login', validateLogin, authController.login);
 
-// Protected routes for regular users
-router.get('/calendar', verifyToken, (req, res) => {
-    res.json('Calendar data');
+router.get('/profile', profileController.getFormOptions);
+router.get('/volunteers', async (req, res) => {
+    const volunteers = await authService.getAllVolunteers();
+    res.json(volunteers);
 });
-
-router.get('/profile', verifyToken, (req, res) => {
-    res.json('Profile data');
-});
-
-router.get('/manage-profile', verifyToken, (req, res) => {
-    res.json('Manage Profile data');
-});
-
-router.get('/volunteer-history', verifyToken, (req, res) => {
-    res.json('Volunteer History data');
-});
-
-router.get('/notifications', verifyToken, (req, res) => {
-    res.json('Notifications data');
-});
-
-
-// Protected admin-only routes
-// router.get('/events', verifyToken, verifyAdmin, (req, res) => {
-//     res.json('Events data');
-// });
-
-router.get('/event-management', verifyToken, verifyAdmin, (req, res) => {
-    res.json('Event Management data');
-});
-
-router.get('/volunteer-event-match', verifyToken, verifyAdmin, (req, res) => {
-    res.json('Volunteer Event Match data');
-});
+router.get('/registered-volunteers', authMiddleware.verifyToken, authController.getRegisteredVolunteers);
 
 module.exports = router;

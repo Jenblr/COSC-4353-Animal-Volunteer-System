@@ -1,12 +1,8 @@
-/* 'authService.js' file:
-- Uses secret key from environment variables (.env)
-- Handles business logic
-*/
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
-// Sample users array to simulate a database
-const users = [
+const adminUsers = [
     {
         id: 1,
         email: 'admin@example.com',
@@ -15,29 +11,71 @@ const users = [
     }
 ];
 
-// Registration for volunteer users 
+const volunteerUsers = [];
+const temporaryUsers = [];
+let lastUserId = 1;
+
 exports.registerUser = (email, password, role) => {
-    const userExists = users.find(user => user.email === email);
+    const userExists = [...adminUsers, ...volunteerUsers, ...temporaryUsers].find(user => user.email === email);
     if (userExists) {
         return { status: 400, message: 'User already exists' };
     }
 
+    lastUserId++;
     const hashedPassword = bcrypt.hashSync(password, 8);
-    const newUser = { id: users.length + 1, email, password: hashedPassword, role: role || 'volunteer' };
-    users.push(newUser);
 
-    return { status: 201, user: newUser };
+    const token = crypto.randomBytes(20).toString('hex');
+    const newUser = { 
+        id: lastUserId, 
+        email, 
+        password: hashedPassword, 
+        role: role || 'volunteer',
+        token: token,
+        createdAt: new Date()
+    };
+    temporaryUsers.push(newUser);
+
+    return { 
+        status: 201, 
+        message: 'Temporary user created. Please complete your profile.',
+        token: token,
+        needsProfile: true 
+    };
 };
 
-// Login for both volunteer and admin
+exports.verifyTemporaryUserByToken = (token) => {
+    return temporaryUsers.find(user => user.token === token);
+};
+
+exports.finalizeRegistration = (userId, profileData) => {
+    const tempUserIndex = temporaryUsers.findIndex(user => user.id === userId);
+    if (tempUserIndex === -1) {
+        return { status: 404, message: 'Temporary user not found' };
+    }
+
+    const user = {
+        ...temporaryUsers[tempUserIndex],
+        ...profileData,
+        isRegistered: true
+    };
+    volunteerUsers.push(user);
+    temporaryUsers.splice(tempUserIndex, 1);
+
+    return { status: 200, message: 'Registration finalized successfully' };
+};
+
 exports.loginUser = (email, password) => {
-    const user = users.find(user => user.email === email);
+    console.log('Attempting login for email:', email);
+
+    const user = [...adminUsers, ...volunteerUsers].find(user => user.email === email);
     if (!user) {
+        console.log('User not found for email:', email);
         return { status: 404, message: 'User not found' };
     }
 
     const validPassword = bcrypt.compareSync(password, user.password);
     if (!validPassword) {
+        console.log('Invalid password for email:', email);
         return { status: 401, message: 'Invalid credentials' };
     }
 
@@ -47,5 +85,32 @@ exports.loginUser = (email, password) => {
         { expiresIn: '1h' }
     );
 
-    return { status: 200, token, role: user.role };
+    console.log('Login successful for email:', email);
+    return { status: 200, token, role: user.role }; 
+};
+
+exports.getAllVolunteers = () => {
+    return volunteerUsers;
+};
+
+exports.getRegisteredVolunteers = () => {
+    return volunteerUsers.filter(user => user.isRegistered);
+};
+
+// Helper functions for testing
+exports.clearUsers = () => {
+    volunteerUsers.length = 0;
+    temporaryUsers.length = 0;
+    lastUserId = adminUsers.length;
+};
+
+exports.getTemporaryUsers = () => {
+    return temporaryUsers;
+};
+
+exports.setTemporaryUserCreatedAt = (token, date) => {
+    const user = temporaryUsers.find(u => u.token === token);
+    if (user) {
+        user.createdAt = date;
+    }
 };

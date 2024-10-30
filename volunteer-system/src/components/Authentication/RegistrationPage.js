@@ -40,33 +40,34 @@ const RegistrationPage = () => {
 		e.preventDefault();
 		setLoading(true);
 		setError('');
-
+	  
 		if (validateEmail(email) && password.length >= 8 && password === confirmPassword) {
-		try {
-			const response = await axios.post('http://localhost:5000/api/auth/register', {
-			email: email, 
-			password,
-			});
-
-			if (response.status === 201) {
-			navigate('/profile-form');
+			try {
+				const response = await axios.post('http://localhost:5000/api/auth/register', {
+				email: email, 
+				password,
+				});
+		
+				if (response.status === 201) {
+				localStorage.setItem('registrationToken', response.data.token);
+				navigate('/profile-form');
+				}
+			} catch (error) {
+				setError(error.response?.data?.message || 'Registration failed');
+			} finally {
+				setLoading(false);
 			}
-		} catch (error) {
-			setError(error.response?.data?.message || 'Registration failed');
-		} finally {
+			} else {
+			if (!validateEmail(email)) {
+				setEmailError('Please enter a valid email address');
+			}
+			if (password.length < 8) {
+				setPasswordError('Password must be at least 8 characters long');
+			}
+			if (password !== confirmPassword) {
+				setPasswordError('Passwords do not match');
+			}
 			setLoading(false);
-		}
-		} else {
-		if (!validateEmail(email)) {
-			setEmailError('Please enter a valid email address');
-		}
-		if (password.length < 8) {
-			setPasswordError('Password must be at least 8 characters long');
-		}
-		if (password !== confirmPassword) {
-			setPasswordError('Passwords do not match');
-		}
-		setLoading(false);
 		}
 	};
 

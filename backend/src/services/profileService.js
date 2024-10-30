@@ -1,128 +1,148 @@
-//profileService.js
-const profiles = [
-    {
-      userId: '1',
-      fullName: 'John Doe',
-      address1: '111 Main St',
-      address2: 'Apt 4B',
-      city: 'Anytown',
-      state: 'CA',
-      zipCode: '12345',
-      skills: ['Cleaning', 'Dog Walking'],
-      preferences: 'Prefer working with dogs',
-      availability: ['2024-06-15', '2024-07-01', '2024-07-15']
-    },
-    {
-      userId: '2',
-      fullName: 'Jane Smith',
-      address1: '222 Elm St',
-      address2: '',
-      city: 'Dogville',
-      state: 'NY',
-      zipCode: '67890',
-      skills: ['Medication', 'Helping with laundry'],
-      preferences: 'Available on weekends',
-      availability: ['2024-06-15', '2024-07-01', '2024-07-15']
-    },
-    {
-      userId: '3',
-      fullName: 'Bob Johnson',
-      address1: '333 Oak Ave',
-      address2: 'Suite 100',
-      city: 'Petsburg',
-      state: 'TX',
-      zipCode: '54321',
-      skills: ['Cleaning', 'Grooming','Emergency Response'],
-      preferences: 'Willing to help with any task',
-      availability: ['2024-06-15', '2024-06-30', '2024-07-15']
-    },
-    {
-        userId: '4',
-        fullName: 'Alice Brown',
-        address1: '555 Vet Street',
-        address2: '',
-        city: 'Petsburg',
-        state: 'TX',
-        zipCode: '54321',
-        skills: ['Medication', 'Emergency Response', 'Animal Care'],
-        preferences: 'Experienced in emergency animal care',
-        availability: ['2024-06-30', '2024-07-15', '2024-07-30']
-      }
-    
-  ];
+const authService = require('../services/authService');
 
-  const validateProfile = (profileData) => {
+const profiles = [];
+
+const formOptions = {
+    states: [
+        { code: 'AL', name: 'Alabama' }, { code: 'AK', name: 'Alaska' },
+        { code: 'AZ', name: 'Arizona' }, { code: 'AR', name: 'Arkansas' },
+        { code: 'CA', name: 'California' }, { code: 'CO', name: 'Colorado' },
+        { code: 'CT', name: 'Connecticut' }, { code: 'DE', name: 'Delaware' },
+        { code: 'FL', name: 'Florida' }, { code: 'GA', name: 'Georgia' },
+        { code: 'HI', name: 'Hawaii' }, { code: 'ID', name: 'Idaho' },
+        { code: 'IL', name: 'Illinois' }, { code: 'IN', name: 'Indiana' },
+        { code: 'IA', name: 'Iowa' }, { code: 'KS', name: 'Kansas' },
+        { code: 'KY', name: 'Kentucky' }, { code: 'LA', name: 'Louisiana' },
+        { code: 'ME', name: 'Maine' }, { code: 'MD', name: 'Maryland' },
+        { code: 'MA', name: 'Massachusetts' }, { code: 'MI', name: 'Michigan' },
+        { code: 'MN', name: 'Minnesota' }, { code: 'MS', name: 'Mississippi' },
+        { code: 'MO', name: 'Missouri' }, { code: 'MT', name: 'Montana' },
+        { code: 'NE', name: 'Nebraska' }, { code: 'NV', name: 'Nevada' },
+        { code: 'NH', name: 'New Hampshire' }, { code: 'NJ', name: 'New Jersey' },
+        { code: 'NM', name: 'New Mexico' }, { code: 'NY', name: 'New York' },
+        { code: 'NC', name: 'North Carolina' }, { code: 'ND', name: 'North Dakota' },
+        { code: 'OH', name: 'Ohio' }, { code: 'OK', name: 'Oklahoma' },
+        { code: 'OR', name: 'Oregon' }, { code: 'PA', name: 'Pennsylvania' },
+        { code: 'RI', name: 'Rhode Island' }, { code: 'SC', name: 'South Carolina' },
+        { code: 'SD', name: 'South Dakota' }, { code: 'TN', name: 'Tennessee' },
+        { code: 'TX', name: 'Texas' }, { code: 'UT', name: 'Utah' },
+        { code: 'VT', name: 'Vermont' }, { code: 'VA', name: 'Virginia' },
+        { code: 'WA', name: 'Washington' }, { code: 'WV', name: 'West Virginia' },
+        { code: 'WI', name: 'Wisconsin' }, { code: 'WY', name: 'Wyoming' }
+    ],
+    
+    skills: [
+        { value: 'Animal Care', label: 'Animal Care' },
+        { value: 'Assisting Potential Adopters', label: 'Assisting Potential Adopters' },
+        { value: 'Cleaning', label: 'Cleaning' },
+        { value: 'Dog Walking', label: 'Dog Walking' },
+        { value: 'Emergency Response', label: 'Emergency Response' },
+        { value: 'Event Coordination', label: 'Event Coordination' },
+        { value: 'Exercise', label: 'Exercise' },
+        { value: 'Feeding', label: 'Feeding' },
+        { value: 'Grooming', label: 'Grooming' },
+        { value: 'Helping with Laundry', label: 'Helping with Laundry' },
+        { value: 'Medication', label: 'Medication' },
+        { value: 'Organizing Shelter Donations', label: 'Organizing Shelter Donations' },
+        { value: 'Potty and Leash Training', label: 'Potty and Leash Training' },
+        { value: 'Taking Photos of Animals', label: 'Taking Photos of Animals' },
+        { value: 'Temporary Foster Care', label: 'Temporary Foster Care' }
+    ]
+};
+
+const validateProfile = (profileData) => {
     const errors = {};
-
-    if (!profileData.fullName.trim() || profileData.fullName.length > 50) 
-        errors.fullName = 'Full Name is required and must be 50 characters or less';
-    
-    if (!profileData.address1.trim() || profileData.address1.length > 100) 
-        errors.address1 = 'Address 1 is required and must be 100 characters or less';
-    
-    if (profileData.address2 && profileData.address2.length > 100) 
-        errors.address2 = 'Address 2 must be 100 characters or less';
-    
-    if (!profileData.city.trim() || profileData.city.length > 100) 
-        errors.city = 'City is required and must be 100 characters or less';
-    
-    if (!profileData.state) 
-        errors.state = 'State selection is required';
-    
-    if (!profileData.zipCode.trim() || profileData.zipCode.length < 5 || profileData.zipCode.length > 9) 
-        errors.zipCode = 'Zip code must be between 5 and 9 characters';
-    
-    if (profileData.skills.length === 0) 
-        errors.skills = 'At least one skill must be selected';
-    
-    if (profileData.availability.length === 0) 
-        errors.availability = 'At least one date must be selected for availability';
-
+    if (!profileData.fullName) errors.fullName = 'Full Name is required';
+    if (!profileData.address1) errors.address1 = 'Address 1 is required';
+    if (!profileData.city) errors.city = 'City is required';
+    if (!profileData.state) errors.state = 'State is required';
+    if (!profileData.zipCode) errors.zipCode = 'Zip Code is required';
+    if (!profileData.skills || profileData.skills.length === 0) errors.skills = 'At least one skill is required';
+    if (!profileData.availability || profileData.availability.length === 0) errors.availability = 'At least one availability date is required';
     return errors;
 };
 
-exports.getProfile = (userId) => {
-    return profiles.find(profile => profile.userId === String(userId));
+exports.getFormOptions = async () => {
+    return formOptions;
 };
-exports.getAllProfiles = () => {
-    return profiles; 
-  };
 
+exports.getProfile = async (userId) => {
+    return profiles.find(profile => profile.userId === userId);
+};
 
-exports.createProfile = (userId, profileData) => {
-    console.log('Creating profile for userId:', userId);
-    if (profiles.some(profile => profile.userId === String(userId))) {
-        console.log('Profile already exists for userId:', userId);
+exports.createProfile = async (userId, profileData) => {
+    const existingProfile = await this.getProfile(userId);
+    if (existingProfile) {
         return { status: 400, message: 'Profile already exists' };
     }
 
-    const validationErrors = validateProfile(profileData);
-    if (Object.keys(validationErrors).length > 0) {
-        return { status: 400, message: 'Validation failed', errors: validationErrors };
+    const errors = validateProfile(profileData);
+    if (Object.keys(errors).length > 0) {
+        return { status: 400, message: 'Validation failed', errors };
     }
 
-    const newProfile = { userId: String(userId), ...profileData };
-    profiles.push(newProfile); 
+    const parsedAvailability = profileData.availability.map(date => new Date(date));
 
-    console.log('New profile created:', newProfile);
-
-    return { status: 201, profile: newProfile };
+    const newProfile = { 
+        userId, 
+        ...profileData,
+        availability: parsedAvailability
+    };
+    profiles.push(newProfile);
+    return { status: 201, message: 'Profile created successfully', profile: newProfile };
 };
 
-exports.updateProfile = (userId, profileData) => {
-    console.log('Updating profile for userId:', userId);
+exports.updateProfile = async (userId, profileData) => {
     const profileIndex = profiles.findIndex(profile => profile.userId === userId);
     if (profileIndex === -1) {
         return { status: 404, message: 'Profile not found' };
     }
 
-    const validationErrors = validateProfile(profileData);
-    if (Object.keys(validationErrors).length > 0) {
-        return { status: 400, message: 'Validation failed', errors: validationErrors };
+    const errors = validateProfile(profileData);
+    if (Object.keys(errors).length > 0) {
+        return { status: 400, message: 'Validation failed', errors };
+    }
+    const parsedAvailability = profileData.availability.map(date => new Date(date));
+
+    const updatedProfile = { 
+        userId, 
+        ...profileData,
+        availability: parsedAvailability
+    };
+    profiles[profileIndex] = updatedProfile;
+    return { status: 200, message: 'Profile updated successfully', profile: updatedProfile };
+};
+
+exports.finalizeRegistration = async (token, profileData) => {
+    const tempUser = authService.verifyTemporaryUserByToken(token);
+    if (!tempUser) {
+        console.log('Temporary user not found');
+        return { status: 400, message: 'Invalid or expired registration attempt' };
     }
 
-    const updatedProfile = { userId, ...profileData };
-    console.log('Profile updated:', updatedProfile);
+    const errors = validateProfile(profileData);
+    if (Object.keys(errors).length > 0) {
+        return { status: 400, message: 'Validation failed', errors };
+    }
 
-    return { status: 200, profile: updatedProfile };
+    const parsedAvailability = profileData.availability.map(date => new Date(date));
+
+    const newProfile = { 
+        userId: tempUser.id, 
+        email: tempUser.email, 
+        ...profileData,
+        availability: parsedAvailability
+    };
+    profiles.push(newProfile);
+
+    const authResult = authService.finalizeRegistration(tempUser.id);
+    if (authResult.status !== 200) {
+        return authResult;
+    }
+
+    return { status: 201, message: 'Registration finalized and profile created successfully', profile: newProfile };
 };
+
+exports.getAllProfiles = async () => {
+    return profiles;
+}; 

@@ -1,13 +1,9 @@
-//matchingService.test.js
-
 const matchingService = require('../../services/matchingService');
 const eventService = require('../../services/eventService');
 const profileService = require('../../services/profileService');
 
-//mock the dependencies
 jest.mock('../../services/eventService');
 jest.mock('../../services/profileService');
-
 
 describe('Matching Service', () => {
 

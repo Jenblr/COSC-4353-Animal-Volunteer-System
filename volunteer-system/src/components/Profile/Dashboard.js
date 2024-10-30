@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import Select from 'react-select';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
@@ -18,6 +20,9 @@ const Dashboard = () => {
     availability: []
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
 
   const states = [
     { value: 'AL', label: 'Alabama' }, { value: 'AK', label: 'Alaska' },
@@ -52,23 +57,32 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const mockUserData = {
-        fullName: 'Adam Larson',
-        email: 'Adam Larson@example.com',
-        address1: '123 Main St',
-        address2: 'Apt 4',
-        city: 'Anytown',
-        state: 'CA',
-        zipCode: '12345',
-        skills: ['Animal Care', 'Feeding'],
-        preferences: 'Prefer working with dogs',
-        availability: [new Date(), new Date(new Date().setDate(new Date().getDate() + 7))]
-      };
-      setUserData(mockUserData);
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
+
+        const response = await axios.get('http://localhost:5000/api/profile', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        setUserData({
+          ...response.data,
+          availability: response.data.availability.map(date => new Date(date))
+        });
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        setError('Failed to load user data. Please try again later.');
+        setIsLoading(false);
+      }
     };
 
     fetchUserData();
-  }, []);
+  }, [navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -81,14 +95,37 @@ const Dashboard = () => {
   };
 
   const handleDateChange = (date) => {
-    setUserData({ ...userData, availability: [...userData.availability, date] });
+    setUserData({ 
+      ...userData, 
+      availability: [...userData.availability, date]
+    });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Updated user data:', userData);
-    setIsEditing(false);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put('http://localhost:5000/api/profile', {
+        ...userData,
+        availability: userData.availability.map(date => date.toISOString())
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIsEditing(false);
+      // Optionally, show a success message to the user
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setError('Failed to update profile. Please try again.');
+    }
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div className="error-message">{error}</div>;
 
   return (
     <div className="dashboard-container">
@@ -229,6 +266,7 @@ const Dashboard = () => {
           <button type="button" onClick={() => setIsEditing(true)}>Edit Profile</button>
         )}
       </form>
+      <button onClick={handleLogout}>Logout</button>
     </div>
   );
 };

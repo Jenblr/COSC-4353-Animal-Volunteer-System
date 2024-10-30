@@ -34,10 +34,16 @@
 # Installation
 - **Requirements:**
     - Clone this repository: https://github.com/Jenblr/COSC-4353-Animal-Volunteer-System
-    - **Frontend:**
-        - Go to client folder → ```cd volunteer-system```
-        - Start server → ```npm start```
     - **Backend:**  
         - Go to backend folder → ```cd backend```
         - Start server → ```npx nodemon src/app.js```
-        - Download Postman (or Postman extension on VScode)
+    - **Frontend:**
+        - Go to client folder → ```cd volunteer-system```
+        - Start server → ```npm start```
+
+---
+# Notes
+- You have to start the backend up first, then the frontend
+- A lot of forms are empty because an admin would need to sign in and create something, or a user needs to be registered
+    - EX: Calendar = For a future event to display, an admin would need to go to Event Management to create events
+    - EX: Volunteer History = A user needs to be registered first and then log in for the dropdown menu to populate with the volunteer's info

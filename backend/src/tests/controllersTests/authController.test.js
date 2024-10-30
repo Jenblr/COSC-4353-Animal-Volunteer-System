@@ -2,10 +2,18 @@ const request = require('supertest');
 const app = require('../../app');
 const authService = require('../../services/authService');
 
+jest.mock('../../services/authService');
+
 describe('AuthController', () => {
-    /* Testing Registration response */
     describe('POST /api/auth/register', () => {
         it('should register a new user', async () => {
+            authService.registerUser.mockReturnValue({
+                status: 201,
+                message: 'Temporary user created. Please complete your profile.',
+                token: 'mockToken',
+                needsProfile: true
+            });
+
             const response = await request(app)
                 .post('/api/auth/register')
                 .send({
@@ -15,18 +23,21 @@ describe('AuthController', () => {
                 });
 
             expect(response.status).toBe(201);
-            expect(response.body).toHaveProperty('message', 'User registered successfully');
-            expect(response.body.user).toHaveProperty('email', 'newUser@example.com');
+            expect(response.body).toHaveProperty('message', 'Temporary user created. Please complete your profile.');
+            expect(response.body).toHaveProperty('token');
+            expect(response.body).toHaveProperty('needsProfile', true);
         });
 
-        // User already registered
         it('should return 400 if user already exists', async () => {
-            await authService.registerUser('newUser@example.com', 'password1234', 'volunteer');
+            authService.registerUser.mockReturnValue({
+                status: 400,
+                message: 'User already exists'
+            });
 
             const response = await request(app)
                 .post('/api/auth/register')
                 .send({
-                    email: 'newUser@example.com',
+                    email: 'existingUser@example.com',
                     password: 'password1234',
                     role: 'volunteer'
                 });
@@ -36,10 +47,13 @@ describe('AuthController', () => {
         });
     });
 
-    /* Testing Login response */
     describe('POST /api/auth/login', () => {
         it('should login a user and return a token', async () => {
-            await authService.registerUser('testUser@example.com', 'password1234', 'volunteer');
+            authService.loginUser.mockReturnValue({
+                status: 200,
+                token: 'mockToken',
+                role: 'volunteer'
+            });
 
             const response = await request(app)
                 .post('/api/auth/login')
@@ -50,10 +64,15 @@ describe('AuthController', () => {
 
             expect(response.status).toBe(200);
             expect(response.body).toHaveProperty('token');
+            expect(response.body).toHaveProperty('role', 'volunteer');
         });
 
-        // User not found
         it('should return 404 if user not found', async () => {
+            authService.loginUser.mockReturnValue({
+                status: 404,
+                message: 'User not found'
+            });
+
             const response = await request(app)
                 .post('/api/auth/login')
                 .send({
@@ -65,9 +84,11 @@ describe('AuthController', () => {
             expect(response.body).toHaveProperty('message', 'User not found');
         });
 
-        // Password input is not valid
         it('should return 401 if password is incorrect', async () => {
-            await authService.registerUser('testUser@example.com', 'password1234', 'volunteer');
+            authService.loginUser.mockReturnValue({
+                status: 401,
+                message: 'Invalid credentials'
+            });
 
             const response = await request(app)
                 .post('/api/auth/login')

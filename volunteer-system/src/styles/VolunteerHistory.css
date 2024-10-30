@@ -21,3 +21,63 @@
     background-color: #f1f1f1;
   }
   
+  .status-matched {
+    color: #0056b3;
+    font-weight: 500;
+  }
+  
+  .status-attended {
+    color: #28a745;
+    font-weight: 500;
+  }
+  
+  .status-cancelled {
+    color: #dc3545;
+    font-weight: 500;
+  }
+  
+  .status-not-attended {
+    color: #6c757d;
+    font-weight: 500;
+  }
+  
+  /* Style for the status select dropdown */
+  select.status-matched,
+  select.status-attended,
+  select.status-cancelled,
+  select.status-not-attended {
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    font-weight: 500;
+  }
+  
+  select.status-matched {
+    border-color: #0056b3;
+    background-color: #f0f7ff;
+  }
+  
+  select.status-attended {
+    border-color: #28a745;
+    background-color: #f0fff4;
+  }
+  
+  select.status-cancelled {
+    border-color: #dc3545;
+    background-color: #fff5f5;
+  }
+   
+  select.status-not-attended {
+    border-color: #6c757d;
+    background-color: #f8f9fa;
+  }
+  
+  select:hover {
+    cursor: pointer;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
+  }
+  
+  select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+  }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import DatePicker from 'react-datepicker';
@@ -78,19 +79,34 @@ const ProfileForm = () => {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
   
     const formErrors = validateForm();
   
     if (Object.keys(formErrors).length === 0) {
-    // For now, simply log the form data to the console
-        console.log('Form submitted:', formData);
-    
-    // Optionally, navigate to another page
-        navigate('/home');
+      try {
+        const token = localStorage.getItem('registrationToken');
+        if (!token) {
+          throw new Error('Registration token not found');
+        }
+
+        const response = await axios.post('http://localhost:5000/api/profile/finalize-registration', {
+          token: token,
+          ...formData
+        });
+
+        if (response.status === 201) {
+          console.log('Profile created successfully');
+          localStorage.removeItem('registrationToken'); 
+          navigate('/home');
+        }
+      } catch (error) {
+        console.error('Error submitting profile:', error);
+        setErrors({ submit: error.response?.data?.message || 'Failed to submit profile' });
+      }
     } else {
-        setErrors(formErrors);
+      setErrors(formErrors);
     }
   };
 
