@@ -44,19 +44,12 @@
 - **Value:** application/json
 
 **Body**
-<<<<<<< HEAD
-- raw
-- input: 
-=======
 - **SELECT:** raw
 - **Input for User Registration + Login User requests:**
->>>>>>> origin/JenniferN
 {
     "username": "testuser",
     "password": "password1234"
 }
-<<<<<<< HEAD
-=======
 - **Tests Tab Input for Login User requests:**
 const jsonData = pm.response.json();
 pm.environment.set("token", jsonData.token);
@@ -71,7 +64,6 @@ pm.environment.set("token", jsonData.token);
 const jsonData = pm.response.json();
 pm.environment.set("token", jsonData.token);
 
->>>>>>> origin/JenniferN
 ---
 ### GET requests:
 **Requests**
@@ -129,3 +121,51 @@ const events = [
     endTime: '17:00'
   }
 ];
+
+<hr style="border: 3px dashed ;">
+
+### Staring up db
+**npx sequelize-cli db:create**
+
+Sequelize CLI [Node: 20.10.0, CLI: 6.6.2, ORM: 6.37.4]
+
+Loaded configuration file "config\config.json".
+Using environment "development".
+Database volunteer_system_dev created.
+
+**npx sequelize-cli db:migrate**
+
+Sequelize CLI [Node: 20.10.0, CLI: 6.6.2, ORM: 6.37.4]
+
+Loaded configuration file "config\config.json".
+Using environment "development".
+Database volunteer_system_dev created.
+
+**npx sequelize-cli db:seed:all**
+Using environment "development".
+== 20241025-create-user: migrating =======
+== 20241025-create-user: migrated (0.019s)
+
+PS C:\Users\JenNg\OneDrive\Documents\University of Houston\Fall 2024\COSC 4353 - Software Design\COSC-4353-Animal-Volunteer-System\backend> npx sequelize-cli db:seed:all
+== 20241025-create-user: migrated (0.019s)
+
+<hr style="border: 3px dashed ;">
+
+## FLOW OF PROGRAM
+
+### REGISTRATION
+
+**1. User registers**
+  - Creates temporary user
+  - Returns registration token
+
+**2. User fills profile form**
+  - Verifies registration token
+  - Creates profile
+  - Finalizes registration
+  - Updates user status
+
+**3. User can then log in**
+  - Checks if user is fully registered
+  - Validates credentials
+  - Returns auth token and role

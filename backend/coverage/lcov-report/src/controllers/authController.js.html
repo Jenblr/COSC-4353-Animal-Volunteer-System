@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">59.25% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>16/27</span>
+                <span class='fraction'>27/27</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">58.33% </span>
+                <span class="strong">83.33% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>7/12</span>
+                <span class='fraction'>10/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">33.33% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/6</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">64% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>16/25</span>
+                <span class='fraction'>25/25</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -122,10 +122,10 @@
 <a name='L57'></a><a href='#L57'>57</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
@@ -141,47 +141,47 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">const authService = require('../services/authService');
 &nbsp;
 exports.register = (req, res) =&gt; {
     const { email, password, role } = req.body;
 &nbsp;
-    <span class="missing-if-branch" title="if path not taken" >I</span>if (!email || !password) {
-<span class="cstat-no" title="statement not covered" >        return res.status(400).json({ message: 'Email and password are required' });</span>
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
     }
 &nbsp;
     const response = authService.registerUser(email, password, role);
@@ -207,29 +207,29 @@ exports.login = (req, res) =&gt; {
     }
 };
 &nbsp;
-exports.getAllVolunteers = <span class="fstat-no" title="function not covered" >(r</span>eq, res) =&gt; {
-<span class="cstat-no" title="statement not covered" >    try {</span>
-        const volunteers = <span class="cstat-no" title="statement not covered" >authService.getAllVolunteers();</span>
-<span class="cstat-no" title="statement not covered" >        return res.status(200).json(volunteers.map(<span class="fstat-no" title="function not covered" >v </span>=&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+exports.getAllVolunteers = (req, res) =&gt; {
+    try {
+        const volunteers = authService.getAllVolunteers();
+        return res.status(200).json(volunteers.map(v =&gt; ({
             id: v.id,
             email: v.email,
-            fullName: v.fullName || v.email 
+            fullName: v.fullName || <span class="branch-1 cbranch-no" title="branch not covered" >v.email </span>
         })));
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >        return res.status(500).json({ message: 'Error fetching volunteers', error });</span>
+        return res.status(500).json({ message: 'Error fetching volunteers', error });
     }
 };
 &nbsp;
-exports.getRegisteredVolunteers = <span class="fstat-no" title="function not covered" >(r</span>eq, res) =&gt; {
-<span class="cstat-no" title="statement not covered" >    try {</span>
-        const volunteers = <span class="cstat-no" title="statement not covered" >authService.getRegisteredVolunteers();</span>
-<span class="cstat-no" title="statement not covered" >        return res.status(200).json(volunteers.map(<span class="fstat-no" title="function not covered" >v </span>=&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+exports.getRegisteredVolunteers = (req, res) =&gt; {
+    try {
+        const volunteers = authService.getRegisteredVolunteers();
+        return res.status(200).json(volunteers.map(v =&gt; ({
             id: v.id,
             email: v.email,
-            fullName: v.fullName || v.email 
+            fullName: v.fullName || <span class="branch-1 cbranch-no" title="branch not covered" >v.email </span>
         })));
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >        return res.status(500).json({ message: 'Error fetching registered volunteers', error });</span>
+        return res.status(500).json({ message: 'Error fetching registered volunteers', error });
     }
 };</pre></td></tr></table></pre>
 
@@ -238,7 +238,7 @@ exports.getRegisteredVolunteers = <span class="fstat-no" title="function not cov
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2024-10-19T04:06:36.543Z
+                at 2024-10-25T00:33:51.156Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
