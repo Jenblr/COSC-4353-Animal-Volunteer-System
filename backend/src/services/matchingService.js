@@ -130,7 +130,7 @@ const getFutureEvents = () => {
     }
 };
 
-
+}
 
 
 module.exports = { matchVolunteersToEvent, getFutureEvents };

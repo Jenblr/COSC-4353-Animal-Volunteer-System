@@ -1,18 +1,50 @@
 const eventService = require('../services/eventService');
 
+
 //create a new event
+// exports.createEvent = async (req, res) => {
+//   try {
+//     console.log('Create Event Request Body:', req.body);
+//     const result = await eventService.createEvent(req.body);
+//     res.status(201).json(result);
+//   } catch (error) {
+//     console.error('Error creating event:', error);
+//     if (error.status === 400) {
+//       res.status(400).json({ errors: error.errors || 'Bad request' });
+//     } else {
+//       res.status(500).json({ message: 'Internal server error', error: error.message });
+//     }
+//   }
+// };
 exports.createEvent = async (req, res) => {
   try {
-    console.log('Create Event Request Body:', req.body);
-    const result = await eventService.createEvent(req.body);
-    res.status(201).json(result);
+      //detailed logging
+      console.log('Request headers:', req.headers);
+      console.log('User details:', {
+          userId: req.userId,
+          userEmail: req.userEmail,
+          userRole: req.userRole
+      });
+      console.log('Request body:', req.body);
+
+      if (!req.userId) {
+          return res.status(400).json({
+              errors: [{
+                  field: 'createdBy',
+                  message: 'User ID is missing'
+              }]
+          });
+      }
+
+      const result = await eventService.createEvent(req.body, req.userId);
+      res.status(201).json(result);
   } catch (error) {
-    console.error('Error creating event:', error);
-    if (error.status === 400) {
-      res.status(400).json({ errors: error.errors || 'Bad request' });
-    } else {
-      res.status(500).json({ message: 'Internal server error', error: error.message });
-    }
+      console.error('Error in createEvent controller:', error);
+      if (error.status === 400) {
+          res.status(400).json({ errors: error.errors || 'Bad request' });
+      } else {
+          res.status(500).json({ message: 'Internal server error', error: error.message });
+      }
   }
 };
 
