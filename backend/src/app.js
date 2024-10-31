@@ -36,20 +36,20 @@ app.use((err, req, res, next) => {
 	res.status(500).json({ message: 'Something went wrong!' });
 });
 
-// Schedule cron jobs only in non-test environment
-if (process.env.NODE_ENV !== 'test') {
-	cronManager.schedule(
-		'cleanup-registrations',
-		'0 * * * *',
-		() => authService.cleanupIncompleteRegistrations()
-	);
-}
-
 if (process.env.NODE_ENV !== 'test') {
 	const PORT = process.env.PORT || 5000;
 	app.listen(PORT, () => {
 		console.log(`Server running on port ${PORT}`);
 	});
+
+	authService.cleanupTemporaryUsers();
+    
+    // Schedule periodic cleanup = every 10 mins, cleanup expired temp users from db
+    cronManager.schedule(
+        'cleanup-temporary-users',
+        '*/10 * * * *',  
+        authService.cleanupTemporaryUsers
+    );
 }
 
 module.exports = { app, cronManager };

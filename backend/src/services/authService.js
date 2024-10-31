@@ -108,7 +108,7 @@ const authService = {
 
 			if (!user.isRegistered) {
 				console.log('User has not completed registration:', email);
-				return { status: 401, message: 'Please complete your registration first' };
+				return { status: 401, message: 'Error: Registration not complete. Try registering again in 10 minutes.' };
 			}
 
 			const validPassword = await user.validatePassword(password);
@@ -160,18 +160,24 @@ const authService = {
 			return [];
 		}
 	},
-
-	removeExpiredTemporaryUsers: async () => {
+	
+	// Delete users where token is expired and registration is not complete
+	cleanupTemporaryUsers: async () => {
 		try {
-			const deletedCount = await User.destroy({
+			const result = await User.destroy({
 				where: {
 					isRegistered: false,
-					tokenExpiresAt: { [Op.lt]: new Date() }
+					tokenExpiresAt: {
+						[Op.lt]: new Date()
+					}
 				}
 			});
-			console.log(`Removed ${deletedCount} expired temporary users`);
+			
+			if (result > 0) {
+				console.log(`Cleaned up ${result} expired temporary users`);
+			}
 		} catch (error) {
-			console.error('Error removing expired temporary users:', error);
+			console.error('Error in cleanup task:', error);
 		}
 	}
 };

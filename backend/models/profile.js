@@ -29,7 +29,11 @@ module.exports = (sequelize, DataTypes) => {
         },
         state: {
             type: DataTypes.STRING(2),
-            allowNull: true
+            allowNull: true,
+            references: {
+                model: 'States',
+                key: 'code'
+            }
         },
         zipCode: {
             type: DataTypes.STRING,
@@ -56,7 +60,12 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: 'userId',
             as: 'User'
         });
+        Profile.belongsTo(models.State, {
+            foreignKey: 'state',
+            targetKey: 'code',
+            as: 'stateDetails'
+        });
     };
-
+    
     return Profile;
 };
