@@ -2,167 +2,7 @@ const volunteerHistoryService = require('../services/historyService');
 const authService = require('../services/authService');
 const notificationService = require('../services/notificationService');
 
-;
-
-// const validateEventData = (eventData) => {
-// 	const errors = {};
-
-// 	if (!eventData.eventName || eventData.eventName.trim().length === 0) {
-// 		errors.eventName = 'Event Name is required';
-// 	} else if (eventData.eventName.length > 100) {
-// 		errors.eventName = 'Event Name must be 100 characters or less';
-// 	}
-
-// 	if (!eventData.eventDescription || eventData.eventDescription.trim().length === 0) {
-// 		errors.eventDescription = 'Event Description is required';
-// 	}
-
-// 	if (!eventData.address1 || eventData.address1.trim().length === 0) {
-// 		errors.address1 = 'Address 1 is required';
-// 	}
-
-// 	if (!eventData.city || eventData.city.trim().length === 0) {
-// 		errors.city = 'City is required';
-// 	}
-
-// 	if (!eventData.state || eventData.state.trim().length === 0) {
-// 		errors.state = 'State is required';
-// 	}
-
-// 	if (!eventData.zipCode || eventData.zipCode.trim().length === 0) {
-// 		errors.zipCode = 'Zip Code is required';
-// 	}
-
-// 	if (!eventData.requiredSkills || eventData.requiredSkills.length === 0) {
-// 		errors.requiredSkills = 'At least one skill is required';
-// 	}
-
-// 	if (!eventData.urgency) {
-// 		errors.urgency = 'Urgency is required';
-// 	}
-
-// 	if (!eventData.eventDate) {
-// 		errors.eventDate = 'Event Date is required';
-// 	}
-
-// 	return errors;
-// };
-
-// exports.createEvent = (eventData) => {
-// 	const errors = validateEventData(eventData);
-// 	if (Object.keys(errors).length > 0) {
-// 		throw { status: 400, errors };
-// 	}
-
-// 	const newEvent = {
-// 		id: (events.length + 1).toString(),
-// 		...eventData,
-// 		createdAt: new Date().toISOString()
-// 	};
-
-// 	events.push(newEvent);
-
-// 	notificationService.createEventNotification(newEvent);
-
-// 	const allVolunteers = authService.getAllVolunteers();
-// 	allVolunteers.forEach(volunteer => {
-// 		const historyRecord = {
-// 			eventId: newEvent.id,
-// 			eventName: newEvent.eventName,
-// 			eventDescription: newEvent.eventDescription,
-// 			location: `${newEvent.address1}, ${newEvent.city}, ${newEvent.state} ${newEvent.zipCode}`,
-// 			requiredSkills: newEvent.requiredSkills,
-// 			urgency: newEvent.urgency,
-// 			eventDate: newEvent.eventDate,
-// 			startTime: newEvent.startTime,
-// 			endTime: newEvent.endTime,
-// 			participationStatus: 'Not Attended'
-// 		};
-
-// 		volunteerHistoryService.updateHistoryRecord(volunteer.id, historyRecord);
-// 	});
-
-// 	return {
-// 		message: "Event created successfully",
-// 		event: newEvent
-// 	};
-// };
-
-// exports.getAllEvents = () => {
-// 	return events;
-// };
-
-// exports.getEventById = (id) => {
-// 	console.log('Looking for event with ID:', id);
-
-// 	const event = events.find(e => e.id === id.toString());
-
-// 	if (!event) {
-// 		console.log('No event found with ID:', id);
-// 		throw { status: 404, message: 'Event not found' };
-// 	}
-
-// 	console.log('Found event:', event);
-// 	return event;
-// };
-
-// exports.updateEvent = (id, eventData) => {
-// 	const index = events.findIndex(e => e.id === String(id));
-// 	if (index === -1) {
-// 		throw { status: 404, message: 'Event not found' };
-// 	}
-
-// 	const errors = validateEventData(eventData);
-// 	if (Object.keys(errors).length > 0) {
-// 		throw { status: 400, errors };
-// 	}
-
-// 	const updatedEvent = { ...events[index], ...eventData, updatedAt: new Date().toISOString() };
-// 	events[index] = updatedEvent;
-// 	return {
-// 		message: "Event updated successfully",
-// 		event: updatedEvent
-// 	};
-// };
-
-// exports.deleteEvent = (id) => {
-// 	const index = events.findIndex(e => e.id === String(id));
-// 	if (index === -1) {
-// 		throw { status: 404, message: 'Event not found' };
-// 	}
-// 	events.splice(index, 1);
-// 	return { message: "Event deleted successfully" };
-// };
-
-// exports.getFormOptions = () => {
-// 	return {
-// 		skillOptions: [
-// 			'Animal Care',
-// 			'Assisting Potential Adopters',
-// 			'Cleaning',
-// 			'Dog Walking',
-// 			'Emergency Response',
-// 			'Event Coordination',
-// 			'Exercise',
-// 			'Feeding',
-// 			'Grooming',
-// 			'Helping with Laundry',
-// 			'Medication',
-// 			'Organizing Shelter Donations',
-// 			'Potty and Leash Training',
-// 			'Taking Photos of Animals',
-// 			'Temporary Foster Care'
-// 		],
-// 		urgencyOptions: ['Low', 'Medium', 'High', 'Critical'],
-// 		stateOptions: [
-// 			'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-// 			'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-// 			'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-// 			'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-// 			'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
-// 		]
-// 	};
-// };
+const { Op } = require('sequelize');
 
 // services/eventService.js
 const { Event, State, User } = require('../../models');
@@ -461,7 +301,8 @@ exports.searchEvents = async (criteria) => {
         });
 
         return events;
-    } catch (error) {
+    }
+    catch (error) {
         throw {
             status: 500,
             message: 'Error searching events',
@@ -469,3 +310,6 @@ exports.searchEvents = async (criteria) => {
         };
     }
 };
+
+
+
