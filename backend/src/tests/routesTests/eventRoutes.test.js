@@ -2,152 +2,166 @@ const request = require('supertest');
 const express = require('express');
 const eventRoutes = require('../../routes/eventRoutes');
 const { verifyToken, verifyAdmin } = require('../../middleware/authMiddleware');
-const eventService = require('../../services/eventService');
+const eventController = require('../../controllers/eventController');
 
 jest.mock('../../middleware/authMiddleware', () => ({
   verifyToken: jest.fn((req, res, next) => next()),
   verifyAdmin: jest.fn((req, res, next) => next())
 }));
 
-
-const app = express();
-app.use(express.json());
-app.use('/events', eventRoutes);
-
-//rest events
-const originalEvents = [...eventService.getAllEvents()];
-beforeEach(() => {
-  eventService.getAllEvents().length = 0;
-  originalEvents.forEach(event => eventService.createEvent({ ...event }));
-});
+jest.mock('../../controllers/eventController', () => ({
+  getAllEvents: jest.fn((req, res) => res.json({ message: 'getAllEvents' })),
+  getFormOptions: jest.fn((req, res) => res.json({ message: 'getFormOptions' })),
+  getEventById: jest.fn((req, res) => res.json({ message: 'getEventById' })),
+  createEvent: jest.fn((req, res) => res.json({ message: 'createEvent' })),
+  updateEvent: jest.fn((req, res) => res.json({ message: 'updateEvent' })),
+  deleteEvent: jest.fn((req, res) => res.json({ message: 'deleteEvent' }))
+}));
 
 describe('Event Routes', () => {
-  
-  test('GET /events should return all events', async () => {
-    const response = await request(app).get('/events');
-    expect(response.statusCode).toBe(200);
-    expect(Array.isArray(response.body)).toBeTruthy();
-    expect(response.body.length).toBeGreaterThan(0); //ensure we get some events
+  let app;
+
+  beforeEach(() => {
+    app = express();
+    app.use(express.json());
+    app.use('/api/events', eventRoutes);
+
+    jest.clearAllMocks();
   });
 
-  test('GET /events/:id should return a specific event', async () => {
-    const response = await request(app).get('/events/1');
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toHaveProperty('id', '1');
-    expect(response.body).toHaveProperty('eventName'); //check for a valid event
+  describe('GET /', () => {
+    it('should route to getAllEvents and use verifyToken middleware', async () => {
+      const response = await request(app)
+        .get('/api/events')
+        .expect(200);
+
+      expect(verifyToken).toHaveBeenCalled();
+      expect(eventController.getAllEvents).toHaveBeenCalled();
+      expect(response.body).toEqual({ message: 'getAllEvents' });
+    });
+
+    it('should handle unauthorized access', async () => {
+      verifyToken.mockImplementationOnce((req, res, next) => {
+        res.status(401).json({ message: 'Unauthorized' });
+      });
+
+      await request(app)
+        .get('/api/events')
+        .expect(401);
+
+      expect(verifyToken).toHaveBeenCalled();
+      expect(eventController.getAllEvents).not.toHaveBeenCalled();
+    });
   });
 
-  test('GET /events/:id should return 404 for a non-existent event', async () => {
-    const response = await request(app).get('/events/999');
-    expect(response.statusCode).toBe(404);
-    expect(response.body).toHaveProperty('message', 'Event not found');
+  describe('GET /form-options', () => {
+    it('should route to getFormOptions and use both auth middlewares', async () => {
+      const response = await request(app)
+        .get('/api/events/form-options')
+        .expect(200);
+
+      expect(verifyToken).toHaveBeenCalled();
+      expect(verifyAdmin).toHaveBeenCalled();
+      expect(eventController.getFormOptions).toHaveBeenCalled();
+      expect(response.body).toEqual({ message: 'getFormOptions' });
+    });
+
+    it('should handle non-admin access', async () => {
+      verifyAdmin.mockImplementationOnce((req, res, next) => {
+        res.status(403).json({ message: 'Forbidden' });
+      });
+
+      await request(app)
+        .get('/api/events/form-options')
+        .expect(403);
+
+      expect(verifyToken).toHaveBeenCalled();
+      expect(verifyAdmin).toHaveBeenCalled();
+      expect(eventController.getFormOptions).not.toHaveBeenCalled();
+    });
   });
 
-  test('POST /events should create a new event', async () => {
-    const newEvent = {
-      eventName: 'New Test Event',
-      eventDescription: 'Test Description',
-      address1: '123 Test St',
-      city: 'Test City',
-      state: 'TX',
-      zipCode: '12345',
-      requiredSkills: ['Cleaning'],
-      urgency: 'Medium',
-      eventDate: '2024-12-01',
-      startTime: '09:00',
-      endTime: '12:00'
-    };
+  describe('GET /:id', () => {
+    it('should route to getEventById and use both auth middlewares', async () => {
+      const response = await request(app)
+        .get('/api/events/1')
+        .expect(200);
 
-    const response = await request(app)
-      .post('/events')
-      .send(newEvent);
-
-    expect(response.statusCode).toBe(201);
-    expect(response.body).toHaveProperty('message', 'Event created successfully');
-    expect(response.body.event).toHaveProperty('id'); // Ensure an ID is generated
+      expect(verifyToken).toHaveBeenCalled();
+      expect(verifyAdmin).toHaveBeenCalled();
+      expect(eventController.getEventById).toHaveBeenCalled();
+      expect(response.body).toEqual({ message: 'getEventById' });
+    });
   });
 
-  test('POST /events should return 400 for invalid input', async () => {
-    const invalidEvent = {
-      eventName: '', //invalid: empty string
-      eventDescription: 'Test Description',
-      address1: 'A'.repeat(101), //invalid: exceeds 100 characters
-      city: '',  //invalid: empty string
-      state: 'Invalid', //invalid: not a valid state code
-      zipCode: '1234', //invalid: less than 5 characters
-      requiredSkills: [], //invalid: empty array
-      urgency: 'Invalid', //invalid: not a valid urgency level
-      eventDate: '2024/12/01', //invalid: incorrect date format
-      startTime: '9:00', //invalid: incorrect time format
-      endTime: '08:00' // invalid: end time before start time
-    };
+  describe('POST /', () => {
+    it('should route to createEvent and use auth middlewares', async () => {
+      const response = await request(app)
+        .post('/api/events')
+        .send({ eventName: 'Test Event' })
+        .expect(200);
 
-    const response = await request(app)
-      .post('/events')
-      .send(invalidEvent);
-
-    expect(response.statusCode).toBe(400);
-    expect(response.body).toHaveProperty('errors');
-    expect(response.body.errors).toEqual(expect.objectContaining({
-      eventName: expect.any(String),
-      city: expect.any(String),
-      requiredSkills: expect.any(String),
-    }));
+      expect(verifyToken).toHaveBeenCalled();
+      expect(verifyAdmin).toHaveBeenCalled();
+      expect(eventController.createEvent).toHaveBeenCalled();
+      expect(response.body).toEqual({ message: 'createEvent' });
+    });
   });
 
-  test('PUT /events/:id should update an event', async () => {
-    const updatedData = {
-      eventName: 'Updated Event Name',
-      eventDescription: 'Updated Description',
-      address1: 'Updated Address',
-      city: 'Updated City',
-      state: 'TX',
-      zipCode: '12345',
-      requiredSkills: ['Updated Skill'],
-      urgency: 'High',
-      eventDate: '2024-12-25',
-      startTime: '10:00',
-      endTime: '14:00'
-    };
+  describe('PUT /:id', () => {
+    it('should route to updateEvent and use auth middlewares', async () => {
+      const response = await request(app)
+        .put('/api/events/1')
+        .send({ eventName: 'Updated Event' })
+        .expect(200);
 
-    const response = await request(app)
-      .put('/events/1')
-      .send(updatedData);
-
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Event updated successfully');
-    expect(response.body.event).toHaveProperty('eventName', 'Updated Event Name');
+      expect(verifyToken).toHaveBeenCalled();
+      expect(verifyAdmin).toHaveBeenCalled();
+      expect(eventController.updateEvent).toHaveBeenCalled();
+      expect(response.body).toEqual({ message: 'updateEvent' });
+    });
   });
 
-  test('PUT /events/:id should return 404 for a non-existent event', async () => {
-    const updatedData = { eventName: 'Updated Event Name' };
-    const response = await request(app)
-      .put('/events/999')
-      .send(updatedData);
+  describe('DELETE /:id', () => {
+    it('should route to deleteEvent and use auth middlewares', async () => {
+      const response = await request(app)
+        .delete('/api/events/1')
+        .expect(200);
 
-    expect(response.statusCode).toBe(404);
-    expect(response.body).toHaveProperty('message', 'Event not found');
+      expect(verifyToken).toHaveBeenCalled();
+      expect(verifyAdmin).toHaveBeenCalled();
+      expect(eventController.deleteEvent).toHaveBeenCalled();
+      expect(response.body).toEqual({ message: 'deleteEvent' });
+    });
   });
 
-  test('DELETE /events/:id should delete an event', async () => {
-    const response = await request(app).delete('/events/1');
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Event deleted successfully');
-  });
+  describe('Middleware Error Handling', () => {
+    it('should handle verifyToken errors for all routes', async () => {
+      verifyToken.mockImplementation((req, res, next) => {
+        res.status(401).json({ message: 'Unauthorized' });
+      });
 
-  test('DELETE /events/:id should return 404 for a non-existent event', async () => {
-    const response = await request(app).delete('/events/999');
-    expect(response.statusCode).toBe(404);
-    expect(response.body).toHaveProperty('message', 'Event not found');
-  });
+      await request(app).get('/api/events').expect(401);
+      await request(app).get('/api/events/form-options').expect(401);
+      await request(app).get('/api/events/1').expect(401);
+      await request(app).post('/api/events').expect(401);
+      await request(app).put('/api/events/1').expect(401);
+      await request(app).delete('/api/events/1').expect(401);
+    });
 
-  test('GET /events/form-options should return valid form options', async () => {
-    const response = await request(app).get('/events/form-options');
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toHaveProperty('skillOptions');
-    expect(response.body).toHaveProperty('urgencyOptions');
-    expect(response.body.skillOptions.length).toBeGreaterThan(0);
-    expect(response.body.urgencyOptions.length).toBeGreaterThan(0);
+    it('should handle verifyAdmin errors for protected routes', async () => {
+      // Allow verifyToken to pass but fail on verifyAdmin
+      verifyToken.mockImplementation((req, res, next) => next());
+      verifyAdmin.mockImplementation((req, res, next) => {
+        res.status(403).json({ message: 'Forbidden' });
+      });
+
+      // Test admin-protected routes
+      await request(app).get('/api/events/form-options').expect(403);
+      await request(app).get('/api/events/1').expect(403);
+      await request(app).post('/api/events').expect(403);
+      await request(app).put('/api/events/1').expect(403);
+      await request(app).delete('/api/events/1').expect(403);
+    });
   });
 });
-

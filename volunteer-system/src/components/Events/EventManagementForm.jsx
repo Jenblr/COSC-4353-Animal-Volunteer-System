@@ -31,24 +31,30 @@ const EventManagementForm = () => {
     fetchFormOptions();
   }, []);
 
+ 
   const fetchFormOptions = async () => {
     setIsLoading(true);
     setErrorMessage('');
     try {
       const response = await api.get('/events/form-options');
-      setFormOptions(response.data);
+      // Transform the data to match frontend structure
+      setFormOptions({
+        stateOptions: response.data.states.map(state => state.code), // Convert state objects to array of codes
+        skillOptions: response.data.skills || [],
+        urgencyOptions: response.data.urgencyLevels || []
+      });
     } catch (error) {
       console.error('Error fetching form options:', error.response?.data || error.message);
       setErrorMessage('Unable to load form options. Please try again later.');
       setFormOptions({
+        stateOptions: [],
         skillOptions: [],
-        urgencyOptions: [],
-        stateOptions: []
+        urgencyOptions: []
       });
     } finally {
       setIsLoading(false);
     }
-  };
+};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -91,39 +97,107 @@ const EventManagementForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   if (!validateForm()) {
+  //     return;
+  //   }
+  //   try {
+  //     setIsLoading(true);
+  //     const response = await api.post('/events', formData);
+  //     setSubmitStatus('success');
+   
+  //     setFormData({
+  //       eventName: '',
+  //       eventDescription: '',
+  //       address1: '',
+  //       city: '',
+  //       state: '',
+  //       zipCode: '',
+  //       requiredSkills: [],
+  //       urgency: '',
+  //       eventDate: '',
+  //       startTime: '',
+  //       endTime: ''
+  //     });
+  //     console.log('Event created successfully:', response.data);
+  //   } catch (error) {
+  //     console.error('Error submitting form:', error.response?.data || error.message);
+  //     setErrors(error.response?.data?.errors || {});
+  //     setSubmitStatus('error');
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
-      return;
+        return;
     }
     try {
-      setIsLoading(true);
-      const response = await api.post('/events', formData);
-      setSubmitStatus('success');
-   
-      setFormData({
-        eventName: '',
-        eventDescription: '',
-        address1: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        requiredSkills: [],
-        urgency: '',
-        eventDate: '',
-        startTime: '',
-        endTime: ''
-      });
-      console.log('Event created successfully:', response.data);
-    } catch (error) {
-      console.error('Error submitting form:', error.response?.data || error.message);
-      setErrors(error.response?.data?.errors || {});
-      setSubmitStatus('error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        setIsLoading(true);
+        
+        // Transform address1 to address before sending
+        const eventData = {
+            ...formData,
+            address: formData.address1 // Map address1 to address
+        };
+        delete eventData.address1;  // Remove address1
 
+        // Log the exact data being sent
+        console.log('Sending event data:', eventData);
+        
+        const response = await api.post('/events', eventData);
+        console.log('Server response:', response.data);
+        
+        setSubmitStatus('success');
+        setFormData({
+            eventName: '',
+            eventDescription: '',
+            address1: '',
+            city: '',
+            state: '',
+            zipCode: '',
+            requiredSkills: [],
+            urgency: '',
+            eventDate: '',
+            startTime: '',
+            endTime: ''
+        });
+    } catch (error) {
+        // More detailed error logging
+        console.error('Full error:', error);
+        console.error('Error response:', {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.message,
+            stack: error.stack
+        });
+        
+        // Handle specific error cases
+        if (error.response?.status === 401) {
+            setSubmitStatus('error');
+            setErrorMessage('Please login again. Your session may have expired.');
+            return;
+        }
+        
+        if (error.response?.status === 400) {
+            if (error.response.data?.errors) {
+                setErrors(error.response.data.errors);
+                console.log('Validation errors:', error.response.data.errors);
+            } else {
+                setErrorMessage(error.response.data?.message || 'Invalid data submitted');
+            }
+            setSubmitStatus('error');
+            return;
+        }
+        
+        setSubmitStatus('error');
+        setErrorMessage('An unexpected error occurred. Please try again.');
+    } finally {
+        setIsLoading(false);
+    }
+};
   if (isLoading) {
     return <p>Loading...</p>;
   }
