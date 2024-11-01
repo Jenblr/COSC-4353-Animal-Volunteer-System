@@ -16,22 +16,22 @@ jest.mock('../../services/authService');
 
 describe('AuthController', () => {
     afterEach(() => {
-        jest.clearAllMocks(); 
+        jest.clearAllMocks();
     });
 
     describe('register', () => {
-        it('should return 201 and token when registration is successful', () => {
+        it('should return 201 and token when registration is successful', async () => {
             const req = mockRequest({ email: 'test@example.com', password: 'password123', role: 'volunteer' });
             const res = mockResponse();
 
-            authService.registerUser.mockReturnValue({
+            authService.registerUser.mockResolvedValue({
                 status: 201,
                 message: 'User registered successfully',
                 token: 'test-token',
                 needsProfile: true
             });
 
-            authController.register(req, res);
+            await authController.register(req, res);
 
             expect(res.status).toHaveBeenCalledWith(201);
             expect(res.json).toHaveBeenCalledWith({
@@ -41,44 +41,56 @@ describe('AuthController', () => {
             });
         });
 
-        it('should return 400 when email or password is missing', () => {
+        it('should return 400 when email or password is missing', async () => {
             const req = mockRequest({ email: '', password: '' });
             const res = mockResponse();
 
-            authController.register(req, res);
+            await authController.register(req, res);
 
             expect(res.status).toHaveBeenCalledWith(400);
             expect(res.json).toHaveBeenCalledWith({ message: 'Email and password are required' });
         });
 
-        it('should return the correct error status and message from the service', () => {
+        it('should return 500 when an error occurs', async () => {
             const req = mockRequest({ email: 'test@example.com', password: 'password123' });
             const res = mockResponse();
 
-            authService.registerUser.mockReturnValue({
-                status: 500,
-                message: 'Registration failed'
-            });
+            authService.registerUser.mockRejectedValue(new Error('Registration failed'));
 
-            authController.register(req, res);
+            await authController.register(req, res);
 
             expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({ message: 'Registration failed' });
+            expect(res.json).toHaveBeenCalledWith({ message: 'Internal server error' });
+        });
+
+        it('should return the correct error status and message from the service', async () => {
+            const req = mockRequest({ email: 'test@example.com', password: 'password123' });
+            const res = mockResponse();
+
+            authService.registerUser.mockResolvedValue({
+                status: 409,
+                message: 'User already exists'
+            });
+
+            await authController.register(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(409);
+            expect(res.json).toHaveBeenCalledWith({ message: 'User already exists' });
         });
     });
 
     describe('login', () => {
-        it('should return 200 and token when login is successful', () => {
+        it('should return 200 and token when login is successful', async () => {
             const req = mockRequest({ email: 'test@example.com', password: 'password123' });
             const res = mockResponse();
 
-            authService.loginUser.mockReturnValue({
+            authService.loginUser.mockResolvedValue({
                 status: 200,
                 token: 'test-token',
                 role: 'volunteer'
             });
 
-            authController.login(req, res);
+            await authController.login(req, res);
 
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.json).toHaveBeenCalledWith({
@@ -87,16 +99,28 @@ describe('AuthController', () => {
             });
         });
 
-        it('should return the correct error status and message when login fails', () => {
+        it('should return 500 when an error occurs', async () => {
+            const req = mockRequest({ email: 'test@example.com', password: 'password123' });
+            const res = mockResponse();
+
+            authService.loginUser.mockRejectedValue(new Error('Login failed'));
+
+            await authController.login(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(500);
+            expect(res.json).toHaveBeenCalledWith({ message: 'Internal server error' });
+        });
+
+        it('should return the correct error status and message when login fails', async () => {
             const req = mockRequest({ email: 'test@example.com', password: 'wrongpassword' });
             const res = mockResponse();
 
-            authService.loginUser.mockReturnValue({
+            authService.loginUser.mockResolvedValue({
                 status: 401,
                 message: 'Invalid credentials'
             });
 
-            authController.login(req, res);
+            await authController.login(req, res);
 
             expect(res.status).toHaveBeenCalledWith(401);
             expect(res.json).toHaveBeenCalledWith({ message: 'Invalid credentials' });
@@ -104,7 +128,7 @@ describe('AuthController', () => {
     });
 
     describe('getAllVolunteers', () => {
-        it('should return 200 and a list of volunteers', () => {
+        it('should return 200 and a list of volunteers', async () => {
             const req = mockRequest();
             const res = mockResponse();
 
@@ -113,35 +137,31 @@ describe('AuthController', () => {
                 { id: 2, email: 'volunteer2@example.com', fullName: 'Volunteer Two' }
             ];
 
-            authService.getAllVolunteers.mockReturnValue(mockVolunteers);
+            authService.getAllVolunteers.mockResolvedValue(mockVolunteers);
 
-            authController.getAllVolunteers(req, res);
+            await authController.getAllVolunteers(req, res);
 
             expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.json).toHaveBeenCalledWith(mockVolunteers.map(v => ({
-                id: v.id,
-                email: v.email,
-                fullName: v.fullName
-            })));
+            expect(res.json).toHaveBeenCalledWith(mockVolunteers);
         });
 
-        it('should return 500 if there is an error fetching volunteers', () => {
+        it('should return 500 if there is an error fetching volunteers', async () => {
             const req = mockRequest();
             const res = mockResponse();
 
-            authService.getAllVolunteers.mockImplementation(() => {
-                throw new Error('Error fetching volunteers');
-            });
+            authService.getAllVolunteers.mockRejectedValue(new Error('Error fetching volunteers'));
 
-            authController.getAllVolunteers(req, res);
+            await authController.getAllVolunteers(req, res);
 
             expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({ message: 'Error fetching volunteers', error: expect.any(Error) });
+            expect(res.json).toHaveBeenCalledWith({ 
+                message: 'Error fetching volunteers'
+            });
         });
     });
 
     describe('getRegisteredVolunteers', () => {
-        it('should return 200 and a list of registered volunteers', () => {
+        it('should return 200 and a list of registered volunteers', async () => {
             const req = mockRequest();
             const res = mockResponse();
 
@@ -150,30 +170,26 @@ describe('AuthController', () => {
                 { id: 2, email: 'registered2@example.com', fullName: 'Registered Two' }
             ];
 
-            authService.getRegisteredVolunteers.mockReturnValue(mockRegisteredVolunteers);
+            authService.getRegisteredVolunteers.mockResolvedValue(mockRegisteredVolunteers);
 
-            authController.getRegisteredVolunteers(req, res);
+            await authController.getRegisteredVolunteers(req, res);
 
             expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.json).toHaveBeenCalledWith(mockRegisteredVolunteers.map(v => ({
-                id: v.id,
-                email: v.email,
-                fullName: v.fullName
-            })));
+            expect(res.json).toHaveBeenCalledWith(mockRegisteredVolunteers);
         });
 
-        it('should return 500 if there is an error fetching registered volunteers', () => {
+        it('should return 500 if there is an error fetching registered volunteers', async () => {
             const req = mockRequest();
             const res = mockResponse();
 
-            authService.getRegisteredVolunteers.mockImplementation(() => {
-                throw new Error('Error fetching registered volunteers');
-            });
+            authService.getRegisteredVolunteers.mockRejectedValue(new Error('Error fetching registered volunteers'));
 
-            authController.getRegisteredVolunteers(req, res);
+            await authController.getRegisteredVolunteers(req, res);
 
             expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({ message: 'Error fetching registered volunteers', error: expect.any(Error) });
+            expect(res.json).toHaveBeenCalledWith({ 
+                message: 'Error fetching registered volunteers'
+            });
         });
     });
 });

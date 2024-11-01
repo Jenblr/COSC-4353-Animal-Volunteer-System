@@ -16,7 +16,6 @@ const validateProfile = (profileData) => {
 const profileService = {
     getFormOptions: async () => {
         try {
-            // Get states from database
             const states = await State.findAll({
                 order: [['name', 'ASC']]
             });
@@ -74,7 +73,6 @@ const profileService = {
 				return null;
 			}
 	
-			// Return different profile structure based on user role
 			return {
 				fullName: profile.fullName,
 				email: profile.User.email,
@@ -190,13 +188,11 @@ const profileService = {
 				return { status: 400, message: 'Validation failed', errors };
 			}
 
-			// Create profile first
 			const profileResult = await profileService.createProfile(tempUser.id, profileData);
 			if (profileResult.status !== 201) {
 				return profileResult;
 			}
 
-			// Then finalize registration
 			const authResult = await authService.finalizeRegistration(tempUser.id);
 			if (authResult.status !== 200) {
 				return authResult;

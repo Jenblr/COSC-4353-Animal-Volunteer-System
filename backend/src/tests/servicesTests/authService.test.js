@@ -1,265 +1,324 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { User } = require('../../../models');
+const { Op } = require('sequelize');
 const authService = require('../../services/authService');
 
 jest.mock('bcryptjs');
 jest.mock('jsonwebtoken');
 jest.mock('crypto');
+jest.mock('../../../models', () => ({
+  User: {
+    findOne: jest.fn(),
+    create: jest.fn(),
+    findAll: jest.fn(),
+    destroy: jest.fn(),
+    update: jest.fn()
+  }
+}));
 
 describe('AuthService', () => {
-	let tokenCounter = 0;
+  let tokenCounter = 0;
 
-	beforeEach(() => {
-		jest.clearAllMocks();
-		tokenCounter = 0;
-		crypto.randomBytes.mockImplementation(() => ({
-			toString: () => `mockedToken${++tokenCounter}`
-		}));
-		authService.clearUsers();
-	});
+  beforeEach(() => {
+    jest.clearAllMocks();
+    tokenCounter = 0;
+    crypto.randomBytes.mockImplementation(() => ({
+      toString: () => `mockedToken${++tokenCounter}`
+    }));
+    process.env.JWT_SECRET = 'test-secret';
+  });
 
-	describe('registerUser', () => {
-		it('should register a new admin user successfully', () => {
-			const result = authService.registerUser('admin2@example.com', 'adminpassword', 'admin');
+  describe('registerUser', () => {
+    it('should register a new user successfully', async () => {
+      User.findOne.mockResolvedValueOnce(null);
+      
+      User.create.mockResolvedValueOnce({
+        id: 1,
+        email: 'test@example.com',
+        role: 'volunteer'
+      });
 
-			expect(result.status).toBe(201);
-			expect(result.message).toBe('Temporary user created. Please complete your profile.');
-			expect(result.token).toBe('mockedToken1');
-			expect(result.needsProfile).toBe(true);
-		});
+      const result = await authService.registerUser('test@example.com', 'password123');
 
-		it('should register a volunteer user when no role is specified', () => {
-			const result = authService.registerUser('volunteer@example.com', 'password123');
+      expect(result.status).toBe(201);
+      expect(result.message).toBe('Temporary user created. Please complete your profile.');
+      expect(result.token).toBeDefined();
+      expect(result.needsProfile).toBe(true);
+      
+      expect(User.create).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        password: 'password123',
+        role: 'volunteer',
+        registrationToken: expect.any(String),
+        tokenExpiresAt: expect.any(Date),
+        isRegistered: false
+      });
+    });
 
-			const user = authService.verifyTemporaryUserByToken(result.token);
-			expect(user.role).toBe('volunteer');
-			expect(result.status).toBe(201);
-		});
+    it('should prevent registration with existing email', async () => {
+      User.findOne.mockResolvedValueOnce({ id: 1, email: 'existing@example.com' });
 
-		it('should prevent registration with existing admin email', () => {
-			const result = authService.registerUser('admin@example.com', 'newpassword', 'volunteer');
+      const result = await authService.registerUser('existing@example.com', 'password123');
 
-			expect(result.status).toBe(400);
-			expect(result.message).toBe('User already exists');
-		});
+      expect(result.status).toBe(400);
+      expect(result.message).toBe('User already exists');
+      expect(User.create).not.toHaveBeenCalled();
+    });
 
-		it('should prevent registration with existing volunteer email', () => {
-			const firstResult = authService.registerUser('volunteer@example.com', 'password123', 'volunteer');
-			const tempUser = authService.verifyTemporaryUserByToken(firstResult.token);
-			authService.finalizeRegistration(tempUser.id, { name: 'John' });
+    it('should handle database errors during registration', async () => {
+      User.findOne.mockRejectedValueOnce(new Error('Database error'));
 
-			const result = authService.registerUser('volunteer@example.com', 'newpassword', 'volunteer');
+      const result = await authService.registerUser('test@example.com', 'password123');
 
-			expect(result.status).toBe(400);
-			expect(result.message).toBe('User already exists');
-		});
+      expect(result.status).toBe(500);
+      expect(result.message).toBe('Error creating user');
+    });
 
-		it('should prevent registration with existing temporary user email', () => {
-			authService.registerUser('temp@example.com', 'password123', 'volunteer');
+    it('should handle user creation failure', async () => {
+      User.findOne.mockResolvedValueOnce(null);
+      User.create.mockResolvedValueOnce(null); 
 
-			const result = authService.registerUser('temp@example.com', 'newpassword', 'volunteer');
+      const result = await authService.registerUser('test@example.com', 'password123');
 
-			expect(result.status).toBe(400);
-			expect(result.message).toBe('User already exists');
-		});
+      expect(result.status).toBe(500);
+      expect(result.message).toBe('Error creating temporary user');
+    });
+  });
 
-		it('should hash the password before storing user', () => {
-			bcrypt.hashSync.mockReturnValue('hashedPassword123');
-			const result = authService.registerUser('hashuser@example.com', 'password123', 'volunteer');
+  describe('verifyTemporaryUserByToken', () => {
+    it('should verify a temporary user successfully', async () => {
+      const mockUser = {
+        id: 1,
+        email: 'temp@example.com',
+        isRegistered: false,
+        tokenExpiresAt: new Date(Date.now() + 600000) // 10 minutes from now
+      };
 
-			expect(bcrypt.hashSync).toHaveBeenCalledWith('password123', 8);
-			expect(result.status).toBe(201);
-		});
-	});
+      User.findOne.mockResolvedValueOnce(mockUser);
 
-	describe('loginUser', () => {
-		it('should login a user successfully', () => {
-			const registerResult = authService.registerUser('testuser@example.com', 'password123', 'volunteer');
-			const tempUser = authService.verifyTemporaryUserByToken(registerResult.token);
-			authService.finalizeRegistration(tempUser.id);
+      const result = await authService.verifyTemporaryUserByToken('valid-token');
 
-			bcrypt.compareSync.mockReturnValue(true);
-			jwt.sign.mockReturnValue('jwtToken');
+      expect(result).toEqual(mockUser);
+      expect(User.findOne).toHaveBeenCalledWith({
+        where: {
+          registrationToken: 'valid-token',
+          tokenExpiresAt: expect.any(Object),
+          isRegistered: false
+        }
+      });
+    });
 
-			const result = authService.loginUser('testuser@example.com', 'password123');
+    it('should return null for expired or invalid token', async () => {
+      User.findOne.mockResolvedValueOnce(null);
 
-			expect(result.status).toBe(200);
-			expect(result.token).toBe('jwtToken');
-			expect(result.role).toBe('volunteer');
-		});
+      const result = await authService.verifyTemporaryUserByToken('invalid-token');
 
-		it('should return error if user not found', () => {
-			const result = authService.loginUser('nonexistent@example.com', 'password123');
+      expect(result).toBeNull();
+    });
+  });
 
-			expect(result.status).toBe(404);
-			expect(result.message).toBe('User not found');
-		});
+  describe('finalizeRegistration', () => {
+    it('should finalize registration successfully', async () => {
+      const mockUser = {
+        id: 1,
+        tokenExpiresAt: new Date(Date.now() + 600000),
+        update: jest.fn().mockResolvedValueOnce(true)
+      };
 
-		it('should return error if password is incorrect', () => {
-			const registerResult = authService.registerUser('testuser@example.com', 'password123', 'volunteer');
-			const tempUser = authService.verifyTemporaryUserByToken(registerResult.token);
-			authService.finalizeRegistration(tempUser.id);
+      User.findOne.mockResolvedValueOnce(mockUser);
 
-			bcrypt.compareSync.mockReturnValue(false);
+      const result = await authService.finalizeRegistration(1, { name: 'John' });
 
-			const result = authService.loginUser('testuser@example.com', 'wrongpassword');
+      expect(result.status).toBe(200);
+      expect(result.message).toBe('Registration finalized successfully');
+      expect(mockUser.update).toHaveBeenCalledWith({
+        isRegistered: true,
+        registrationToken: null,
+        tokenExpiresAt: null
+      });
+    });
 
-			expect(result.status).toBe(401);
-			expect(result.message).toBe('Invalid credentials');
-		});
-	});
+    it('should handle non-existent user', async () => {
+      User.findOne.mockResolvedValueOnce(null);
 
-	describe('verifyTemporaryUserByToken', () => {
-		it('should verify a temporary user successfully', () => {
-			const registerResult = authService.registerUser('tempuser@example.com', 'password123', 'volunteer');
+      const result = await authService.finalizeRegistration(999, { name: 'John' });
 
-			const result = authService.verifyTemporaryUserByToken(registerResult.token);
+      expect(result.status).toBe(404);
+      expect(result.message).toBe('Temporary user not found');
+    });
 
-			expect(result).toBeDefined();
-			expect(result.email).toBe('tempuser@example.com');
-		});
+    it('should handle expired token during finalization', async () => {
+      const mockUser = {
+        id: 1,
+        tokenExpiresAt: new Date(Date.now() - 600000) // 10 minutes ago (expired)
+      };
 
-		it('should return undefined for non-existent token', () => {
-			const result = authService.verifyTemporaryUserByToken('nonexistenttoken');
+      User.findOne.mockResolvedValueOnce(mockUser);
 
-			expect(result).toBeUndefined();
-		});
-	});
+      const result = await authService.finalizeRegistration(1, { name: 'John' });
 
-	describe('finalizeRegistration', () => {
-		it('should finalize registration with profile data', () => {
-			const registerResult = authService.registerUser('profileuser@example.com', 'password123', 'volunteer');
-			const tempUser = authService.verifyTemporaryUserByToken(registerResult.token);
+      expect(result.status).toBe(400);
+      expect(result.message).toBe('Registration token has expired');
+    });
 
-			const profileData = { name: 'John Doe', age: 25 };
-			const result = authService.finalizeRegistration(tempUser.id, profileData);
+    it('should handle database errors during finalization', async () => {
+      User.findOne.mockRejectedValueOnce(new Error('Database error'));
 
-			expect(result.status).toBe(200);
-			expect(result.message).toBe('Registration finalized successfully');
-			const registeredUser = authService.getRegisteredVolunteers().find(user => user.id === tempUser.id);
-			expect(registeredUser.name).toBe('John Doe');
-			expect(registeredUser.age).toBe(25);
-		});
+      const result = await authService.finalizeRegistration(1, { name: 'John' });
 
-		it('should handle non-existent temporary user ID', () => {
-			const result = authService.finalizeRegistration(999, { name: 'John' });
+      expect(result.status).toBe(500);
+      expect(result.message).toBe('Error finalizing registration');
+    });
+  });
 
-			expect(result.status).toBe(404);
-			expect(result.message).toBe('Temporary user not found');
-		});
+  describe('loginUser', () => {
+    it('should login user successfully', async () => {
+      const mockUser = {
+        id: 1,
+        email: 'test@example.com',
+        role: 'volunteer',
+        isRegistered: true,
+        validatePassword: jest.fn().mockResolvedValueOnce(true)
+      };
 
-		it('should properly transfer all user data during finalization', () => {
-			const registerResult = authService.registerUser('complete@example.com', 'password123', 'volunteer');
-			const tempUser = authService.verifyTemporaryUserByToken(registerResult.token);
+      User.findOne.mockResolvedValueOnce(mockUser);
+      jwt.sign.mockReturnValueOnce('mocked-jwt-token');
 
-			const profileData = {
-				name: 'John Doe',
-				age: 25,
-				phone: '123-456-7890',
-				address: '123 Main St'
-			};
+      const result = await authService.loginUser('test@example.com', 'password123');
 
-			authService.finalizeRegistration(tempUser.id, profileData);
-			const registeredUser = authService.getRegisteredVolunteers().find(user => user.id === tempUser.id);
+      expect(result.status).toBe(200);
+      expect(result.token).toBe('mocked-jwt-token');
+      expect(result.role).toBe('volunteer');
+    });
 
-			expect(registeredUser).toMatchObject({
-				...profileData,
-				email: 'complete@example.com',
-				role: 'volunteer',
-				isRegistered: true
-			});
-			expect(registeredUser.password).toBeDefined();
-			expect(registeredUser.token).toBe(tempUser.token);
-		});
-	});
+    it('should reject login for unregistered user', async () => {
+      const mockUser = {
+        isRegistered: false
+      };
 
-	describe('removeExpiredTemporaryUsers', () => {
-		it('should remove expired temporary users', () => {
-			const result1 = authService.registerUser('tempuser1@example.com', 'password123', 'volunteer');
-			const tempUser1 = authService.verifyTemporaryUserByToken(result1.token);
-			authService.setTemporaryUserCreatedAt(tempUser1.token, new Date(Date.now() - 11 * 60 * 1000));
+      User.findOne.mockResolvedValueOnce(mockUser);
 
-			const result2 = authService.registerUser('tempuser2@example.com', 'password123', 'volunteer');
-			const tempUser2 = authService.verifyTemporaryUserByToken(result2.token);
-			authService.setTemporaryUserCreatedAt(tempUser2.token, new Date(Date.now() - 9 * 60 * 1000));
+      const result = await authService.loginUser('temp@example.com', 'password123');
 
-			authService.removeExpiredTemporaryUsers();
-			const remainingTempUsers = authService.getTemporaryUsers();
+      expect(result.status).toBe(401);
+      expect(result.message).toBe('Error: Registration not complete. Try registering again in 10 minutes.');
+    });
 
-			expect(remainingTempUsers.length).toBe(1);
-			expect(remainingTempUsers[0].email).toBe('tempuser2@example.com');
-		});
+    it('should reject login with invalid credentials', async () => {
+      const mockUser = {
+        isRegistered: true,
+        validatePassword: jest.fn().mockResolvedValueOnce(false)
+      };
 
-		it('should not remove any temporary users if none are expired', () => {
-			const result = authService.registerUser('tempuser1@example.com', 'password123', 'volunteer');
-			const tempUser1 = authService.verifyTemporaryUserByToken(result.token);
-			authService.setTemporaryUserCreatedAt(tempUser1.token, new Date(Date.now() - 5 * 60 * 1000));
+      User.findOne.mockResolvedValueOnce(mockUser);
 
-			authService.removeExpiredTemporaryUsers();
-			const remainingTempUsers = authService.getTemporaryUsers();
+      const result = await authService.loginUser('test@example.com', 'wrongpassword');
 
-			expect(remainingTempUsers.length).toBe(1);
-			expect(remainingTempUsers[0].email).toBe('tempuser1@example.com');
-		});
-	});
+      expect(result.status).toBe(401);
+      expect(result.message).toBe('Invalid credentials');
+    });
 
-	describe('clearUsers', () => {
-		it('should clear all temporary and volunteer users', () => {
-			authService.registerUser('clearuser1@example.com', 'password123', 'volunteer');
-			authService.registerUser('clearuser2@example.com', 'password123', 'volunteer');
+    it('should handle user not found during login', async () => {
+      User.findOne.mockResolvedValueOnce(null);
 
-			authService.clearUsers();
+      const result = await authService.loginUser('nonexistent@example.com', 'password123');
 
-			expect(authService.getRegisteredVolunteers().length).toBe(0);
-			expect(authService.getTemporaryUsers().length).toBe(0);
-		});
-	});
+      expect(result.status).toBe(404);
+      expect(result.message).toBe('User not found');
+    });
 
-	describe('getAllVolunteers', () => {
-		it('should return all volunteer users', () => {
-			const result1 = authService.registerUser('vol1@example.com', 'pass123', 'volunteer');
-			const tempUser1 = authService.verifyTemporaryUserByToken(result1.token);
-			authService.finalizeRegistration(tempUser1.id, { name: 'Vol 1' });
+    it('should handle database errors during login', async () => {
+      User.findOne.mockRejectedValueOnce(new Error('Database error'));
 
-			const result2 = authService.registerUser('vol2@example.com', 'pass123', 'volunteer');
-			const tempUser2 = authService.verifyTemporaryUserByToken(result2.token);
-			authService.finalizeRegistration(tempUser2.id, { name: 'Vol 2' });
+      const result = await authService.loginUser('test@example.com', 'password123');
 
-			const volunteers = authService.getAllVolunteers();
+      expect(result.status).toBe(500);
+      expect(result.message).toBe('Error during login');
+    });
+  });
 
-			expect(volunteers.length).toBe(2);
-			expect(volunteers.map(v => v.email)).toContain('vol1@example.com');
-			expect(volunteers.map(v => v.email)).toContain('vol2@example.com');
-		});
+  describe('getAllVolunteers', () => {
+    it('should return all registered volunteers', async () => {
+      const mockVolunteers = [
+        { id: 1, email: 'vol1@example.com' },
+        { id: 2, email: 'vol2@example.com' }
+      ];
 
-		it('should return empty array when no volunteers exist', () => {
-			const volunteers = authService.getAllVolunteers();
-			expect(volunteers).toEqual([]);
-		});
-	});
+      User.findAll.mockResolvedValueOnce(mockVolunteers);
 
-	describe('getRegisteredVolunteers', () => {
-		it('should return only registered volunteers', () => {
-			const result1 = authService.registerUser('registered@example.com', 'pass123', 'volunteer');
-			const tempUser1 = authService.verifyTemporaryUserByToken(result1.token);
-			authService.finalizeRegistration(tempUser1.id, { name: 'Registered Vol' });
+      const result = await authService.getAllVolunteers();
 
-			authService.registerUser('temp@example.com', 'pass123', 'volunteer');
+      expect(result).toEqual(mockVolunteers);
+      expect(User.findAll).toHaveBeenCalledWith({
+        where: {
+          role: 'volunteer',
+          isRegistered: true
+        },
+        attributes: ['id', 'email']
+      });
+    });
 
-			const registeredVolunteers = authService.getRegisteredVolunteers();
+    it('should handle database errors', async () => {
+      User.findAll.mockRejectedValueOnce(new Error('Database error'));
 
-			expect(registeredVolunteers.length).toBe(1);
-			expect(registeredVolunteers[0].email).toBe('registered@example.com');
-			expect(registeredVolunteers[0].isRegistered).toBe(true);
-		});
+      const result = await authService.getAllVolunteers();
 
-		it('should return empty array when no registered volunteers exist', () => {
-			authService.registerUser('temp1@example.com', 'pass123', 'volunteer');
-			authService.registerUser('temp2@example.com', 'pass123', 'volunteer');
+      expect(result).toEqual([]);
+    });
+  });
 
-			const registeredVolunteers = authService.getRegisteredVolunteers();
-			expect(registeredVolunteers).toEqual([]);
-		});
-	});
+  describe('cleanupTemporaryUsers', () => {
+    it('should remove expired temporary users', async () => {
+      User.destroy.mockResolvedValueOnce(2); 
+
+      await authService.cleanupTemporaryUsers();
+
+      expect(User.destroy).toHaveBeenCalledWith({
+        where: {
+          isRegistered: false,
+          tokenExpiresAt: {
+            [Op.lt]: expect.any(Date)
+          }
+        }
+      });
+    });
+
+    it('should handle database errors during cleanup', async () => {
+      User.destroy.mockRejectedValueOnce(new Error('Database error'));
+
+      await authService.cleanupTemporaryUsers();
+    });
+  });
+  
+  describe('getRegisteredVolunteers', () => {
+    it('should return registered volunteers successfully', async () => {
+      const mockVolunteers = [
+        { id: 1, email: 'vol1@example.com' },
+        { id: 2, email: 'vol2@example.com' }
+      ];
+
+      User.findAll.mockResolvedValueOnce(mockVolunteers);
+
+      const result = await authService.getRegisteredVolunteers();
+
+      expect(result).toEqual(mockVolunteers);
+      expect(User.findAll).toHaveBeenCalledWith({
+        where: {
+          role: 'volunteer',
+          isRegistered: true
+        },
+        attributes: ['id', 'email']
+      });
+    });
+
+    it('should handle database errors when getting registered volunteers', async () => {
+      User.findAll.mockRejectedValueOnce(new Error('Database error'));
+
+      const result = await authService.getRegisteredVolunteers();
+
+      expect(result).toEqual([]);
+    });
+  });
 });
