@@ -1,261 +1,159 @@
-const { Sequelize, DataTypes } = require('sequelize');
+const { DataTypes } = require('sequelize');
+const EventModel = require('../../../models/Event');
+
+// Create a mock Sequelize instance
+const mockSequelize = {
+    define: jest.fn((modelName, attributes) => {
+        return { name: modelName, rawAttributes: attributes, belongsTo: jest.fn() };
+    }),
+};
 
 describe('Event Model', () => {
-    let sequelize;
-    let Event;
+    const Event = EventModel(mockSequelize, DataTypes);
 
-    beforeAll(() => {
-        sequelize = new Sequelize('sqlite::memory:', {
-            logging: false
-        });
+    it('should have the correct model name', () => {
+        expect(Event.name).toBe('Event');
+    });
 
-        Event = sequelize.define('Event', {
-            id: {
+    describe('Field Definitions', () => {
+        it('should define id field correctly', () => {
+            expect(Event.rawAttributes.id).toMatchObject({
                 type: DataTypes.INTEGER,
                 primaryKey: true,
                 autoIncrement: true
-            },
-            eventName: {
+            });
+        });
+
+        it('should define eventName field correctly', () => {
+            expect(Event.rawAttributes.eventName).toMatchObject({
                 type: DataTypes.STRING(100),
                 allowNull: false,
                 validate: {
                     notEmpty: true,
                     len: [1, 100]
                 }
-            },
-            eventDescription: {
+            });
+        });
+
+        it('should define eventDescription field correctly', () => {
+            expect(Event.rawAttributes.eventDescription).toMatchObject({
                 type: DataTypes.TEXT,
                 allowNull: false,
                 validate: {
                     notEmpty: true
                 }
-            },
-            address: {
+            });
+        });
+
+        it('should define address field correctly', () => {
+            expect(Event.rawAttributes.address).toMatchObject({
                 type: DataTypes.TEXT,
                 allowNull: false,
                 validate: {
                     notEmpty: true
                 }
-            },
-            city: {
+            });
+        });
+
+        it('should define city field correctly', () => {
+            expect(Event.rawAttributes.city).toMatchObject({
                 type: DataTypes.STRING,
                 allowNull: false,
                 validate: {
                     notEmpty: true
                 }
-            },
-            state: {
+            });
+        });
+
+        it('should define state field correctly', () => {
+            expect(Event.rawAttributes.state).toMatchObject({
                 type: DataTypes.STRING(2),
-                allowNull: false
-            },
-            zipCode: {
+                allowNull: false,
+                references: {
+                    model: 'States',
+                    key: 'code'
+                }
+            });
+        });
+
+        it('should define zipCode field correctly', () => {
+            expect(Event.rawAttributes.zipCode).toMatchObject({
                 type: DataTypes.STRING(10),
                 allowNull: false,
                 validate: {
                     notEmpty: true,
                     is: /^\d{5}(-\d{4})?$/
                 }
-            },
-            requiredSkills: {
-                type: DataTypes.TEXT,
-                allowNull: false,
-                defaultValue: '[]',
-                get() {
-                    const rawValue = this.getDataValue('requiredSkills');
-                    return JSON.parse(rawValue);
-                },
-                set(value) {
-                    this.setDataValue('requiredSkills', JSON.stringify(value));
-                },
-                validate: {
-                    isValidArray(value) {
-                        try {
-                            const arr = JSON.parse(value);
-                            if (!Array.isArray(arr) || arr.length === 0) {
-                                throw new Error('Required skills must be a non-empty array');
-                            }
-                        } catch (e) {
-                            throw new Error('Invalid skills format');
-                        }
-                    }
-                }
-            },
-            urgency: {
-                type: DataTypes.STRING,
-                allowNull: false,
-                validate: {
-                    isIn: [['Low', 'Medium', 'High', 'Critical']]
-                }
-            },
-            eventDate: {
-                type: DataTypes.DATEONLY,
-                allowNull: false
-            },
-            startTime: {
-                type: DataTypes.TIME,
-                allowNull: false
-            },
-            endTime: {
-                type: DataTypes.TIME,
-                allowNull: false
-            },
-            createdBy: {
-                type: DataTypes.INTEGER,
-                allowNull: false
-            }
-        });
-
-        // Define minimal User and State models
-        const User = sequelize.define('User', {
-            id: {
-                type: DataTypes.INTEGER,
-                primaryKey: true,
-                autoIncrement: true
-            },
-            email: {
-                type: DataTypes.STRING,
-                allowNull: false
-            }
-        });
-
-        const State = sequelize.define('State', {
-            code: {
-                type: DataTypes.STRING(2),
-                primaryKey: true
-            },
-            name: {
-                type: DataTypes.STRING,
-                allowNull: false
-            }
-        });
-
-        // Set up associations
-        Event.belongsTo(User, {
-            foreignKey: 'createdBy'
-        });
-
-        Event.belongsTo(State, {
-            foreignKey: 'state',
-            targetKey: 'code'
-        });
-    });
-
-    beforeEach(async () => {
-        await sequelize.sync({ force: true });
-        
-        // Create test user and state
-        await sequelize.models.User.create({
-            id: 1,
-            email: 'test@example.com'
-        });
-
-        await sequelize.models.State.create({
-            code: 'CA',
-            name: 'California'
-        });
-    });
-
-    afterAll(async () => {
-        await sequelize.close();
-    });
-
-    const validEventData = {
-        eventName: 'Test Event',
-        eventDescription: 'Test Description',
-        address: '123 Test St',
-        city: 'Test City',
-        state: 'CA',
-        zipCode: '12345',
-        requiredSkills: ['skill1', 'skill2'],
-        urgency: 'Medium',
-        eventDate: '2024-12-25',
-        startTime: '09:00:00',
-        endTime: '17:00:00',
-        createdBy: 1
-    };
-
-    describe('Model Structure', () => {
-        it('should have all required fields', () => {
-            const fields = Object.keys(Event.rawAttributes);
-            const requiredFields = [
-                'id', 'eventName', 'eventDescription', 'address',
-                'city', 'state', 'zipCode', 'requiredSkills',
-                'urgency', 'eventDate', 'startTime', 'endTime',
-                'createdBy'
-            ];
-
-            requiredFields.forEach(field => {
-                expect(fields).toContain(field);
             });
         });
 
-        it('should have correct associations', () => {
-            expect(Event.associations.User).toBeDefined();
-            expect(Event.associations.State).toBeDefined();
+        it('should define requiredSkills field correctly', () => {
+            expect(Event.rawAttributes.requiredSkills).toMatchObject({
+                type: DataTypes.ARRAY(DataTypes.STRING),
+                allowNull: false,
+                defaultValue: [],
+                validate: {
+                    notEmpty: true
+                }
+            });
+        });
+
+        it('should define urgency field correctly', () => {
+            expect(Event.rawAttributes.urgency).toMatchObject({
+                type: DataTypes.ENUM('Low', 'Medium', 'High', 'Critical'),
+                allowNull: false
+            });
+        });
+
+        it('should define eventDate field correctly', () => {
+            expect(Event.rawAttributes.eventDate).toMatchObject({
+                type: DataTypes.DATEONLY,
+                allowNull: false
+            });
+        });
+
+        it('should define startTime field correctly', () => {
+            expect(Event.rawAttributes.startTime).toMatchObject({
+                type: DataTypes.TIME,
+                allowNull: false
+            });
+        });
+
+        it('should define endTime field correctly', () => {
+            expect(Event.rawAttributes.endTime).toMatchObject({
+                type: DataTypes.TIME,
+                allowNull: false
+            });
+        });
+
+        it('should define createdBy field correctly', () => {
+            expect(Event.rawAttributes.createdBy).toMatchObject({
+                type: DataTypes.INTEGER,
+                allowNull: false
+            });
         });
     });
 
-    describe('Validations', () => {
-        it('should create event with valid data', async () => {
-            const event = await Event.create(validEventData);
-            expect(event).toBeDefined();
-            expect(event.eventName).toBe(validEventData.eventName);
-            expect(Array.isArray(event.requiredSkills)).toBe(true);
+    describe('Associations', () => {
+        const State = { name: 'State' };
+        const User = { name: 'User' };
+
+        beforeAll(() => {
+            Event.associate({ State, User });
         });
 
-        it('should enforce eventName length validation', async () => {
-            const invalidEvent = { ...validEventData, eventName: 'a'.repeat(101) };
-            await expect(Event.create(invalidEvent)).rejects.toThrow();
+        it('should belong to State', () => {
+            expect(Event.belongsTo).toHaveBeenCalledWith(State, {
+                foreignKey: 'state',
+                targetKey: 'code'
+            });
         });
 
-        it('should enforce zipCode format', async () => {
-            const invalidEvent = { ...validEventData, zipCode: '123' };
-            await expect(Event.create(invalidEvent)).rejects.toThrow();
-
-            const validZipEvent = { ...validEventData, zipCode: '12345-6789' };
-            const event = await Event.create(validZipEvent);
-            expect(event.zipCode).toBe('12345-6789');
-        });
-
-        it('should enforce urgency values', async () => {
-            const invalidEvent = { ...validEventData, urgency: 'Invalid' };
-            await expect(Event.create(invalidEvent)).rejects.toThrow();
-
-            const validUrgencies = ['Low', 'Medium', 'High', 'Critical'];
-            for (const urgency of validUrgencies) {
-                const event = await Event.create({ ...validEventData, urgency });
-                expect(event.urgency).toBe(urgency);
-            }
-        });
-
-        it('should validate required skills array', async () => {
-            const invalidEvent = { ...validEventData, requiredSkills: [] };
-            await expect(Event.create(invalidEvent)).rejects.toThrow();
-        });
-    });
-
-    describe('CRUD Operations', () => {
-        it('should handle create, read, update, and delete operations', async () => {
-            // Create
-            const event = await Event.create(validEventData);
-            expect(event.id).toBeDefined();
-
-            // Read
-            const foundEvent = await Event.findByPk(event.id);
-            expect(foundEvent.eventName).toBe(validEventData.eventName);
-
-            // Update
-            const updatedName = 'Updated Event Name';
-            await event.update({ eventName: updatedName });
-            expect(event.eventName).toBe(updatedName);
-
-            // Delete
-            await event.destroy();
-            const deletedEvent = await Event.findByPk(event.id);
-            expect(deletedEvent).toBeNull();
+        it('should belong to User', () => {
+            expect(Event.belongsTo).toHaveBeenCalledWith(User, {
+                foreignKey: 'createdBy'
+            });
         });
     });
 });
-
-
 
