@@ -1,7 +1,6 @@
 const { DataTypes } = require('sequelize');
 const EventModel = require('../../../models/Event');
 
-// Create a mock Sequelize instance
 const mockSequelize = {
     define: jest.fn((modelName, attributes) => {
         return { name: modelName, rawAttributes: attributes, belongsTo: jest.fn() };
