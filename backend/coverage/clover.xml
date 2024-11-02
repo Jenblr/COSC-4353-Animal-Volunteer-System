@@ -1,17 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1730520743207" clover="3.2.0">
-  <project timestamp="1730520743207" name="All files">
-    <metrics statements="966" coveredstatements="876" conditionals="377" coveredconditionals="330" methods="115" coveredmethods="107" elements="1458" coveredelements="1313" complexity="0" loc="966" ncloc="966" packages="7" files="31" classes="31"/>
+<coverage generated="1730520869577" clover="3.2.0">
+  <project timestamp="1730520869577" name="All files">
+    <metrics statements="969" coveredstatements="879" conditionals="377" coveredconditionals="330" methods="117" coveredmethods="109" elements="1463" coveredelements="1318" complexity="0" loc="969" ncloc="969" packages="8" files="32" classes="32"/>
+    <package name="migrations">
+      <metrics statements="3" coveredstatements="3" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="2"/>
+      <file name="20241030-create-events.js" path="C:\Users\JenNg\OneDrive\Documents\University of Houston\Fall 2024\COSC 4353 - Software Design\COSC-4353-Animal-Volunteer-System\backend\migrations\20241030-create-events.js">
+        <metrics statements="3" coveredstatements="3" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="2"/>
+        <line num="1" count="1" type="stmt"/>
+        <line num="3" count="4" type="stmt"/>
+        <line num="77" count="2" type="stmt"/>
+      </file>
+    </package>
     <package name="models">
       <metrics statements="55" coveredstatements="49" conditionals="14" coveredconditionals="8" methods="16" coveredmethods="13"/>
       <file name="event.js" path="C:\Users\JenNg\OneDrive\Documents\University of Houston\Fall 2024\COSC 4353 - Software Design\COSC-4353-Animal-Volunteer-System\backend\models\event.js">
         <metrics statements="6" coveredstatements="6" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="2"/>
-        <line num="1" count="20" type="stmt"/>
-        <line num="2" count="20" type="stmt"/>
-        <line num="83" count="20" type="stmt"/>
-        <line num="84" count="20" type="stmt"/>
-        <line num="88" count="20" type="stmt"/>
-        <line num="93" count="20" type="stmt"/>
+        <line num="1" count="21" type="stmt"/>
+        <line num="2" count="21" type="stmt"/>
+        <line num="83" count="21" type="stmt"/>
+        <line num="84" count="21" type="stmt"/>
+        <line num="88" count="21" type="stmt"/>
+        <line num="93" count="21" type="stmt"/>
       </file>
       <file name="history.js" path="C:\Users\JenNg\OneDrive\Documents\University of Houston\Fall 2024\COSC 4353 - Software Design\COSC-4353-Animal-Volunteer-System\backend\models\history.js">
         <metrics statements="6" coveredstatements="6" conditionals="0" coveredconditionals="0" methods="2" coveredmethods="2"/>
