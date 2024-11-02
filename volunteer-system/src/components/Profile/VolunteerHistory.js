@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import '../../styles/VolunteerHistory.css';
 
@@ -8,7 +9,7 @@ const VolunteerHistory = () => {
   const [selectedVolunteer, setSelectedVolunteer] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAdmin } = useAuth();
   const participationStatuses = [
     { value: 'Not Attended', label: 'Not Attended' },
     { value: 'Matched - Pending Attendance', label: 'Matched - Pending Attendance' },
@@ -18,13 +19,7 @@ const VolunteerHistory = () => {
 
   useEffect(() => {
     fetchVolunteers();
-    checkAdminStatus();
   }, []);
-
-  const checkAdminStatus = () => {
-    const role = localStorage.getItem('role');
-    setIsAdmin(role === 'admin');
-  };
 
   const fetchVolunteers = async () => {
     setLoading(true);
@@ -43,23 +38,37 @@ const VolunteerHistory = () => {
   };
 
   const fetchVolunteerHistory = async (userId) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/auth/history/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setVolunteerHistory(response.data);
-    } catch (err) {
-      console.error('Error fetching volunteer history:', err);
-      setError('Failed to fetch volunteer history. Please try again later.');
-      setVolunteerHistory([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+      setLoading(true);
+      setError(null);
+      try {
+          const token = localStorage.getItem('token');
+          if (!token) {
+              throw new Error('No authentication token found');
+          }
 
+          console.log('Fetching history for user:', userId);
+          const response = await axios.get(
+              `http://localhost:5000/api/auth/history/${userId}`,
+              {
+                  headers: { Authorization: `Bearer ${token}` }
+              }
+          );
+
+          console.log('History response:', response.data);
+          setVolunteerHistory(response.data);
+      } catch (err) {
+          console.error('Error fetching volunteer history:', err);
+          if (err.response?.status === 401 || err.response?.status === 403) {
+              setError('Please log in again to view history.');
+          } else {
+              setError('Failed to fetch volunteer history. Please try again later.');
+          }
+          setVolunteerHistory([]);
+      } finally {
+          setLoading(false);
+      }
+  };
+  
   const handleVolunteerChange = (e) => {
     const userId = e.target.value;
     setSelectedVolunteer(userId);

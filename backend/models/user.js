@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 module.exports = (sequelize, DataTypes) => {
 	class User extends Model {
 		static associate(models) {
-			// Waiting for group member' User Profile, Event Details, States, Volunteer History
+			// Ignore for now -J
 		}
 
 		async validatePassword(password) {

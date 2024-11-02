@@ -1,107 +1,141 @@
-const eventService = require('../services/eventService');
-const authService = require('../services/authService');
+const { VolunteerHistory, Event, User } = require('../../models');
 
-let volunteerHistory = [];
-let isInitialized = false;
-
-const initializeHistory = () => {
-    if (isInitialized) {
-        return volunteerHistory;
-    }
-
-    console.log('Initializing history records');
-    const allEvents = eventService.getAllEvents();
-    const allVolunteers = authService.getAllVolunteers();
-    
-    const newHistory = [];
-
-    allVolunteers.forEach(volunteer => {
-        allEvents.forEach(event => {
-            const historyRecord = {
-                id: `${volunteer.id}-${event.id}`, 
-                volunteer: volunteer.id,
-                eventId: event.id,
-                eventName: event.eventName,
-                eventDescription: event.eventDescription,
-                location: `${event.address1}, ${event.city}, ${event.state} ${event.zipCode}`,
-                requiredSkills: event.requiredSkills,
-                urgency: event.urgency,
-                eventDate: event.eventDate,
-                startTime: event.startTime,
-                endTime: event.endTime,
-                participationStatus: 'Not Attended' 
-            };
-            newHistory.push(historyRecord);
-        });
-    });
-
-    volunteerHistory = newHistory;
-    isInitialized = true;
-    console.log('History records initialized:', volunteerHistory.length);
-    return newHistory;
-};
-
-const ensureHistoryExists = (volunteerId, eventId) => {
-    if (!isInitialized) {
-        initializeHistory();
-    }
-    
-    const recordId = `${volunteerId}-${eventId}`;
-    return volunteerHistory.find(record => record.id === recordId);
-};
-
-exports.getAllHistory = () => {
-    if (!isInitialized) {
-        initializeHistory();
-    }
-    return volunteerHistory;
-};
-
-exports.getHistory = (userId) => {
-    if (!isInitialized) {
-        initializeHistory();
-    }
-    console.log('Fetching history for userId:', userId);
-    return volunteerHistory.filter(record => record.volunteer === userId);
-};
-
-exports.updateHistoryRecord = (recordId, updateData) => {
-    console.log('Updating record. RecordId:', recordId);
-    const recordIndex = volunteerHistory.findIndex(r => r.id === recordId);
-    
-    if (recordIndex === -1) {
-        return { status: 404, message: 'History record not found' };
-    }
-
-    volunteerHistory[recordIndex] = { ...volunteerHistory[recordIndex], ...updateData };
-    return { status: 200, record: volunteerHistory[recordIndex] };
-};
-
-exports.updateVolunteerEventStatus = async (volunteerId, eventId, newStatus) => {
-    try {
-        console.log(`Updating status for volunteer ${volunteerId} and event ${eventId}`);
-        
-        const existingRecord = ensureHistoryExists(volunteerId, eventId);
-        if (!existingRecord) {
-            console.log('No history record found for:', { volunteerId, eventId });
-            throw new Error('History record not found');
+const historyService = {
+    initializeHistory: async (volunteerId = null, eventId = null) => {
+        try {
+            let events = eventId ? [await Event.findByPk(eventId)] : await Event.findAll();
+            let volunteers = volunteerId ? [await User.findByPk(volunteerId)] : 
+                           await User.findAll({ where: { role: 'volunteer' } });
+                           
+            const records = [];
+            for (const volunteer of volunteers) {
+                for (const event of events) {
+                    const [record] = await VolunteerHistory.findOrCreate({
+                        where: {
+                            volunteerId: volunteer.id,
+                            eventId: event.id
+                        },
+                        defaults: {
+                            participationStatus: 'Not Attended'
+                        }
+                    });
+                    records.push(record);
+                }
+            }
+            return records;
+        } catch (error) {
+            console.error('Error initializing history:', error);
+            throw error;
         }
+    },
 
-        const recordId = `${volunteerId}-${eventId}`;
-        return this.updateHistoryRecord(recordId, {
-            participationStatus: newStatus,
-            matchedAt: new Date().toISOString()
-        });
-    } catch (error) {
-        console.error('Error updating volunteer event status:', error);
-        throw error;
+    updateVolunteerEventStatus: async (volunteerId, eventId, participationStatus) => {
+        try {
+            console.log(`Updating status for volunteer ${volunteerId} and event ${eventId}`);
+            
+            const [historyRecord, created] = await VolunteerHistory.findOrCreate({
+                where: { 
+                    volunteerId: parseInt(volunteerId),
+                    eventId: parseInt(eventId)
+                },
+                defaults: {
+                    participationStatus: participationStatus,
+                    matchedAt: new Date()
+                }
+            });
+
+            if (!created) {
+                await historyRecord.update({
+                    participationStatus: participationStatus,
+                    matchedAt: new Date()
+                });
+            }
+
+            return { 
+                success: true,
+                message: 'Volunteer status updated successfully'
+            };
+        } catch (error) {
+            console.error('Error updating volunteer event status:', error);
+            throw {
+                success: false,
+                message: 'Failed to update volunteer status',
+                error: error.message
+            };
+        }
+    },
+
+    getAllHistory: async () => {
+        try {
+            return await VolunteerHistory.findAll({
+                include: [{ 
+                    model: Event,
+                    attributes: [
+                        'eventName', 'eventDescription', 'address', 
+                        'city', 'state', 'zipCode', 'requiredSkills',
+                        'urgency', 'eventDate', 'startTime', 'endTime'
+                    ]
+                }]
+            });
+        } catch (error) {
+            console.error('Error getting all history:', error);
+            throw error;
+        }
+    },
+
+    getHistory: async (userId) => {
+        try {
+            await historyService.initializeHistory(userId);
+
+            const history = await VolunteerHistory.findAll({
+                where: { volunteerId: userId },
+                include: [{
+                    model: Event,
+                    required: true,
+                    attributes: [
+                        'eventName', 'eventDescription', 
+                        'address', 'city', 'state', 'zipCode',
+                        'requiredSkills', 'urgency', 
+                        'eventDate', 'startTime', 'endTime'
+                    ]
+                }],
+                order: [[Event, 'eventDate', 'DESC']]
+            });
+
+            return history;
+        } catch (error) {
+            console.error('Error in getHistory service:', error);
+            throw error;
+        }
+    },
+
+    updateHistoryRecord: async (recordId, updateData) => {
+        try {
+            const record = await VolunteerHistory.findByPk(recordId);
+            if (!record) {
+                throw new Error('History record not found');
+            }
+
+            await record.update(updateData);
+            return { 
+                success: true,
+                message: 'Record updated successfully',
+                record 
+            };
+        } catch (error) {
+            console.error('Error updating history record:', error);
+            throw error;
+        }
+    },
+    
+    initializeEventHistory: async (eventId) => {
+        try {
+            return await historyService.initializeHistory(null, eventId);
+        } catch (error) {
+            console.error('Error initializing event history:', error);
+            throw error;
+        }
     }
 };
 
-// For testing purposes
-exports._reset = () => {
-    volunteerHistory = [];
-    isInitialized = false;
-};
-
-exports.ensureHistoryExists = ensureHistoryExists;
+module.exports = historyService;

@@ -1,4 +1,5 @@
 const matchingService = require('../services/matchingService');
+const historyService = require('../services/historyService');
 
 exports.getMatchingVolunteers = async (req, res) => {
     try {
@@ -33,8 +34,7 @@ exports.matchVolunteerToEvent = async (req, res) => {
             return res.status(400).json({ message: 'Volunteer ID and Event ID are required' });
         }
         
-        const historyService = require('../services/historyService');
-        historyService.ensureHistoryExists(volunteerId, eventId);
+        await historyService.initializeHistory(volunteerId, eventId);
 
         const result = await historyService.updateVolunteerEventStatus(
             volunteerId, 
@@ -45,8 +45,11 @@ exports.matchVolunteerToEvent = async (req, res) => {
         res.status(200).json(result);
     } catch (error) {
         console.error('Error matching volunteer to event:', error);
-        res.status(error.status || 500).json({ 
-            message: error.message || 'Error matching volunteer to event' 
-        });
+        const status = error.status || 500;
+        const message = status === 500 ? 
+            'Error matching volunteer to event' : 
+            error.message;
+            
+        res.status(status).json({ message });
     }
 };

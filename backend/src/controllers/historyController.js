@@ -6,17 +6,34 @@ exports.getAllHistory = (req, res) => {
 	res.status(200).json(allHistory);
 };
 
-exports.getHistory = (req, res) => {
-	const userId = parseInt(req.params.userId, 10);
-	console.log('Controller: Fetching history for userId:', userId);
-	const allHistory = historyService.getAllHistory();
-	const userHistory = allHistory.filter(record => record.volunteer === userId);
-    
-	if (userHistory.length === 0) {
-		return res.status(404).json({ message: 'No history found for this user' });
-	}
-    
-	res.status(200).json(userHistory);
+exports.getHistory = async (req, res) => {
+    try {
+        const userId = parseInt(req.params.userId);
+        console.log('Controller: Fetching history for userId:', userId);
+
+        const history = await historyService.getHistory(userId);
+        
+        const formattedHistory = history.map(record => ({
+            id: record.id,
+            eventName: record.Event.eventName,
+            eventDescription: record.Event.eventDescription,
+            location: `${record.Event.address}, ${record.Event.city}, ${record.Event.state} ${record.Event.zipCode}`,
+            requiredSkills: record.Event.requiredSkills,
+            urgency: record.Event.urgency,
+            eventDate: record.Event.eventDate,
+            startTime: record.Event.startTime,
+            endTime: record.Event.endTime,
+            participationStatus: record.participationStatus
+        }));
+
+        res.status(200).json(formattedHistory);
+    } catch (error) {
+        console.error('Error in getHistory controller:', error);
+        res.status(500).json({
+            message: 'Error fetching volunteer history',
+            error: error.message
+        });
+    }
 };
 
 exports.updateHistoryRecord = (req, res) => {

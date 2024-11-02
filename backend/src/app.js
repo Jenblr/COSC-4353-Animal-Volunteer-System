@@ -5,7 +5,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const eventRoutes = require('./routes/eventRoutes');
-//const matchingRoutes = require('./routes/matchingRoutes');
+const matchingRoutes = require('./routes/matchingRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const historyRoutes = require('./routes/historyRoutes');
 const cronManager = require('./services/cronManager');
@@ -26,7 +26,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/auth/events', eventRoutes);
-//app.use('/api/auth/volunteer-matching', matchingRoutes);
+app.use('/api/auth/volunteer-matching', matchingRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/auth/history', historyRoutes);
 

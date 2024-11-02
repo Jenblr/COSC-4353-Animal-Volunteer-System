@@ -11,24 +11,29 @@ export const AuthProvider = ({ children }) => {
 
     const checkAuthStatus = useCallback(async () => {
         const token = localStorage.getItem('token');
-        if (token) {
-            try {
-                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-                
-                const response = await axios.get('http://localhost:5000/api/auth/verify');
-                const { role } = response.data;
-
-                setIsLoggedIn(true);
-                setIsAdmin(role === 'admin');
-                setUser(response.data);
-            } catch (error) {
-                console.error('Auth verification failed:', error);
-                logout();
-            }
+        if (!token) {
+            setLoading(false);
+            return;
         }
-        setLoading(false);
-    }, []);  
-
+    
+        try {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            const response = await axios.get('http://localhost:5000/api/auth/verify');
+            const { role } = response.data;
+    
+            setIsLoggedIn(true);
+            setIsAdmin(role === 'admin');
+            setUser(response.data);
+        } catch (error) {
+            console.error('Auth verification failed:', error);
+            // Clear token if invalid
+            localStorage.removeItem('token');
+            delete axios.defaults.headers.common['Authorization'];
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+    
     useEffect(() => {
         checkAuthStatus();
     }, [checkAuthStatus]);

@@ -1,114 +1,242 @@
+const { VolunteerHistory, Event, User } = require('../../../models');
 const historyService = require('../../services/historyService');
-const eventService = require('../../services/eventService');
-const authService = require('../../services/authService');
 
-jest.mock('../../services/eventService');
-jest.mock('../../services/authService');
+jest.mock('../../../models', () => ({
+  VolunteerHistory: {
+    findAll: jest.fn(),
+    findOrCreate: jest.fn(),
+    findByPk: jest.fn()
+  },
+  Event: {
+    findAll: jest.fn(),
+    findByPk: jest.fn()
+  },
+  User: {
+    findAll: jest.fn(),
+    findByPk: jest.fn()
+  }
+}));
 
 describe('History Service', () => {
-    const mockEvent = {
-        id: '1',
-        eventName: 'Test Event',
-        eventDescription: 'Test Description',
-        address1: '123 Test St',
-        city: 'Test City',
-        state: 'CA',
-        zipCode: '12345',
-        requiredSkills: ['Animal Care'],
-        urgency: 'Medium',
-        eventDate: '2024-12-25',
-        startTime: '09:00',
-        endTime: '17:00'
-    };
+  const mockEvent = {
+    id: 1,
+    eventName: 'Test Event',
+    eventDescription: 'Test Description',
+    address: '123 Test St',
+    city: 'Test City',
+    state: 'CA',
+    zipCode: '12345',
+    requiredSkills: ['Animal Care'],
+    urgency: 'Medium',
+    eventDate: '2024-12-25',
+    startTime: '09:00',
+    endTime: '17:00'
+  };
 
-    const mockVolunteer = {
-        id: '1',
-        email: 'test@example.com'
-    };
+  const mockVolunteer = {
+    id: 1,
+    email: 'test@example.com',
+    role: 'volunteer'
+  };
 
-    beforeEach(() => {
-        jest.clearAllMocks();
-        historyService._reset(); 
-        eventService.getAllEvents.mockReturnValue([mockEvent]);
-        authService.getAllVolunteers.mockReturnValue([mockVolunteer]);
+  const mockHistoryRecord = {
+    volunteerId: 1,
+    eventId: 1,
+    participationStatus: 'Not Attended',
+    update: jest.fn()
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('initializeHistory', () => {
+    it('should initialize history for all volunteers and events when no IDs provided', async () => {
+      Event.findAll.mockResolvedValue([mockEvent]);
+      User.findAll.mockResolvedValue([mockVolunteer]);
+      VolunteerHistory.findOrCreate.mockResolvedValue([mockHistoryRecord, true]);
+
+      const result = await historyService.initializeHistory();
+
+      expect(Event.findAll).toHaveBeenCalled();
+      expect(User.findAll).toHaveBeenCalledWith({ where: { role: 'volunteer' } });
+      expect(VolunteerHistory.findOrCreate).toHaveBeenCalledWith({
+        where: {
+          volunteerId: mockVolunteer.id,
+          eventId: mockEvent.id
+        },
+        defaults: {
+          participationStatus: 'Not Attended'
+        }
+      });
+      expect(result).toEqual([mockHistoryRecord]);
     });
 
-    describe('getAllHistory', () => {
-        it('should initialize history if empty', () => {
-            const history = historyService.getAllHistory();
-            
-            expect(Array.isArray(history)).toBe(true);
-            expect(history.length).toBeGreaterThan(0);
-            expect(eventService.getAllEvents).toHaveBeenCalledTimes(1);
-            expect(authService.getAllVolunteers).toHaveBeenCalledTimes(1);
-        });
+    it('should initialize history for specific volunteer and event when IDs provided', async () => {
+      Event.findByPk.mockResolvedValue(mockEvent);
+      User.findByPk.mockResolvedValue(mockVolunteer);
+      VolunteerHistory.findOrCreate.mockResolvedValue([mockHistoryRecord, true]);
 
-        it('should return existing history if not empty', () => {
-            const firstCall = historyService.getAllHistory();
-            const secondCall = historyService.getAllHistory();
-            
-            expect(firstCall).toEqual(secondCall);
-            expect(eventService.getAllEvents).toHaveBeenCalledTimes(1);
-        });
+      const result = await historyService.initializeHistory(1, 1);
+
+      expect(Event.findByPk).toHaveBeenCalledWith(1);
+      expect(User.findByPk).toHaveBeenCalledWith(1);
+      expect(result).toEqual([mockHistoryRecord]);
     });
 
-    describe('getHistory', () => {
-        it('should return history for specific user', () => {
-            const userHistory = historyService.getHistory('1');
-            
-            expect(Array.isArray(userHistory)).toBe(true);
-            expect(userHistory.every(record => record.volunteer === '1')).toBe(true);
-        });
+    it('should handle errors appropriately', async () => {
+      Event.findAll.mockRejectedValue(new Error('Database error'));
 
-        it('should return empty array for non-existent user', () => {
-            const userHistory = historyService.getHistory('999');
-            expect(userHistory).toEqual([]);
-        });
+      await expect(historyService.initializeHistory()).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('updateVolunteerEventStatus', () => {
+    it('should create new history record if not exists', async () => {
+      const newStatus = 'Attended';
+      VolunteerHistory.findOrCreate.mockResolvedValue([mockHistoryRecord, true]);
+
+      const result = await historyService.updateVolunteerEventStatus(1, 1, newStatus);
+
+      expect(VolunteerHistory.findOrCreate).toHaveBeenCalledWith({
+        where: { volunteerId: 1, eventId: 1 },
+        defaults: {
+          participationStatus: newStatus,
+          matchedAt: expect.any(Date)
+        }
+      });
+      expect(result).toEqual({
+        success: true,
+        message: 'Volunteer status updated successfully'
+      });
     });
 
-    describe('updateVolunteerEventStatus', () => {
-        it('should update status successfully', async () => {
-            historyService.getAllHistory();
+    it('should update existing history record', async () => {
+      const newStatus = 'Attended';
+      VolunteerHistory.findOrCreate.mockResolvedValue([mockHistoryRecord, false]);
 
-            const result = await historyService.updateVolunteerEventStatus('1', '1', 'Matched - Pending Attendance');
-            
-            expect(result.status).toBe(200);
-            expect(result.record.participationStatus).toBe('Matched - Pending Attendance');
-            expect(result.record.matchedAt).toBeTruthy();
-        });
+      const result = await historyService.updateVolunteerEventStatus(1, 1, newStatus);
 
-        it('should throw error for non-existent record', async () => {
-            await expect(
-                historyService.updateVolunteerEventStatus('999', '999', 'Matched - Pending Attendance')
-            ).rejects.toThrow('History record not found');
-        });
+      expect(mockHistoryRecord.update).toHaveBeenCalledWith({
+        participationStatus: newStatus,
+        matchedAt: expect.any(Date)
+      });
+      expect(result).toEqual({
+        success: true,
+        message: 'Volunteer status updated successfully'
+      });
     });
 
-    describe('updateHistoryRecord', () => {
-        it('should update history record with new data', () => {
-            historyService.getAllHistory();
+    it('should handle errors appropriately', async () => {
+      VolunteerHistory.findOrCreate.mockRejectedValue(new Error('Database error'));
 
-            const updateData = {
-                participationStatus: 'Attended'
-            };
-
-            const result = historyService.updateHistoryRecord('1-1', updateData);
-            
-            expect(result.status).toBe(200);
-            expect(result.record.participationStatus).toBe('Attended');
-        });
-
-        it('should return error for non-existent record', () => {
-            const result = historyService.updateHistoryRecord('999-999', {});
-            expect(result.status).toBe(404);
+      await expect(historyService.updateVolunteerEventStatus(1, 1, 'Attended'))
+        .rejects.toEqual({
+          success: false,
+          message: 'Failed to update volunteer status',
+          error: 'Database error'
         });
     });
+  });
 
-    describe('ensureHistoryExists', () => {
-        it('should initialize history if record not found', () => {
-            const record = historyService.ensureHistoryExists('1', '1');
-            expect(record).toBeTruthy();
-            expect(record.id).toBe('1-1');
-        });
+  describe('getAllHistory', () => {
+    it('should return all history records with event details', async () => {
+      const mockHistoryWithEvent = {
+        ...mockHistoryRecord,
+        Event: mockEvent
+      };
+      
+      VolunteerHistory.findAll.mockResolvedValue([mockHistoryWithEvent]);
+
+      const result = await historyService.getAllHistory();
+
+      expect(VolunteerHistory.findAll).toHaveBeenCalledWith({
+        include: [{
+          model: Event,
+          attributes: [
+            'eventName', 'eventDescription', 'address',
+            'city', 'state', 'zipCode', 'requiredSkills',
+            'urgency', 'eventDate', 'startTime', 'endTime'
+          ]
+        }]
+      });
+      expect(result).toEqual([mockHistoryWithEvent]);
     });
+
+    it('should handle errors appropriately', async () => {
+      VolunteerHistory.findAll.mockRejectedValue(new Error('Database error'));
+
+      await expect(historyService.getAllHistory()).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('getHistory', () => {
+    it('should initialize and return history for specific user', async () => {
+      const mockHistoryWithEvent = {
+        ...mockHistoryRecord,
+        Event: mockEvent
+      };
+
+      Event.findAll.mockResolvedValue([mockEvent]);
+      User.findByPk.mockResolvedValue(mockVolunteer);
+      VolunteerHistory.findOrCreate.mockResolvedValue([mockHistoryRecord, true]);
+
+      VolunteerHistory.findAll.mockResolvedValue([mockHistoryWithEvent]);
+
+      const result = await historyService.getHistory(1);
+
+      expect(VolunteerHistory.findAll).toHaveBeenCalledWith({
+        where: { volunteerId: 1 },
+        include: [{
+          model: Event,
+          required: true,
+          attributes: [
+            'eventName', 'eventDescription',
+            'address', 'city', 'state', 'zipCode',
+            'requiredSkills', 'urgency',
+            'eventDate', 'startTime', 'endTime'
+          ]
+        }],
+        order: [[Event, 'eventDate', 'DESC']]
+      });
+      expect(result).toEqual([mockHistoryWithEvent]);
+    });
+  });
+
+  describe('updateHistoryRecord', () => {
+    it('should update an existing history record', async () => {
+      VolunteerHistory.findByPk.mockResolvedValue(mockHistoryRecord);
+      const updateData = { participationStatus: 'Attended' };
+
+      const result = await historyService.updateHistoryRecord(1, updateData);
+
+      expect(mockHistoryRecord.update).toHaveBeenCalledWith(updateData);
+      expect(result).toEqual({
+        success: true,
+        message: 'Record updated successfully',
+        record: mockHistoryRecord
+      });
+    });
+
+    it('should throw error if record not found', async () => {
+      VolunteerHistory.findByPk.mockResolvedValue(null);
+
+      await expect(historyService.updateHistoryRecord(999, {}))
+        .rejects.toThrow('History record not found');
+    });
+  });
+
+  describe('initializeEventHistory', () => {
+    it('should initialize history for specific event', async () => {
+      const mockResult = [mockHistoryRecord];
+      Event.findByPk.mockResolvedValue(mockEvent);
+      User.findAll.mockResolvedValue([mockVolunteer]);
+      VolunteerHistory.findOrCreate.mockResolvedValue([mockHistoryRecord, true]);
+
+      const result = await historyService.initializeEventHistory(1);
+
+      expect(Event.findByPk).toHaveBeenCalledWith(1);
+      expect(result).toEqual(mockResult);
+    });
+  });
 });

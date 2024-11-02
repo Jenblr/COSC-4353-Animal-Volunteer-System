@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useAuth } from '../../context/AuthContext';
 import '../../styles/MatchingForm.css';
 
 const VolunteerMatchingForm = () => {
@@ -9,28 +10,44 @@ const VolunteerMatchingForm = () => {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(null);
 	const [selectedVolunteer, setSelectedVolunteer] = useState(null);
+	const { isAdmin, isLoggedIn } = useAuth();
 
-	useEffect(() => {
-		const fetchEvents = async () => {
-		try {
-			setLoading(true);
-			const token = localStorage.getItem('token');
-			const response = await axios.get('http://localhost:5000/api/auth/volunteer-matching/future-events', {
-			headers: { Authorization: `Bearer ${token}` }
-			});
-			console.log('Fetched events:', response.data);
-			setEvents(response.data);
-			setError(null);
-		} catch (error) {
-			console.error('Error fetching events:', error);
-			setError(error.response?.data?.message || 'Failed to load events');
-		} finally {
-			setLoading(false);
-		}
-		};
+    useEffect(() => {
+        if (!isLoggedIn || !isAdmin) {
+            setError('Admin access required');
+            return;
+        }
 
-		fetchEvents();
-	}, []);
+        const fetchEvents = async () => {
+            try {
+                setLoading(true);
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                const response = await axios.get('http://localhost:5000/api/auth/volunteer-matching/future-events', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                console.log('Fetched events:', response.data);
+                setEvents(response.data);
+                setError(null);
+            } catch (error) {
+                console.error('Error fetching events:', error);
+                if (error.response?.status === 401 || error.response?.status === 403) {
+                    setError('Please log in again with admin credentials');
+                } else {
+                    setError(error.response?.data?.message || 'Failed to load events');
+                }
+                setEvents([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchEvents();
+    }, [isAdmin, isLoggedIn]);
 
 	useEffect(() => {
 		const fetchMatchingVolunteers = async () => {
@@ -92,35 +109,41 @@ const VolunteerMatchingForm = () => {
 		try {
 			setLoading(true);
 			const token = localStorage.getItem('token');
-		  
-		  // Update to use the new match-status endpoint
-		  await axios.post(
-			'http://localhost:5000/api/auth/history/match-status',
-			{
-				volunteerId: selectedVolunteer.id,
-				eventId: selectedEvent.id
-			},
-			{
-				headers: { Authorization: `Bearer ${token}` }
-			}
-		  );
 	
-		  // Remove the matched volunteer from the list
-		  setMatchedVolunteers(prev => prev.filter(v => v.id !== selectedVolunteer.id));
-		  setSelectedVolunteer(null);
-		  setError(null);
+			await axios.post(
+				'http://localhost:5000/api/auth/history/match-status',
+				{
+					volunteerId: selectedVolunteer.id,
+					eventId: selectedEvent.id,
+					participationStatus: 'Matched - Pending Attendance' // Add this explicitly
+				},
+				{
+					headers: { 
+						Authorization: `Bearer ${token}`,
+						'Content-Type': 'application/json'
+					}
+				}
+			);
 	
-		  alert(`${selectedVolunteer.fullName} has been matched to ${selectedEvent.eventName}! Their status is now "Matched - Pending Attendance".`);
+			// Only update UI if request succeeded
+			setMatchedVolunteers(prev => prev.filter(v => v.id !== selectedVolunteer.id));
+			setSelectedVolunteer(null);
+			setError(null);
+	
+			alert(`${selectedVolunteer.fullName} has been matched to ${selectedEvent.eventName}! Their status is now "Matched - Pending Attendance".`);
 		} catch (error) {
 			console.error('Error matching volunteer:', error);
-			setError(
-				error.response?.data?.message || 
-				'Failed to match volunteer to event. Please try again.'
-		  );
+			if (error.response?.status === 500) {
+				setError('Server error: Unable to update volunteer status. Please try again.');
+			} else if (error.response?.status === 401 || error.response?.status === 403) {
+				setError('Authentication error: Please log in again with admin credentials.');
+			} else {
+				setError(error.response?.data?.message || 'Failed to match volunteer to event. Please try again.');
+			}
 		} finally {
 			setLoading(false);
 		}
-	  };	
+	};
 
 	const getEventUrgencyClass = (urgency) => {
 		switch (urgency.toLowerCase()) {

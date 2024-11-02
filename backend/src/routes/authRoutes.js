@@ -21,4 +21,12 @@ router.get('/registered-volunteers',
 	authController.getRegisteredVolunteers
 );
 
+router.get('/verify', authMiddleware.verifyToken, (req, res) => {
+    res.json({
+        id: req.userId,
+        email: req.userEmail,
+        role: req.userRole
+    });
+});
+
 module.exports = router;

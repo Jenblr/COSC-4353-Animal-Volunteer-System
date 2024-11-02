@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; // Add axios for API requests
+import axios from 'axios'; 
 import '../../styles/NotificationDisplay.css';
 
 const NotificationDisplay = ({ isAdmin }) => {
@@ -25,7 +25,6 @@ const NotificationDisplay = ({ isAdmin }) => {
     fetchNotifications();
   }, []);
 
-  // Handle admin adding a new update
   const handleAddUpdate = async () => {
     if (newUpdate.trim()) {
       const updateNotification = {

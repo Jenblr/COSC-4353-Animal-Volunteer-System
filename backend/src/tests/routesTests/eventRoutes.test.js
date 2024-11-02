@@ -14,8 +14,6 @@ jest.mock('../../controllers/eventController', () => ({
   getFormOptions: jest.fn((req, res) => res.json({ message: 'getFormOptions' })),
   getEventById: jest.fn((req, res) => res.json({ message: 'getEventById' })),
   createEvent: jest.fn((req, res) => res.json({ message: 'createEvent' })),
-  updateEvent: jest.fn((req, res) => res.json({ message: 'updateEvent' })),
-  deleteEvent: jest.fn((req, res) => res.json({ message: 'deleteEvent' }))
 }));
 
 describe('Event Routes', () => {
@@ -108,33 +106,6 @@ describe('Event Routes', () => {
     });
   });
 
-  describe('PUT /:id', () => {
-    it('should route to updateEvent and use auth middlewares', async () => {
-      const response = await request(app)
-        .put('/api/events/1')
-        .send({ eventName: 'Updated Event' })
-        .expect(200);
-
-      expect(verifyToken).toHaveBeenCalled();
-      expect(verifyAdmin).toHaveBeenCalled();
-      expect(eventController.updateEvent).toHaveBeenCalled();
-      expect(response.body).toEqual({ message: 'updateEvent' });
-    });
-  });
-
-  describe('DELETE /:id', () => {
-    it('should route to deleteEvent and use auth middlewares', async () => {
-      const response = await request(app)
-        .delete('/api/events/1')
-        .expect(200);
-
-      expect(verifyToken).toHaveBeenCalled();
-      expect(verifyAdmin).toHaveBeenCalled();
-      expect(eventController.deleteEvent).toHaveBeenCalled();
-      expect(response.body).toEqual({ message: 'deleteEvent' });
-    });
-  });
-
   describe('Middleware Error Handling', () => {
     it('should handle verifyToken errors for all routes', async () => {
       verifyToken.mockImplementation((req, res, next) => {
@@ -145,8 +116,6 @@ describe('Event Routes', () => {
       await request(app).get('/api/events/form-options').expect(401);
       await request(app).get('/api/events/1').expect(401);
       await request(app).post('/api/events').expect(401);
-      await request(app).put('/api/events/1').expect(401);
-      await request(app).delete('/api/events/1').expect(401);
     });
 
     it('should handle verifyAdmin errors for protected routes', async () => {
@@ -160,8 +129,6 @@ describe('Event Routes', () => {
       await request(app).get('/api/events/form-options').expect(403);
       await request(app).get('/api/events/1').expect(403);
       await request(app).post('/api/events').expect(403);
-      await request(app).put('/api/events/1').expect(403);
-      await request(app).delete('/api/events/1').expect(403);
     });
   });
 });

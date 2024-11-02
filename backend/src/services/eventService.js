@@ -1,13 +1,11 @@
-const volunteerHistoryService = require('../services/historyService');
+const historyService = require('../services/historyService');
 const authService = require('../services/authService');
 const notificationService = require('../services/notificationService');
 
 const { Op } = require('sequelize');
 
-// services/eventService.js
 const { Event, State, User } = require('../../models');
 
-// Predefined skills list
 const AVAILABLE_SKILLS = [
     'Animal Care',
     'Assisting Potential Adopters',
@@ -26,7 +24,6 @@ const AVAILABLE_SKILLS = [
     'Temporary Foster Care'
 ];
 
-// Get form options for dropdowns
 exports.getFormOptions = async () => {
     try {
         const states = await State.findAll({
@@ -48,8 +45,6 @@ exports.getFormOptions = async () => {
     }
 };
 
-
-// Get all events
 exports.getAllEvents = async () => {
     try {
         const events = await Event.findAll({
@@ -77,9 +72,8 @@ exports.getAllEvents = async () => {
 exports.createEvent = async (eventData, userId) => {
     try {
         console.log('Creating event with data:', eventData);
-        console.log('User ID received:', userId);  // Add this log
+        console.log('User ID received:', userId); 
 
-        // Validate skills
         const invalidSkills = eventData.requiredSkills.filter(
             skill => !AVAILABLE_SKILLS.includes(skill)
         );
@@ -92,7 +86,6 @@ exports.createEvent = async (eventData, userId) => {
             };
         }
 
-        // Validate state exists
         const stateExists = await State.findOne({
             where: { code: eventData.state }
         });
@@ -104,22 +97,23 @@ exports.createEvent = async (eventData, userId) => {
             };
         }
 
-        // Explicitly add the userId to eventData
         const eventWithUser = {
             ...eventData,
             createdBy: userId
         };
 
-        console.log('Final event data:', eventWithUser);  // Add this log
+        console.log('Final event data:', eventWithUser);  
 
         const event = await Event.create(eventWithUser);
+
+        await historyService.initializeEventHistory(event.id);
 
         return {
             message: "Event created successfully",
             event: await this.getEventById(event.id)
         };
     } catch (error) {
-        console.error('Error in createEvent service:', error);  // Add this log
+        console.error('Error in createEvent service:', error);  
         if (error.name === 'SequelizeValidationError') {
             throw {
                 status: 400,
@@ -133,8 +127,6 @@ exports.createEvent = async (eventData, userId) => {
     }
 };
 
-
-// Get event by ID
 exports.getEventById = async (id) => {
     try {
         const event = await Event.findByPk(id, {
@@ -163,104 +155,6 @@ exports.getEventById = async (id) => {
     }
 };
 
-// Update event
-exports.updateEvent = async (id, eventData, userId) => {
-    try {
-        const event = await Event.findByPk(id);
-        
-        if (!event) {
-            throw {
-                status: 404,
-                message: 'Event not found'
-            };
-        }
-
-        if (event.createdBy !== userId) {
-            throw {
-                status: 403,
-                message: 'Unauthorized to update this event'
-            };
-        }
-
-        // Validate skills if provided
-        if (eventData.requiredSkills) {
-            const invalidSkills = eventData.requiredSkills.filter(
-                skill => !AVAILABLE_SKILLS.includes(skill)
-            );
-            
-            if (invalidSkills.length > 0) {
-                throw {
-                    status: 400,
-                    message: 'Invalid skills provided',
-                    invalidSkills
-                };
-            }
-        }
-
-        // Validate state if provided
-        if (eventData.state) {
-            const stateExists = await State.findOne({
-                where: { code: eventData.state }
-            });
-
-            if (!stateExists) {
-                throw {
-                    status: 400,
-                    message: 'Invalid state code provided'
-                };
-            }
-        }
-
-        await event.update(eventData);
-
-        return {
-            message: "Event updated successfully",
-            event: await this.getEventById(id)
-        };
-    } catch (error) {
-        if (error.name === 'SequelizeValidationError') {
-            throw {
-                status: 400,
-                errors: error.errors.map(err => ({
-                    field: err.path,
-                    message: err.message
-                }))
-            };
-        }
-        throw error;
-    }
-};
-
-// Delete event
-exports.deleteEvent = async (id, userId) => {
-    try {
-        const event = await Event.findByPk(id);
-        
-        if (!event) {
-            throw {
-                status: 404,
-                message: 'Event not found'
-            };
-        }
-
-        if (event.createdBy !== userId) {
-            throw {
-                status: 403,
-                message: 'Unauthorized to delete this event'
-            };
-        }
-
-        await event.destroy();
-        
-        return {
-            message: "Event deleted successfully"
-        };
-    } catch (error) {
-        throw error;
-    }
-};
-
-// Search events by criteria
 exports.searchEvents = async (criteria) => {
     try {
         const where = {};
@@ -273,16 +167,35 @@ exports.searchEvents = async (criteria) => {
             where.urgency = criteria.urgency;
         }
 
-        if (criteria.skills) {
+        if (criteria.requiredSkills && Array.isArray(criteria.requiredSkills)) {
             where.requiredSkills = {
-                [Op.overlap]: criteria.skills // PostgreSQL array overlap
+                [Op.overlap]: criteria.requiredSkills
             };
         }
 
-        if (criteria.startDate && criteria.endDate) {
-            where.eventDate = {
-                [Op.between]: [criteria.startDate, criteria.endDate]
-            };
+        if (criteria.startDate || criteria.endDate) {
+            const startDate = criteria.startDate ? new Date(criteria.startDate) : null;
+            const endDate = criteria.endDate ? new Date(criteria.endDate) : null;
+
+            if (startDate && isNaN(startDate)) {
+                throw { status: 400, message: "Invalid start date format" };
+            }
+
+            if (endDate && isNaN(endDate)) {
+                throw { status: 400, message: "Invalid end date format" };
+            }
+
+            if (startDate && endDate && startDate > endDate) {
+                throw { status: 400, message: "Start date must be before end date" };
+            }
+
+            where.eventDate = {};
+            if (startDate) where.eventDate[Op.gte] = startDate;
+            if (endDate) where.eventDate[Op.lte] = endDate;
+        }
+
+        if (Object.keys(where).length === 0) {
+            throw { status: 400, message: "No search criteria provided" };
         }
 
         const events = await Event.findAll({
@@ -301,15 +214,12 @@ exports.searchEvents = async (criteria) => {
         });
 
         return events;
-    }
-    catch (error) {
+
+    } catch (error) {
         throw {
-            status: 500,
-            message: 'Error searching events',
-            error: error.message
+            status: error.status || 500,
+            message: error.message || 'Error searching events',
+            error: error.error || error.message
         };
     }
 };
-
-
-
