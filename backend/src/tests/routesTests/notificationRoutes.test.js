@@ -1,202 +1,152 @@
 const request = require('supertest');
 const express = require('express');
+const notificationController = require('../../controllers/notificationController');
+const authMiddleware = require('../../middleware/authMiddleware');
+const { validateNotification } = require('../../middleware/notificationMiddleware');
 const notificationRoutes = require('../../routes/notificationRoutes');
-const notificationService = require('../../services/notificationService');
 
-jest.mock('../../services/notificationService');
-jest.mock('../../middleware/authMiddleware', () => ({
-	verifyToken: (req, res, next) => next(),
-	verifyAdmin: (req, res, next) => next()
-}));
-
-const app = express();
-app.use(express.json());
-app.use('/notifications', notificationRoutes);
+jest.mock('../../controllers/notificationController');
+jest.mock('../../middleware/authMiddleware');
+jest.mock('../../middleware/notificationMiddleware');
 
 describe('Notification Routes', () => {
-	beforeEach(() => {
-		jest.clearAllMocks();
-		notificationService.NOTIFICATION_TYPES = {
-			NEW_EVENT: 'New Event',
-			UPDATE: 'Update',
-			REMINDER: 'Reminder'
-		};
-	});
+    let app;
 
-	describe('GET /notifications', () => {
-		test('should return all notifications', async () => {
-			const mockNotifications = [
-				{ id: 1, type: 'Update', message: 'Test Message' }
-			];
-			notificationService.getAllNotifications.mockReturnValue(mockNotifications);
+    beforeEach(() => {
+        jest.clearAllMocks();
 
-			const res = await request(app).get('/notifications');
+        app = express();
+        app.use(express.json());
+        app.use('/api/notifications', notificationRoutes);
 
-			expect(res.status).toBe(200);
-			expect(res.body.notifications).toEqual(mockNotifications);
-			expect(res.body.count).toBe(1);
-		});
+        authMiddleware.verifyToken.mockImplementation((req, res, next) => next());
+        authMiddleware.verifyAdmin.mockImplementation((req, res, next) => next());
+        validateNotification.mockImplementation((req, res, next) => next());
+    });
 
-		test('should filter notifications by type', async () => {
-			const mockNotifications = [
-				{ id: 1, type: 'Update', message: 'Test Message' }
-			];
-			notificationService.getAllNotifications.mockReturnValue(mockNotifications);
+    describe('GET /', () => {
+        it('should call getNotifications controller with auth', async () => {
+            notificationController.getNotifications.mockImplementation((req, res) => {
+                res.json({ notifications: [] });
+            });
 
-			const res = await request(app)
-				.get('/notifications')
-				.query({ type: 'Update' });
+            await request(app)
+                .get('/api/notifications')
+                .expect(200);
 
-			expect(res.status).toBe(200);
-			expect(res.body.notifications).toEqual(mockNotifications);
-		});
-	});
+            expect(authMiddleware.verifyToken).toHaveBeenCalled();
+            expect(notificationController.getNotifications).toHaveBeenCalled();
+        });
 
-	describe('GET /notifications/types', () => {
-		test('should return notification types', async () => {
-			const res = await request(app).get('/notifications/types');
+        it('should handle unauthorized access', async () => {
+            authMiddleware.verifyToken.mockImplementation((req, res) => {
+                res.status(401).json({ message: 'Unauthorized' });
+            });
 
-			expect(res.status).toBe(200);
-			expect(res.body.types).toEqual({
-				all: ['New Event', 'Update', 'Reminder'],
-				manual: ['Update', 'Reminder']
-			});
-		});
-	});
+            await request(app)
+                .get('/api/notifications')
+                .expect(401);
 
-	describe('POST /notifications/add', () => {
-		test('should add valid update notification', async () => {
-			const mockNotification = {
-				id: 1,
-				type: 'Update',
-				message: 'Test Message'
-			};
-			notificationService.addUpdateNotification.mockReturnValue(mockNotification);
+            expect(notificationController.getNotifications).not.toHaveBeenCalled();
+        });
+    });
 
-			const res = await request(app)
-				.post('/notifications/add')
-				.send({ type: 'Update', message: 'Test Message' });
+    describe('GET /types', () => {
+        it('should call getNotificationTypes controller with auth', async () => {
+            notificationController.getNotificationTypes.mockImplementation((req, res) => {
+                res.json({ types: ['Update', 'Reminder'] });
+            });
 
-			expect(res.status).toBe(201);
-			expect(res.body).toEqual({
-				message: 'Notification added successfully',
-				notification: mockNotification
-			});
-		});
+            await request(app)
+                .get('/api/notifications/types')
+                .expect(200);
 
-		test('should add valid reminder notification', async () => {
-			const mockNotification = {
-				id: 2,
-				type: 'Reminder',
-				message: 'Test Reminder'
-			};
-			notificationService.addReminderNotification.mockReturnValue(mockNotification);
+            expect(authMiddleware.verifyToken).toHaveBeenCalled();
+            expect(notificationController.getNotificationTypes).toHaveBeenCalled();
+        });
+    });
 
-			const res = await request(app)
-				.post('/notifications/add')
-				.send({ type: 'Reminder', message: 'Test Reminder' });
+    describe('GET /:id', () => {
+        it('should call getNotification controller with auth and id param', async () => {
+            notificationController.getNotification.mockImplementation((req, res) => {
+                res.json({ notification: {} });
+            });
 
-			expect(res.status).toBe(201);
-			expect(res.body).toEqual({
-				message: 'Notification added successfully',
-				notification: mockNotification
-			});
-		});
+            await request(app)
+                .get('/api/notifications/1')
+                .expect(200);
 
-		test('should reject NEW_EVENT type notifications', async () => {
-			const res = await request(app)
-				.post('/notifications/add')
-				.send({ type: 'New Event', message: 'Test Message' });
+            expect(authMiddleware.verifyToken).toHaveBeenCalled();
+            expect(notificationController.getNotification).toHaveBeenCalled();
+        });
+    });
 
-			expect(res.status).toBe(400);
-			expect(res.body).toEqual({
-				error: 'New event notifications are created automatically and cannot be added manually'
-			});
-		});
+    describe('POST /add', () => {
+        it('should call addNotification controller with auth, admin rights, and validation', async () => {
+            notificationController.addNotification.mockImplementation((req, res) => {
+                res.status(201).json({ message: 'Notification added' });
+            });
 
-		test('should reject invalid notification type', async () => {
-			const res = await request(app)
-				.post('/notifications/add')
-				.send({ type: 'Invalid', message: 'Test Message' });
+            const notificationData = {
+                type: 'Update',
+                message: 'Test notification'
+            };
 
-			expect(res.status).toBe(400);
-			expect(res.body.error).toContain('Invalid notification type');
-		});
+            await request(app)
+                .post('/api/notifications/add')
+                .send(notificationData)
+                .expect(201);
 
-		test('should reject empty message', async () => {
-			const res = await request(app)
-				.post('/notifications/add')
-				.send({ type: 'Update', message: '' });
+            expect(authMiddleware.verifyToken).toHaveBeenCalled();
+            expect(authMiddleware.verifyAdmin).toHaveBeenCalled();
+            expect(validateNotification).toHaveBeenCalled();
+            expect(notificationController.addNotification).toHaveBeenCalled();
+        });
 
-			expect(res.status).toBe(400);
-			expect(res.body.error).toContain('message');
-		});
-	});
+        it('should handle validation failure', async () => {
+            validateNotification.mockImplementation((req, res) => {
+                res.status(400).json({ message: 'Validation failed' });
+            });
 
-	describe('GET /notifications/:id', () => {
-		test('should return specific notification', async () => {
-			const mockNotification = {
-				id: 1,
-				type: 'Update',
-				message: 'Test Message'
-			};
-			notificationService.getNotificationById.mockReturnValue(mockNotification);
+            const invalidData = {
+                type: 'Invalid',
+                message: ''
+            };
 
-			const res = await request(app).get('/notifications/1');
+            await request(app)
+                .post('/api/notifications/add')
+                .send(invalidData)
+                .expect(400);
 
-			expect(res.status).toBe(200);
-			expect(res.body).toEqual({ notification: mockNotification });
-		});
+            expect(notificationController.addNotification).not.toHaveBeenCalled();
+        });
+    });
 
-		test('should return 404 for non-existent notification', async () => {
-			notificationService.getNotificationById.mockReturnValue(null);
+    describe('DELETE /delete/:id', () => {
+        it('should call deleteNotification controller with auth and admin rights', async () => {
+            notificationController.deleteNotification.mockImplementation((req, res) => {
+                res.json({ message: 'Notification deleted' });
+            });
 
-			const res = await request(app).get('/notifications/999');
+            await request(app)
+                .delete('/api/notifications/delete/1')
+                .expect(200);
 
-			expect(res.status).toBe(404);
-			expect(res.body).toEqual({ message: 'Notification not found' });
-		});
+            expect(authMiddleware.verifyToken).toHaveBeenCalled();
+            expect(authMiddleware.verifyAdmin).toHaveBeenCalled();
+            expect(notificationController.deleteNotification).toHaveBeenCalled();
+        });
 
-		test('should return 400 for invalid ID', async () => {
-			const res = await request(app).get('/notifications/invalid');
+        it('should handle unauthorized deletion attempt', async () => {
+            authMiddleware.verifyAdmin.mockImplementation((req, res) => {
+                res.status(403).json({ message: 'Admin rights required' });
+            });
 
-			expect(res.status).toBe(400);
-			expect(res.body).toEqual({ message: 'Invalid ID' });
-		});
-	});
+            await request(app)
+                .delete('/api/notifications/delete/1')
+                .expect(403);
 
-	describe('DELETE /notifications/delete/:id', () => {
-		test('should delete existing notification', async () => {
-			const mockNotification = {
-				id: 1,
-				type: 'Update',
-				message: 'Test Message'
-			};
-			notificationService.deleteNotification.mockReturnValue(mockNotification);
-
-			const res = await request(app).delete('/notifications/delete/1');
-
-			expect(res.status).toBe(200);
-			expect(res.body).toEqual({
-				message: 'Notification deleted successfully',
-				deletedNotification: mockNotification
-			});
-		});
-
-		test('should return 404 for non-existent notification', async () => {
-			notificationService.deleteNotification.mockReturnValue(null);
-
-			const res = await request(app).delete('/notifications/delete/999');
-
-			expect(res.status).toBe(404);
-			expect(res.body).toEqual({ message: 'Notification not found' });
-		});
-
-		test('should return 400 for invalid ID', async () => {
-			const res = await request(app).delete('/notifications/delete/invalid');
-
-			expect(res.status).toBe(400);
-			expect(res.body).toEqual({ error: 'Invalid notification ID' });
-		});
-	});
+            expect(notificationController.deleteNotification).not.toHaveBeenCalled();
+        });
+    });
 });

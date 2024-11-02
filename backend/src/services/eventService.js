@@ -106,6 +106,11 @@ exports.createEvent = async (eventData, userId) => {
 
         const event = await Event.create(eventWithUser);
 
+        notificationService.createEventNotification({
+            eventName: event.eventName,
+            eventDate: event.eventDate
+        });
+
         await historyService.initializeEventHistory(event.id);
 
         return {

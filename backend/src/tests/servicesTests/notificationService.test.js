@@ -1,98 +1,235 @@
+const { Notification } = require('../../../models');
 const notificationService = require('../../services/notificationService');
+const { Op } = require('sequelize');
+
+jest.mock('../../../models', () => ({
+    Notification: {
+        findAll: jest.fn(),
+        findByPk: jest.fn(),
+        create: jest.fn(),
+        destroy: jest.fn()
+    },
+    Sequelize: {
+        Op: require('sequelize').Op
+    }
+}));
 
 describe('Notification Service', () => {
-	beforeEach(() => {
-		const notifications = notificationService.getAllNotifications();
-		while (notifications.length > 0) {
-			notifications.pop();
-		}
-	});
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
 
-	describe('getAllNotifications', () => {
-		test('should fetch all notifications', () => {
-			const notifications = notificationService.getAllNotifications();
-			expect(Array.isArray(notifications)).toBe(true);
-		});
-	});
+    describe('getAllNotifications', () => {
+        it('should fetch all notifications ordered by creation date', async () => {
+            const mockNotifications = [
+                { id: 1, message: 'Test 1' },
+                { id: 2, message: 'Test 2' }
+            ];
+            Notification.findAll.mockResolvedValue(mockNotifications);
 
-	describe('getNotificationById', () => {
-		test('should fetch notification by ID', () => {
-			const newNotification = notificationService.addUpdateNotification('Test Message');
-			const notification = notificationService.getNotificationById(newNotification.id);
-			expect(notification).toBeDefined();
-			expect(notification.id).toBe(newNotification.id);
-		});
+            const result = await notificationService.getAllNotifications();
 
-		test('should return undefined for non-existent ID', () => {
-			const notification = notificationService.getNotificationById(999);
-			expect(notification).toBeUndefined();
-		});
-	});
+            expect(Notification.findAll).toHaveBeenCalledWith({
+                order: [['createdAt', 'DESC']]
+            });
+            expect(result).toEqual(mockNotifications);
+        });
 
-	describe('createEventNotification', () => {
-		test('should create notification for new event', () => {
-			const event = {
-				eventName: 'Test Event',
-				eventDate: '2024-12-25'
-			};
+        it('should handle errors when fetching notifications', async () => {
+            const error = new Error('Database error');
+            Notification.findAll.mockRejectedValue(error);
 
-			const notification = notificationService.createEventNotification(event);
-			expect(notification).toBeDefined();
-			expect(notification.type).toBe(notificationService.NOTIFICATION_TYPES.NEW_EVENT);
-			expect(notification.message).toContain(event.eventName);
-			expect(notification.message).toContain(event.eventDate);
-		});
-	});
+            await expect(notificationService.getAllNotifications())
+                .rejects
+                .toThrow('Database error');
+        });
+    });
 
-	describe('addUpdateNotification', () => {
-		test('should add update notification', () => {
-			const message = 'Test Update Message';
-			const notification = notificationService.addUpdateNotification(message);
+    describe('getNotificationById', () => {
+        it('should fetch a notification by id', async () => {
+            const mockNotification = { id: 1, message: 'Test' };
+            Notification.findByPk.mockResolvedValue(mockNotification);
 
-			expect(notification).toBeDefined();
-			expect(notification.type).toBe(notificationService.NOTIFICATION_TYPES.UPDATE);
-			expect(notification.message).toBe(message);
-			expect(notification.date).toBeDefined();
-			expect(notification.createdAt).toBeDefined();
-		});
-	});
+            const result = await notificationService.getNotificationById(1);
 
-	describe('addReminderNotification', () => {
-		test('should add reminder notification', () => {
-			const message = 'Test Reminder Message';
-			const notification = notificationService.addReminderNotification(message);
+            expect(Notification.findByPk).toHaveBeenCalledWith(1);
+            expect(result).toEqual(mockNotification);
+        });
 
-			expect(notification).toBeDefined();
-			expect(notification.type).toBe(notificationService.NOTIFICATION_TYPES.REMINDER);
-			expect(notification.message).toBe(message);
-			expect(notification.date).toBeDefined();
-			expect(notification.createdAt).toBeDefined();
-		});
-	});
+        it('should handle errors when fetching notification by id', async () => {
+            Notification.findByPk.mockRejectedValue(new Error('Not found'));
 
-	describe('deleteNotification', () => {
-		test('should delete notification by ID', () => {
-			const notification = notificationService.addUpdateNotification('Test Message');
-			const deleted = notificationService.deleteNotification(notification.id);
+            await expect(notificationService.getNotificationById(999))
+                .rejects
+                .toThrow('Not found');
+        });
+    });
 
-			expect(deleted).toBeDefined();
-			expect(deleted.id).toBe(notification.id);
-			expect(notificationService.getNotificationById(notification.id)).toBeUndefined();
-		});
+    describe('createEventNotification', () => {
+        it('should create a new event notification', async () => {
+            const mockEvent = {
+                eventName: 'Test Event',
+                eventDate: '2024-12-25'
+            };
+            const expectedMessage = `New volunteer opportunity: Test Event on 2024-12-25!`;
+            const mockCreatedNotification = {
+                id: 1,
+                type: 'New Event',
+                message: expectedMessage
+            };
 
-		test('should return null when deleting non-existent notification', () => {
-			const deleted = notificationService.deleteNotification(999);
-			expect(deleted).toBeNull();
-		});
-	});
+            Notification.create.mockResolvedValue(mockCreatedNotification);
 
-	describe('NOTIFICATION_TYPES', () => {
-		test('should have all required notification types', () => {
-			expect(notificationService.NOTIFICATION_TYPES).toEqual({
-				NEW_EVENT: 'New Event',
-				UPDATE: 'Update',
-				REMINDER: 'Reminder'
-			});
-		});
-	});
+            const result = await notificationService.createEventNotification(mockEvent);
+
+            expect(Notification.create).toHaveBeenCalledWith({
+                type: 'New Event',
+                message: expectedMessage,
+                recipientEmail: null,
+                isRead: false
+            });
+            expect(result).toEqual(mockCreatedNotification);
+        });
+    });
+
+    describe('createVolunteerMatchNotification', () => {
+        it('should create a volunteer match notification', async () => {
+            const mockData = {
+                volunteerEmail: 'test@example.com',
+                eventName: 'Test Event',
+                eventDate: '2024-12-25'
+            };
+            const expectedMessage = `You (test@example.com) have been matched to volunteer at Test Event on 2024-12-25. Please check your volunteer history for details.`;
+            
+            const mockCreatedNotification = {
+                id: 1,
+                type: 'Volunteer Match',
+                message: expectedMessage,
+                recipientEmail: 'test@example.com'
+            };
+
+            Notification.create.mockResolvedValue(mockCreatedNotification);
+
+            const result = await notificationService.createVolunteerMatchNotification(
+                mockData.volunteerEmail,
+                mockData.eventName,
+                mockData.eventDate
+            );
+
+            expect(Notification.create).toHaveBeenCalledWith({
+                type: 'Volunteer Match',
+                message: expectedMessage,
+                recipientEmail: 'test@example.com',
+                isRead: false
+            });
+            expect(result).toEqual(mockCreatedNotification);
+        });
+    });
+
+    describe('addUpdateNotification', () => {
+        it('should create an update notification', async () => {
+            const message = 'Test update message';
+            const mockCreatedNotification = {
+                id: 1,
+                type: 'Update',
+                message
+            };
+
+            Notification.create.mockResolvedValue(mockCreatedNotification);
+
+            const result = await notificationService.addUpdateNotification(message);
+
+            expect(Notification.create).toHaveBeenCalledWith({
+                type: 'Update',
+                message,
+                recipientEmail: null,
+                isRead: false
+            });
+            expect(result).toEqual(mockCreatedNotification);
+        });
+    });
+
+    describe('addReminderNotification', () => {
+        it('should create a reminder notification', async () => {
+            const message = 'Test reminder message';
+            const mockCreatedNotification = {
+                id: 1,
+                type: 'Reminder',
+                message
+            };
+
+            Notification.create.mockResolvedValue(mockCreatedNotification);
+
+            const result = await notificationService.addReminderNotification(message);
+
+            expect(Notification.create).toHaveBeenCalledWith({
+                type: 'Reminder',
+                message,
+                recipientEmail: null,
+                isRead: false
+            });
+            expect(result).toEqual(mockCreatedNotification);
+        });
+    });
+
+    describe('deleteNotification', () => {
+        it('should delete an existing notification', async () => {
+            const mockNotification = {
+                id: 1,
+                message: 'Test',
+                destroy: jest.fn()
+            };
+            Notification.findByPk.mockResolvedValue(mockNotification);
+            mockNotification.destroy.mockResolvedValue(true);
+
+            const result = await notificationService.deleteNotification(1);
+
+            expect(Notification.findByPk).toHaveBeenCalledWith(1);
+            expect(mockNotification.destroy).toHaveBeenCalled();
+            expect(result).toEqual(mockNotification);
+        });
+
+        it('should return null when deleting non-existent notification', async () => {
+            Notification.findByPk.mockResolvedValue(null);
+
+            const result = await notificationService.deleteNotification(999);
+
+            expect(Notification.findByPk).toHaveBeenCalledWith(999);
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('getNotificationsForUser', () => {
+        it('should fetch notifications for a specific user including global notifications', async () => {
+            const userEmail = 'test@example.com';
+            const mockNotifications = [
+                { id: 1, message: 'Global notification', recipientEmail: null },
+                { id: 2, message: 'User notification', recipientEmail: userEmail }
+            ];
+
+            Notification.findAll.mockResolvedValue(mockNotifications);
+
+            const result = await notificationService.getNotificationsForUser(userEmail);
+
+            expect(Notification.findAll).toHaveBeenCalledWith({
+                where: {
+                    [Op.or]: [
+                        { recipientEmail: null },
+                        { recipientEmail: userEmail }
+                    ]
+                },
+                order: [['createdAt', 'DESC']]
+            });
+            expect(result).toEqual(mockNotifications);
+        });
+
+        it('should handle errors when fetching user notifications', async () => {
+            const userEmail = 'test@example.com';
+            Notification.findAll.mockRejectedValue(new Error('Database error'));
+
+            await expect(notificationService.getNotificationsForUser(userEmail))
+                .rejects
+                .toThrow('Database error');
+        });
+    });
 });

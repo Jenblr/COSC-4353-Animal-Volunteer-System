@@ -1,4 +1,5 @@
 const { VolunteerHistory, Event, User } = require('../../models');
+const notificationService = require('./notificationService');
 
 const historyService = {
     initializeHistory: async (volunteerId = null, eventId = null) => {
@@ -33,6 +34,13 @@ const historyService = {
         try {
             console.log(`Updating status for volunteer ${volunteerId} and event ${eventId}`);
             
+            const volunteer = await User.findByPk(volunteerId);
+            const event = await Event.findByPk(eventId);
+
+            if (!volunteer || !event) {
+                throw new Error('Volunteer or event not found');
+            }
+
             const [historyRecord, created] = await VolunteerHistory.findOrCreate({
                 where: { 
                     volunteerId: parseInt(volunteerId),
@@ -49,6 +57,21 @@ const historyService = {
                     participationStatus: participationStatus,
                     matchedAt: new Date()
                 });
+            }
+
+            if (participationStatus === 'Matched - Pending Attendance') {
+                const formattedDate = new Date(event.eventDate).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                notificationService.createVolunteerMatchNotification(
+                    volunteer.email,
+                    event.eventName,
+                    formattedDate
+                );
             }
 
             return { 

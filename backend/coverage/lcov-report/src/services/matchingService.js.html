@@ -195,18 +195,7 @@
 <a name='L130'></a><a href='#L130'>130</a>
 <a name='L131'></a><a href='#L131'>131</a>
 <a name='L132'></a><a href='#L132'>132</a>
-<a name='L133'></a><a href='#L133'>133</a>
-<a name='L134'></a><a href='#L134'>134</a>
-<a name='L135'></a><a href='#L135'>135</a>
-<a name='L136'></a><a href='#L136'>136</a>
-<a name='L137'></a><a href='#L137'>137</a>
-<a name='L138'></a><a href='#L138'>138</a>
-<a name='L139'></a><a href='#L139'>139</a>
-<a name='L140'></a><a href='#L140'>140</a>
-<a name='L141'></a><a href='#L141'>141</a>
-<a name='L142'></a><a href='#L142'>142</a>
-<a name='L143'></a><a href='#L143'>143</a>
-<a name='L144'></a><a href='#L144'>144</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
+<a name='L133'></a><a href='#L133'>133</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
@@ -215,7 +204,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -224,7 +212,6 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -235,27 +222,21 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
@@ -292,7 +273,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -315,9 +295,7 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
@@ -359,7 +337,6 @@ const matchingService = {
         try {
             console.log('Attempting to match volunteers for event:', eventId);
             
-            // Get event details - handle both string and number IDs
             const event = await eventService.getEventById(eventId.toString());
             
             if (!event) {
@@ -367,7 +344,6 @@ const matchingService = {
                 throw { status: 404, message: 'Event not found' };
             }
 &nbsp;
-            // Get existing matches for this event
             const existingMatches = await VolunteerHistory.findAll({
                 where: {
                     eventId: event.id,
@@ -378,29 +354,23 @@ const matchingService = {
 &nbsp;
             const matchedVolunteerIds = existingMatches.map(match =&gt; match.volunteerId);
 &nbsp;
-            // Get all volunteer profiles
             const allProfiles = await profileService.getAllProfiles();
             console.log('Total volunteer profiles found:', allProfiles.length);
             
-            // Filter volunteers based on matching criteria and exclude matched volunteers
             const matchedVolunteers = allProfiles.filter(volunteer =&gt; {
-                // Skip if volunteer is already matched to this event
                 if (matchedVolunteerIds.includes(volunteer.userId)) {
                     return false;
                 }
 &nbsp;
-                // Check if volunteer is available on event date
                 const isDateAvailable = volunteer.availability.some(date =&gt; {
                     const availDate = new Date(date);
                     return availDate.toISOString().split('T')[0] === event.eventDate;
                 });
 &nbsp;
-                // Check if volunteer has at least one matching skill
                 const hasMatchingSkill = volunteer.skills.some(skill =&gt; 
                     event.requiredSkills.includes(skill)
                 );
 &nbsp;
-                // Check if volunteer is in same city
                 const isSameCity = volunteer.city.toLowerCase() === event.city.toLowerCase();
 &nbsp;
                 const isMatch = isDateAvailable &amp;&amp; hasMatchingSkill &amp;&amp; isSameCity;
@@ -429,13 +399,12 @@ const matchingService = {
     matchVolunteerToEvent: async (eventId, volunteerIds) =&gt; {
         try {
             const event = await eventService.getEventById(eventId);
-            // ensure event exists
+&nbsp;
             <span class="missing-if-branch" title="if path not taken" >I</span>if (!event) {
 <span class="cstat-no" title="statement not covered" >                throw { status: 404, message: 'Event not found' };</span>
             }
 &nbsp;
             const results = [];
-            // iterate over each volunteerId in the array
             for (let volunteerId of volunteerIds) {
                 const volunteer = await profileService.getProfile(volunteerId);
 &nbsp;
@@ -443,7 +412,7 @@ const matchingService = {
                     results.push({ volunteerId, message: 'Volunteer not found' });
                     continue;
                 }
-                // validate volunteer availability and location
+&nbsp;
                 if (!volunteer.availability.includes(event.eventDate)) {
                     results.push({ volunteerId, message: 'Volunteer is not available on the event date' });
                     continue;
@@ -458,11 +427,9 @@ const matchingService = {
                     results.push({ volunteerId, message: 'Volunteer does not have the required skills for this event' });
                     continue;
                 }
-                // if everything is okay, match the volunteer
                 results.push({ volunteerId, message: `Volunteer ${volunteer.fullName} successfully matched to event ${event.eventName}` });
             }
 &nbsp;
-            // return results for all volunteers
             return results;
         } catch (error) {
 <span class="cstat-no" title="statement not covered" >            console.error('Error in matchVolunteerToEvent:', error);</span>
@@ -499,7 +466,7 @@ module.exports = matchingService;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2024-11-02T00:29:50.681Z
+                at 2024-11-02T02:48:53.092Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
