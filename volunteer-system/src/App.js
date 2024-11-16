@@ -15,6 +15,7 @@ import LoginPage from './components/Authentication/LoginPage';
 import AdminLoginPage from './components/Authentication/AdminLoginPage';
 import VolunteerHistory from './components/Profile/VolunteerHistory';
 import NotificationDisplay from './components/Notifications/NotificationDisplay';
+import Reports from './components/Events/Reports';
 import './App.css'
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
 						<Route element={<AdminRoute />}>
 							<Route path="/event-management" element={<EventManagementForm />} />
 							<Route path="/volunteer-event-match" element={<VolunteerMatchForm />} />
+							<Route path="/reports" element={<Reports />} />
 						</Route>
 
 						{/* Profile Completion Route */}

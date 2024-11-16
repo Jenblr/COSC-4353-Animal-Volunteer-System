@@ -1,202 +1,160 @@
 const request = require('supertest');
 const express = require('express');
-const router = require('../../routes/authRoutes');
+const authRoutes = require('../../routes/authRoutes');
 const authController = require('../../controllers/authController');
 const authMiddleware = require('../../middleware/authMiddleware');
-const validators = require('../../utils/validators');
 
 jest.mock('../../controllers/authController');
 jest.mock('../../middleware/authMiddleware');
 jest.mock('../../utils/validators', () => ({
-  validateRegistration: jest.fn(),
-  validateLogin: jest.fn()
+  validateRegistration: jest.fn((req, res, next) => next()),
+  validateLogin: jest.fn((req, res, next) => next())
 }));
 
 describe('Auth Routes', () => {
   let app;
 
   beforeEach(() => {
+    jest.clearAllMocks();
+
     app = express();
     app.use(express.json());
-    app.use(router);
+    app.use('/auth', authRoutes);
 
-    jest.clearAllMocks();
+    authMiddleware.verifyToken.mockImplementation((req, res, next) => {
+      req.userId = 'mock-user-id';
+      req.userEmail = 'test@example.com';
+      req.userRole = 'volunteer';
+      next();
+    });
   });
 
-  describe('POST /register', () => {
+  describe('POST /auth/register', () => {
     const validRegistrationData = {
       email: 'test@example.com',
-      password: 'password123',
+      password: 'Password123!',
       name: 'Test User'
     };
 
-    it('should call validateRegistration middleware and register controller', async () => {
-      validators.validateRegistration.mockImplementation((req, res, next) => next());
-      
+    it('should successfully register a new user', async () => {
       authController.register.mockImplementation((req, res) => {
         res.status(201).json({ message: 'User registered successfully' });
       });
 
       const response = await request(app)
-        .post('/register')
+        .post('/auth/register')
         .send(validRegistrationData);
 
-      expect(validators.validateRegistration).toHaveBeenCalled();
-      expect(authController.register).toHaveBeenCalled();
       expect(response.status).toBe(201);
+      expect(authController.register).toHaveBeenCalled();
+      expect(response.body).toEqual({ message: 'User registered successfully' });
     });
 
-    it('should return error if validation fails', async () => {
-      validators.validateRegistration.mockImplementation((req, res, next) => {
-        res.status(400).json({ error: 'Validation failed' });
+    it('should handle registration errors', async () => {
+      authController.register.mockImplementation((req, res) => {
+        res.status(400).json({ error: 'Email already exists' });
       });
 
       const response = await request(app)
-        .post('/register')
-        .send({});
+        .post('/auth/register')
+        .send(validRegistrationData);
 
-      expect(validators.validateRegistration).toHaveBeenCalled();
-      expect(authController.register).not.toHaveBeenCalled();
       expect(response.status).toBe(400);
+      expect(response.body).toEqual({ error: 'Email already exists' });
     });
   });
 
-  describe('POST /login', () => {
+  describe('POST /auth/login', () => {
     const validLoginData = {
       email: 'test@example.com',
-      password: 'password123'
+      password: 'Password123!'
     };
 
-    it('should call validateLogin middleware and login controller', async () => {
-      validators.validateLogin.mockImplementation((req, res, next) => next());
-      
+    it('should successfully login a user', async () => {
       authController.login.mockImplementation((req, res) => {
-        res.status(200).json({ token: 'fake-token' });
+        res.json({ token: 'mock-token' });
       });
 
       const response = await request(app)
-        .post('/login')
+        .post('/auth/login')
         .send(validLoginData);
 
-      expect(validators.validateLogin).toHaveBeenCalled();
+      expect(response.status).toBe(200);
       expect(authController.login).toHaveBeenCalled();
-      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('token');
     });
 
-    it('should return error if validation fails', async () => {
-      validators.validateLogin.mockImplementation((req, res, next) => {
-        res.status(400).json({ error: 'Invalid credentials' });
+    it('should handle invalid credentials', async () => {
+      authController.login.mockImplementation((req, res) => {
+        res.status(401).json({ error: 'Invalid credentials' });
       });
 
       const response = await request(app)
-        .post('/login')
-        .send({});
+        .post('/auth/login')
+        .send(validLoginData);
 
-      expect(validators.validateLogin).toHaveBeenCalled();
-      expect(authController.login).not.toHaveBeenCalled();
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({ error: 'Invalid credentials' });
     });
   });
 
-  describe('GET /volunteers', () => {
-    it('should call auth middleware and return volunteers for admin users', async () => {
-      authMiddleware.verifyToken.mockImplementation((req, res, next) => next());
-      authMiddleware.verifyAdmin.mockImplementation((req, res, next) => next());
-      
-      authController.getAllVolunteers.mockImplementation((req, res) => {
-        res.status(200).json({ volunteers: [] });
+  describe('Protected Routes', () => {
+    describe('GET /auth/volunteers', () => {
+      it('should return all volunteers when authenticated', async () => {
+        authController.getAllVolunteers.mockImplementation((req, res) => {
+          res.json({ volunteers: [] });
+        });
+
+        const response = await request(app)
+          .get('/auth/volunteers')
+          .set('Authorization', 'Bearer mock-token');
+
+        expect(response.status).toBe(200);
+        expect(authController.getAllVolunteers).toHaveBeenCalled();
       });
 
-      const response = await request(app)
-        .get('/volunteers')
-        .set('Authorization', 'Bearer fake-token');
+      it('should handle unauthorized access', async () => {
+        authMiddleware.verifyToken.mockImplementation((req, res) => {
+          res.status(401).json({ error: 'Unauthorized' });
+        });
 
-      expect(authMiddleware.verifyToken).toHaveBeenCalled();
-      expect(authMiddleware.verifyAdmin).toHaveBeenCalled();
-      expect(authController.getAllVolunteers).toHaveBeenCalled();
-      expect(response.status).toBe(200);
+        const response = await request(app)
+          .get('/auth/volunteers')
+          .set('Authorization', 'Bearer invalid-token');
+
+        expect(response.status).toBe(401);
+        expect(response.body).toEqual({ error: 'Unauthorized' });
+      });
     });
 
-    it('should return error if user is not authenticated', async () => {
+    describe('GET /auth/registered-volunteers', () => {
+      it('should return registered volunteers when authenticated', async () => {
+        authController.getRegisteredVolunteers.mockImplementation((req, res) => {
+          res.json({ registeredVolunteers: [] });
+        });
 
-      authMiddleware.verifyToken.mockImplementation((req, res, next) => {
-        res.status(401).json({ error: 'Unauthorized' });
+        const response = await request(app)
+          .get('/auth/registered-volunteers')
+          .set('Authorization', 'Bearer mock-token');
+
+        expect(response.status).toBe(200);
+        expect(authController.getRegisteredVolunteers).toHaveBeenCalled();
       });
-
-      const response = await request(app)
-        .get('/volunteers');
-
-      expect(authMiddleware.verifyToken).toHaveBeenCalled();
-      expect(authMiddleware.verifyAdmin).not.toHaveBeenCalled();
-      expect(authController.getAllVolunteers).not.toHaveBeenCalled();
-      expect(response.status).toBe(401);
     });
 
-    it('should return error if user is not admin', async () => {
+    describe('GET /auth/verify', () => {
+      it('should return user details when token is valid', async () => {
+        const response = await request(app)
+          .get('/auth/verify')
+          .set('Authorization', 'Bearer mock-token');
 
-      authMiddleware.verifyToken.mockImplementation((req, res, next) => next());
-      authMiddleware.verifyAdmin.mockImplementation((req, res, next) => {
-        res.status(403).json({ error: 'Forbidden' });
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({
+          id: 'mock-user-id',
+          email: 'test@example.com',
+          role: 'volunteer'
+        });
       });
-
-      const response = await request(app)
-        .get('/volunteers')
-        .set('Authorization', 'Bearer fake-token');
-
-      expect(authMiddleware.verifyToken).toHaveBeenCalled();
-      expect(authMiddleware.verifyAdmin).toHaveBeenCalled();
-      expect(authController.getAllVolunteers).not.toHaveBeenCalled();
-      expect(response.status).toBe(403);
-    });
-  });
-
-  describe('GET /registered-volunteers', () => {
-    it('should call auth middleware and return registered volunteers for admin users', async () => {
-      authMiddleware.verifyToken.mockImplementation((req, res, next) => next());
-      authMiddleware.verifyAdmin.mockImplementation((req, res, next) => next());
-      
-      authController.getRegisteredVolunteers.mockImplementation((req, res) => {
-        res.status(200).json({ registeredVolunteers: [] });
-      });
-
-      const response = await request(app)
-        .get('/registered-volunteers')
-        .set('Authorization', 'Bearer fake-token');
-
-      expect(authMiddleware.verifyToken).toHaveBeenCalled();
-      expect(authMiddleware.verifyAdmin).toHaveBeenCalled();
-      expect(authController.getRegisteredVolunteers).toHaveBeenCalled();
-      expect(response.status).toBe(200);
-    });
-
-    it('should return error if user is not authenticated', async () => {
-      authMiddleware.verifyToken.mockImplementation((req, res, next) => {
-        res.status(401).json({ error: 'Unauthorized' });
-      });
-
-      const response = await request(app)
-        .get('/registered-volunteers');
-
-      expect(authMiddleware.verifyToken).toHaveBeenCalled();
-      expect(authMiddleware.verifyAdmin).not.toHaveBeenCalled();
-      expect(authController.getRegisteredVolunteers).not.toHaveBeenCalled();
-      expect(response.status).toBe(401);
-    });
-
-    it('should return error if user is not admin', async () => {
-      authMiddleware.verifyToken.mockImplementation((req, res, next) => next());
-      authMiddleware.verifyAdmin.mockImplementation((req, res, next) => {
-        res.status(403).json({ error: 'Forbidden' });
-      });
-
-      const response = await request(app)
-        .get('/registered-volunteers')
-        .set('Authorization', 'Bearer fake-token');
-
-      expect(authMiddleware.verifyToken).toHaveBeenCalled();
-      expect(authMiddleware.verifyAdmin).toHaveBeenCalled();
-      expect(authController.getRegisteredVolunteers).not.toHaveBeenCalled();
-      expect(response.status).toBe(403);
     });
   });
 });

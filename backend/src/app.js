@@ -8,6 +8,7 @@ const eventRoutes = require('./routes/eventRoutes');
 const matchingRoutes = require('./routes/matchingRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const historyRoutes = require('./routes/historyRoutes');
+const reportsRoutes = require('./routes/reportsRoutes');
 const cronManager = require('./services/cronManager');
 const authService = require('./services/authService');
 
@@ -29,6 +30,7 @@ app.use('/api/auth/events', eventRoutes);
 app.use('/api/auth/volunteer-matching', matchingRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/auth/history', historyRoutes);
+app.use('/api/auth/reports', reportsRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

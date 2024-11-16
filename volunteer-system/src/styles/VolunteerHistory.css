@@ -13,14 +13,6 @@
     border: 2px solid #000000; 
   }
   
-  .volunteer-history-table th {
-    background-color: #f8cbc6;
-  }
-  
-  .volunteer-history-table tr:hover {
-    background-color: #f1f1f1;
-  }
-  
   .status-matched {
     color: #0056b3;
     font-weight: 500;
@@ -52,26 +44,6 @@
     font-weight: 500;
   }
   
-  select.status-matched {
-    border-color: #0056b3;
-    background-color: #f0f7ff;
-  }
-  
-  select.status-attended {
-    border-color: #28a745;
-    background-color: #f0fff4;
-  }
-  
-  select.status-cancelled {
-    border-color: #dc3545;
-    background-color: #fff5f5;
-  }
-   
-  select.status-not-attended {
-    border-color: #6c757d;
-    background-color: #f8f9fa;
-  }
-  
   select:hover {
     cursor: pointer;
     box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
@@ -80,4 +52,40 @@
   select:focus {
     outline: none;
     box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+  }
+
+  .volunteer-selection {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Table Styling */
+  .volunteer-history-table {
+    background-color: white;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .volunteer-history-table th {
+    background-color: #f8cbc6;
+    color: #4a5568;
+    font-weight: 600;
+    padding: 1rem;
+    text-align: left;
+  }
+  
+  .volunteer-history-table td {
+    padding: 1rem;
+    border-top: 1px solid #f7fafc;
+  }
+  
+  .volunteer-history-table tr:hover {
+    background-color: #ffefed;
   }

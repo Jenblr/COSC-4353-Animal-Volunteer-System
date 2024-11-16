@@ -3,217 +3,290 @@ const historyService = require('../../services/historyService');
 
 jest.mock('../../services/historyService');
 
-const mockReq = () => ({
-    params: {},
-    body: {},
-    userRole: 'admin'
-});
-
-const mockRes = () => {
-    const res = {};
-    res.status = jest.fn().mockReturnValue(res);
-    res.json = jest.fn().mockReturnValue(res);
-    return res;
-};
-
 describe('History Controller', () => {
-    let req;
-    let res;
+  let mockReq;
+  let mockRes;
+  let consoleErrorSpy;
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    mockReq = {
+      params: {},
+      body: {},
+      userRole: 'volunteer'
+    };
+
+    mockRes = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn()
+    };
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
+  describe('getAllHistory', () => {
+    it('should return all history records successfully', () => {
+      const mockHistory = [
+        { id: 1, eventName: 'Event 1' },
+        { id: 2, eventName: 'Event 2' }
+      ];
+
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      historyService.getAllHistory.mockReturnValue(mockHistory);
+
+      historyController.getAllHistory(mockReq, mockRes);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith('Controller: Fetching all history records');
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith(mockHistory);
+
+      consoleLogSpy.mockRestore();
+    });
+  });
+
+  describe('getHistory', () => {
+    const mockHistoryData = [
+      {
+        id: 1,
+        Event: {
+          eventName: 'Beach Cleanup',
+          eventDescription: 'Clean the beach',
+          address: '123 Beach St',
+          city: 'Miami',
+          state: 'FL',
+          zipCode: '33139',
+          requiredSkills: ['cleaning'],
+          urgency: 'high',
+          eventDate: '2024-03-15',
+          startTime: '09:00',
+          endTime: '12:00'
+        },
+        participationStatus: 'Completed'
+      }
+    ];
+
+    it('should fetch and format history for a specific user', async () => {
+      mockReq.params.userId = '1';
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      
+      historyService.getHistory.mockResolvedValue(mockHistoryData);
+
+      await historyController.getHistory(mockReq, mockRes);
+
+      expect(consoleLogSpy).toHaveBeenCalledWith('Controller: Fetching history for userId:', 1);
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith([
+        {
+          id: 1,
+          eventName: 'Beach Cleanup',
+          eventDescription: 'Clean the beach',
+          location: '123 Beach St, Miami, FL 33139',
+          requiredSkills: ['cleaning'],
+          urgency: 'high',
+          eventDate: '2024-03-15',
+          startTime: '09:00',
+          endTime: '12:00',
+          participationStatus: 'Completed'
+        }
+      ]);
+
+      consoleLogSpy.mockRestore();
+    });
+
+    it('should handle errors when fetching history', async () => {
+      mockReq.params.userId = '1';
+      const error = new Error('Database error');
+      historyService.getHistory.mockRejectedValue(error);
+
+      await historyController.getHistory(mockReq, mockRes);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error in getHistory controller:', error);
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'Error fetching volunteer history',
+        error: 'Database error'
+      });
+    });
+
+    it('should handle invalid userId parameter', async () => {
+      mockReq.params.userId = 'invalid';
+      
+      await historyController.getHistory(mockReq, mockRes);
+      
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'Error fetching volunteer history',
+        error: expect.any(String)
+      });
+    });
+  });
+
+  describe('updateHistoryRecord', () => {
     beforeEach(() => {
-        req = mockReq();
-        res = mockRes();
-        jest.clearAllMocks();
+      mockReq.params.id = '1';
+      mockReq.body = { participationStatus: 'Completed' };
     });
 
-    describe('getAllHistory', () => {
-        it('should return all history records with status 200', () => {
-            const mockHistory = [{ id: 1, volunteer: 123, event: 456 }];
-            historyService.getAllHistory.mockReturnValue(mockHistory);
+    it('should successfully update history record for admin', async () => {
+      mockReq.userRole = 'admin';
+      historyService.updateHistoryRecord.mockResolvedValue({
+        success: true,
+        record: { id: 1, participationStatus: 'Completed' }
+      });
 
-            historyController.getAllHistory(req, res);
+      await historyController.updateHistoryRecord(mockReq, mockRes);
 
-            expect(historyService.getAllHistory).toHaveBeenCalled();
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.json).toHaveBeenCalledWith(mockHistory);
-        });
-
-        // TODO: Add test for async handling when getAllHistory is updated to be async
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Record updated successfully',
+        record: { id: 1, participationStatus: 'Completed' }
+      });
     });
 
-    describe('getHistory', () => {
-        const mockEventData = {
-            id: 1,
-            Event: {
-                eventName: 'Test Event',
-                eventDescription: 'Description',
-                address: '123 Street',
-                city: 'City',
-                state: 'State',
-                zipCode: '12345',
-                requiredSkills: ['Skill1', 'Skill2'],
-                urgency: 'High',
-                eventDate: '2024-01-01',
-                startTime: '09:00',
-                endTime: '17:00'
-            },
-            participationStatus: 'Not Attended'
-        };
+    it('should reject update if user is not authenticated', async () => {
+      mockReq.userRole = undefined;
 
-        it('should return formatted history for a specific user with status 200', async () => {
-            req.params.userId = '123';
-            historyService.getHistory.mockResolvedValue([mockEventData]);
+      await historyController.updateHistoryRecord(mockReq, mockRes);
 
-            await historyController.getHistory(req, res);
-
-            const expectedFormattedHistory = [{
-                id: 1,
-                eventName: 'Test Event',
-                eventDescription: 'Description',
-                location: '123 Street, City, State 12345',
-                requiredSkills: ['Skill1', 'Skill2'],
-                urgency: 'High',
-                eventDate: '2024-01-01',
-                startTime: '09:00',
-                endTime: '17:00',
-                participationStatus: 'Not Attended'
-            }];
-
-            expect(historyService.getHistory).toHaveBeenCalledWith(123);
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.json).toHaveBeenCalledWith(expectedFormattedHistory);
-        });
-
-        it('should handle service errors with status 500', async () => {
-            req.params.userId = '123';
-            const error = new Error('Service error');
-            historyService.getHistory.mockRejectedValue(error);
-
-            await historyController.getHistory(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({
-                message: 'Error fetching volunteer history',
-                error: 'Service error'
-            });
-        });
-
-        it('should handle invalid user ID parameter', async () => {
-            req.params.userId = 'invalid';
-            
-            await historyController.getHistory(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({
-                message: 'Error fetching volunteer history',
-                error: expect.any(String)
-            });
-        });
+      expect(mockRes.status).toHaveBeenCalledWith(401);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: false,
+        message: 'Unauthorized'
+      });
     });
 
-    describe('updateHistoryRecord', () => {
-        it('should update history record and return status from service', () => {
-            req.params.id = '1';
-            req.body = { participationStatus: 'Attended' };
-            const mockResult = { status: 200, message: 'Record updated' };
-            
-            historyService.updateHistoryRecord.mockReturnValue(mockResult);
+    it('should reject participation status update for non-admin users', async () => {
+      mockReq.userRole = 'volunteer';
 
-            historyController.updateHistoryRecord(req, res);
+      await historyController.updateHistoryRecord(mockReq, mockRes);
 
-            expect(historyService.updateHistoryRecord).toHaveBeenCalledWith('1', req.body);
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.json).toHaveBeenCalledWith(mockResult);
-        });
-
-        it('should return 403 if non-admin tries to update participation status', () => {
-            req.userRole = 'volunteer';
-            req.body = { participationStatus: 'Attended' };
-
-            historyController.updateHistoryRecord(req, res);
-
-            expect(historyService.updateHistoryRecord).not.toHaveBeenCalled();
-            expect(res.status).toHaveBeenCalledWith(403);
-            expect(res.json).toHaveBeenCalledWith({
-                message: 'Only admins can update participation status'
-            });
-        });
-
-        it('should return 401 if userRole is not present', () => {
-            req.userRole = undefined;
-            req.body = { participationStatus: 'Attended' };
-
-            historyController.updateHistoryRecord(req, res);
-
-            expect(historyService.updateHistoryRecord).not.toHaveBeenCalled();
-            expect(res.status).toHaveBeenCalledWith(401);
-            expect(res.json).toHaveBeenCalledWith({ message: 'Unauthorized' });
-        });
-
-        it('should allow non-admin to update non-participation status fields', () => {
-            req.userRole = 'volunteer';
-            req.body = { someOtherField: 'value' };
-            const mockResult = { status: 200, message: 'Record updated' };
-            
-            historyService.updateHistoryRecord.mockReturnValue(mockResult);
-
-            historyController.updateHistoryRecord(req, res);
-
-            expect(historyService.updateHistoryRecord).toHaveBeenCalledWith(undefined, req.body);
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.json).toHaveBeenCalledWith(mockResult);
-        });
+      expect(mockRes.status).toHaveBeenCalledWith(403);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: false,
+        message: 'Only admins can update participation status'
+      });
     });
 
-    describe('updateVolunteerEventStatus', () => {
-        it('should successfully update volunteer event status', async () => {
-            req.body = { volunteerId: '1', eventId: '2' };
-            const mockResult = { success: true, message: 'Volunteer status updated successfully' };
-            
-            historyService.updateVolunteerEventStatus.mockResolvedValue(mockResult);
+    it('should allow non-admin users to update non-participation status fields', async () => {
+      mockReq.userRole = 'volunteer';
+      mockReq.body = { someOtherField: 'value' }; 
+      
+      historyService.updateHistoryRecord.mockResolvedValue({
+        success: true,
+        record: { id: 1, someOtherField: 'value' }
+      });
 
-            await historyController.updateVolunteerEventStatus(req, res);
+      await historyController.updateHistoryRecord(mockReq, mockRes);
 
-            expect(historyService.updateVolunteerEventStatus)
-                .toHaveBeenCalledWith('1', '2', 'Matched - Pending Attendance');
-            expect(res.status).toHaveBeenCalledWith(200);
-            expect(res.json).toHaveBeenCalledWith(mockResult);
-        });
-
-        it('should return 400 if volunteerId is missing', async () => {
-            req.body = { eventId: '2' };
-
-            await historyController.updateVolunteerEventStatus(req, res);
-
-            expect(historyService.updateVolunteerEventStatus).not.toHaveBeenCalled();
-            expect(res.status).toHaveBeenCalledWith(400);
-            expect(res.json).toHaveBeenCalledWith({
-                message: 'Volunteer ID and Event ID are required'
-            });
-        });
-
-        it('should return 400 if eventId is missing', async () => {
-            req.body = { volunteerId: '1' };
-
-            await historyController.updateVolunteerEventStatus(req, res);
-
-            expect(historyService.updateVolunteerEventStatus).not.toHaveBeenCalled();
-            expect(res.status).toHaveBeenCalledWith(400);
-            expect(res.json).toHaveBeenCalledWith({
-                message: 'Volunteer ID and Event ID are required'
-            });
-        });
-
-        it('should handle service errors with status 500', async () => {
-            req.body = { volunteerId: '1', eventId: '2' };
-            historyService.updateVolunteerEventStatus.mockRejectedValue(new Error('Service error'));
-
-            await historyController.updateVolunteerEventStatus(req, res);
-
-            expect(res.status).toHaveBeenCalledWith(500);
-            expect(res.json).toHaveBeenCalledWith({
-                message: 'Error updating volunteer status'
-            });
-        });
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Record updated successfully',
+        record: { id: 1, someOtherField: 'value' }
+      });
     });
+
+    it('should handle service errors during update', async () => {
+      mockReq.userRole = 'admin';
+      historyService.updateHistoryRecord.mockRejectedValue(new Error('Service error'));
+
+      await historyController.updateHistoryRecord(mockReq, mockRes);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error in updateHistoryRecord:', expect.any(Error));
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: false,
+        message: 'Internal server error during update'
+      });
+    });
+
+    it('should handle unsuccessful updates from service', async () => {
+      mockReq.userRole = 'admin';
+      historyService.updateHistoryRecord.mockResolvedValue({
+        success: false,
+        message: 'Record not found'
+      });
+
+      await historyController.updateHistoryRecord(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: false,
+        message: 'Record not found'
+      });
+    });
+  });
+
+  describe('updateVolunteerEventStatus', () => {
+    it('should successfully update volunteer event status', async () => {
+      mockReq.body = {
+        volunteerId: 1,
+        eventId: 2
+      };
+
+      historyService.updateVolunteerEventStatus.mockResolvedValue({
+        success: true,
+        message: 'Status updated successfully'
+      });
+
+      await historyController.updateVolunteerEventStatus(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Status updated successfully'
+      });
+    });
+
+    it('should handle missing volunteerId', async () => {
+      mockReq.body = {
+        eventId: 2
+      };
+
+      await historyController.updateVolunteerEventStatus(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'Volunteer ID and Event ID are required'
+      });
+    });
+
+    it('should handle missing eventId', async () => {
+      mockReq.body = {
+        volunteerId: 1
+      };
+
+      await historyController.updateVolunteerEventStatus(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'Volunteer ID and Event ID are required'
+      });
+    });
+
+    it('should handle service errors', async () => {
+      mockReq.body = {
+        volunteerId: 1,
+        eventId: 2
+      };
+
+      historyService.updateVolunteerEventStatus.mockRejectedValue(
+        new Error('Service error')
+      );
+
+      await historyController.updateVolunteerEventStatus(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(500);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'Error updating volunteer status'
+      });
+    });
+  });
 });

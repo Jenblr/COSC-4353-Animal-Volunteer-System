@@ -20,6 +20,10 @@ const Taskbar = () => {
         logout();
         navigate('/login');
     };
+
+    const handleDropdown = (e) => {
+        e.preventDefault();
+    };
     
     return (
         <nav className="navbar">
@@ -35,16 +39,17 @@ const Taskbar = () => {
                     {/* Events viewable only by Admin users */}
                     {isAdmin && (
                         <li className="dropdown">
-                            <Link to='/events'>Events</Link>
+                            <Link to="#" onClick={handleDropdown}>Events</Link>
                             <ul className="dropdown-content">
                                 <li><Link to='/event-management'>Event Management</Link></li> 
                                 <li><Link to='/volunteer-event-match' onClick={(e) => handleAuthenticatedLink(e, '/volunteer-event-match')}>Volunteer Event Match</Link></li>
+                                <li><Link to='/reports'>Reports</Link></li>
                             </ul>
                         </li>
                     )}
                     
                     <li className="dropdown">
-                        <Link to='/profile' onClick={(e) => handleAuthenticatedLink(e, '/profile')}>Profile</Link>
+                        <Link to="#" onClick={handleDropdown}>Profile</Link>
                         <ul className="dropdown-content">
                             {!isLoggedIn && <li><Link to='/login'>Log In</Link></li>}
                             {isLoggedIn && (

@@ -1,5 +1,23 @@
+'use strict';
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
-    const Profile = sequelize.define('Profile', {
+    class Profile extends Model {
+        static associate(models) {
+            Profile.belongsTo(models.User, {
+                foreignKey: 'userId',
+                as: 'User',
+                onDelete: 'CASCADE'
+            });
+            Profile.belongsTo(models.State, {
+                foreignKey: 'state',
+                targetKey: 'code',
+                as: 'stateDetails'
+            });
+        }
+    }
+
+    Profile.init({
         userId: {
             type: DataTypes.INTEGER,
             allowNull: false,
@@ -13,8 +31,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false
         },
-        
-        // Other fields are optional for admin users
         address1: {
             type: DataTypes.STRING,
             allowNull: true
@@ -42,7 +58,7 @@ module.exports = (sequelize, DataTypes) => {
         skills: {
             type: DataTypes.ARRAY(DataTypes.STRING),
             allowNull: true,
-            defaultValue: []
+            defaultValue: [] 
         },
         preferences: {
             type: DataTypes.TEXT,
@@ -53,19 +69,10 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true,
             defaultValue: []
         }
+    }, {
+        sequelize,
+        modelName: 'Profile'
     });
 
-    Profile.associate = (models) => {
-        Profile.belongsTo(models.User, {
-            foreignKey: 'userId',
-            as: 'User'
-        });
-        Profile.belongsTo(models.State, {
-            foreignKey: 'state',
-            targetKey: 'code',
-            as: 'stateDetails'
-        });
-    };
-    
     return Profile;
 };

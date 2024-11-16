@@ -36,21 +36,48 @@ exports.getHistory = async (req, res) => {
     }
 };
 
-exports.updateHistoryRecord = (req, res) => {
-	const { id } = req.params;
-	const updateData = req.body;
-
-	if (!req.userRole) {
-		return res.status(401).json({ message: 'Unauthorized' });
-	}
-
-	if (req.userRole !== 'admin' && updateData.participationStatus !== undefined) {
-		return res.status(403).json({ message: 'Only admins can update participation status' });
-	}    
-
-	const result = historyService.updateHistoryRecord(id, updateData);
-	res.status(result.status).json(result);
-};
+exports.updateHistoryRecord = async (req, res) => {
+    const { id } = req.params;
+    const updateData = req.body;
+  
+    try {
+      if (!req.userRole) {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Unauthorized' 
+        });
+      }
+  
+      if (req.userRole !== 'admin' && updateData.participationStatus !== undefined) {
+        return res.status(403).json({ 
+          success: false, 
+          message: 'Only admins can update participation status' 
+        });
+      }    
+  
+      const result = await historyService.updateHistoryRecord(id, updateData);
+      
+      if (!result.success) {
+        return res.status(400).json({
+          success: false,
+          message: result.message || 'Failed to update record'
+        });
+      }
+  
+      return res.status(200).json({
+        success: true,
+        message: 'Record updated successfully',
+        record: result.record
+      });
+  
+    } catch (error) {
+      console.error('Error in updateHistoryRecord:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error during update'
+      });
+    }
+  };
 
 exports.updateVolunteerEventStatus = async (req, res) => {
 	try {

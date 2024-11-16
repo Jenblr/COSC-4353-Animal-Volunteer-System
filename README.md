@@ -26,6 +26,7 @@
 - npm install --save-dev jest supertest nodemon
 - npm install cors
 - npm install express-validator
+- npm install pdfkit csv-writer
 
 **Unit Testing**
 - npm install --save-dev jest supertest

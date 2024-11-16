@@ -10,14 +10,12 @@ router.post('/login', validateLogin, authController.login);
 
 // Protected routes
 router.get('/volunteers',
-	authMiddleware.verifyToken,
-	authMiddleware.verifyAdmin,
+	authMiddleware.verifyToken, 
 	authController.getAllVolunteers
 );
-
+  
 router.get('/registered-volunteers',
 	authMiddleware.verifyToken,
-	authMiddleware.verifyAdmin,
 	authController.getRegisteredVolunteers
 );
 
