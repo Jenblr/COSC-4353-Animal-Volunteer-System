@@ -153,83 +153,84 @@ const reportsService = {
   },
 
   //Event 
-  generateEventReport: async (format, startDate, endDate) => {
-    try {
-      const events = await Event.findAll({
-        where: { eventDate: { [Op.between]: [startDate, endDate] } },
-        include: [
-          {
-            model: VolunteerHistory,
-            as: 'VolunteerHistories',
-            required: false,
-            include: [{ model: User, include: [{ model: Profile, as: 'Profile' }] }]
-          }
-        ]
-      });
-  
-      if (!events.length) throw new Error('No events found in the specified date range');
-  
-      const reportData = events.map(event => ({
-        eventName: event.eventName,
-        eventDate: event.eventDate,
-        location: `${event.city}, ${event.state}`,
-        volunteersMatched: (event.VolunteerHistories || []).filter(history => history.participationStatus === 'Matched - Pending Attendance').length,
-        matchedVolunteers: (event.VolunteerHistories || [])
-          .filter(history => history.participationStatus === 'Matched - Pending Attendance')
-          .map(history => ({
-            name: history.User?.Profile?.fullName || 'N/A',
-            email: history.User?.email || 'N/A',
-            matchedAt: history.matchedAt || 'N/A'
-          }))
-      }));
-  
-      return format === 'PDF'
-        ? await generateEventPDFReport(reportData)
-        : await generateEventCSVReport(reportData);
-    } catch (error) {
-      console.error('Error in generateEventReport:', error);
-      throw error;
-    }
-  },
+generateEventReport: async (format, startDate, endDate) => {
+  try {
+    const events = await Event.findAll({
+      where: { eventDate: { [Op.between]: [startDate, endDate] } },
+      include: [
+        {
+          model: VolunteerHistory,
+          as: 'VolunteerHistories',
+          required: false,
+          include: [{ model: User, include: [{ model: Profile, as: 'Profile' }] }]
+        }
+      ]
+    });
 
-  generateSpecificEventReport: async (eventId, format) => {
-    try {
-      const event = await Event.findOne({
-        where: { id: eventId },
-        include: [
-          {
-            model: VolunteerHistory,
-            as: 'VolunteerHistories',
-            required: false,
-            include: [{ model: User, include: [{ model: Profile, as: 'Profile' }] }]
-          }
-        ]
-      });
-  
-      if (!event) throw new Error('Event not found');
-  
-      const reportData = {
-        eventName: event.eventName,
-        eventDate: event.eventDate,
-        location: `${event.city}, ${event.state}`,
-        volunteers: (event.VolunteerHistories || [])
-          .filter(history => history.participationStatus === 'Matched - Pending Attendance')
-          .map(history => ({
-            name: history.User?.Profile?.fullName || 'N/A',
-            email: history.User?.email || 'N/A',
-            status: history.participationStatus || 'N/A',
-            matchedAt: history.matchedAt || 'N/A'
-          }))
-      };
-  
-      return format === 'PDF'
-        ? await generateSpecificEventPDFReport(reportData)
-        : await generateSpecificEventCSVReport(reportData);
-    } catch (error) {
-      console.error('Error in generateSpecificEventReport:', error);
-      throw error;
-    }
-  }  
+    if (!events.length) throw new Error('No events found in the specified date range');
+
+    const reportData = events.map(event => ({
+      eventName: event.eventName,
+      eventDate: event.eventDate,
+      location: `${event.city}, ${event.state}`,
+      urgency: event.urgency || 'N/A', // Added urgency
+      volunteersMatched: (event.VolunteerHistories || []).filter(history => history.participationStatus === 'Matched - Pending Attendance').length,
+      matchedVolunteers: (event.VolunteerHistories || [])
+        .filter(history => history.participationStatus === 'Matched - Pending Attendance')
+        .map(history => ({
+          name: history.User?.Profile?.fullName || 'N/A',
+          email: history.User?.email || 'N/A',
+          matchedAt: history.matchedAt || 'N/A'
+        }))
+    }));
+
+    return format === 'PDF'
+      ? await generateEventPDFReport(reportData)
+      : await generateEventCSVReport(reportData);
+  } catch (error) {
+    console.error('Error in generateEventReport:', error);
+    throw error;
+  }
+},
+generateSpecificEventReport: async (eventId, format) => {
+  try {
+    const event = await Event.findOne({
+      where: { id: eventId },
+      include: [
+        {
+          model: VolunteerHistory,
+          as: 'VolunteerHistories',
+          required: false,
+          include: [{ model: User, include: [{ model: Profile, as: 'Profile' }] }]
+        }
+      ]
+    });
+
+    if (!event) throw new Error('Event not found');
+
+    const reportData = {
+      eventName: event.eventName,
+      eventDate: event.eventDate,
+      location: `${event.city}, ${event.state}`,
+      urgency: event.urgency || 'N/A', // Added urgency
+      volunteers: (event.VolunteerHistories || [])
+        .filter(history => history.participationStatus === 'Matched - Pending Attendance')
+        .map(history => ({
+          name: history.User?.Profile?.fullName || 'N/A',
+          email: history.User?.email || 'N/A',
+          status: history.participationStatus || 'N/A',
+          matchedAt: history.matchedAt || 'N/A'
+        }))
+    };
+
+    return format === 'PDF'
+      ? await generateSpecificEventPDFReport(reportData)
+      : await generateSpecificEventCSVReport(reportData);
+  } catch (error) {
+    console.error('Error in generateSpecificEventReport:', error);
+    throw error;
+  }
+}
 };
 
 const generateParticipationStats = (history) => {
@@ -431,7 +432,7 @@ const generateCSVReport = async (data, isDetailedReport = false) => {
     throw error;
   }
 };
-
+//all event pdf
 const generateEventPDFReport = async (data) => {
   return new Promise((resolve, reject) => {
     try {
@@ -474,6 +475,11 @@ const generateEventPDFReport = async (data) => {
            .text('Location: ', { continued: true })
            .font('Helvetica')
            .text(event.location);
+
+        doc.font('Helvetica-Bold')
+           .text('Urgency: ', { continued: true })
+           .font('Helvetica')
+           .text(event.urgency);
 
         doc.font('Helvetica-Bold')
            .text('Total Matched Volunteers: ', { continued: true })
@@ -522,18 +528,18 @@ const generateEventPDFReport = async (data) => {
     }
   });
 };
-
+//all event csv
 const generateEventCSVReport = async (data) => {
   try {
-    let csvContent = 'Event Name,Date,Location,Total Matched Volunteers,Volunteer Name,Volunteer Email,Matched At\n';
+    let csvContent = 'Event Name,Date,Location,Urgency,Total Matched Volunteers,Volunteer Name,Volunteer Email,Matched At\n';
 
     data.forEach(event => {
       event.matchedVolunteers.forEach(volunteer => {
-        csvContent += `"${event.eventName}","${new Date(event.eventDate).toLocaleDateString()}","${event.location}",${event.volunteersMatched},"${volunteer.name}","${volunteer.email}","${new Date(volunteer.matchedAt).toLocaleString()}"\n`;
+        csvContent += `"${event.eventName}","${new Date(event.eventDate).toLocaleDateString()}","${event.location}","${event.urgency}",${event.volunteersMatched},"${volunteer.name}","${volunteer.email}","${new Date(volunteer.matchedAt).toLocaleString()}"\n`;
       });
 
       if (event.matchedVolunteers.length === 0) {
-        csvContent += `"${event.eventName}","${new Date(event.eventDate).toLocaleDateString()}","${event.location}",${event.volunteersMatched},"No Matched Volunteers","",""\n`;
+        csvContent += `"${event.eventName}","${new Date(event.eventDate).toLocaleDateString()}","${event.location}","${event.urgency}",${event.volunteersMatched},"No Matched Volunteers","",""\n`;
       }
     });
 
@@ -649,14 +655,14 @@ const generateSpecificEventPDFReport = async (data) => {
 };
 const generateSpecificEventCSVReport = async (data) => {
   try {
-    let csvContent = 'Event Name,Date,Location,Volunteer Name,Volunteer Email,Status,Matched At\n';
+    let csvContent = 'Event Name,Date,Location,Urgency,Volunteer Name,Volunteer Email,Status,Matched At\n';
 
     if (data.volunteers.length > 0) {
       data.volunteers.forEach(volunteer => {
-        csvContent += `"${data.eventName}","${new Date(data.eventDate).toLocaleDateString()}","${data.location}","${volunteer.name}","${volunteer.email}","${volunteer.status}","${new Date(volunteer.matchedAt).toLocaleString()}"\n`;
+        csvContent += `"${data.eventName}","${new Date(data.eventDate).toLocaleDateString()}","${data.location}","${data.urgency}","${volunteer.name}","${volunteer.email}","${volunteer.status}","${new Date(volunteer.matchedAt).toLocaleString()}"\n`;
       });
     } else {
-      csvContent += `"${data.eventName}","${new Date(data.eventDate).toLocaleDateString()}","${data.location}","No Matched Volunteers","","",""\n`;
+      csvContent += `"${data.eventName}","${new Date(data.eventDate).toLocaleDateString()}","${data.location}","${data.urgency}","No Matched Volunteers","","",""\n`;
     }
 
     return Buffer.from(csvContent, 'utf-8');
