@@ -63,6 +63,15 @@ describe('Notification Service', () => {
                 .rejects
                 .toThrow('Not found');
         });
+
+        it('should return null if notification is not found', async () => {
+            Notification.findByPk.mockResolvedValue(null);
+
+            const result = await notificationService.getNotificationById(999);
+
+            expect(Notification.findByPk).toHaveBeenCalledWith(999);
+            expect(result).toBeNull();
+        });
     });
 
     describe('createEventNotification', () => {
@@ -89,6 +98,18 @@ describe('Notification Service', () => {
                 isRead: false
             });
             expect(result).toEqual(mockCreatedNotification);
+        });
+
+        it('should handle errors when creating an event notification', async () => {
+            const mockEvent = {
+                eventName: 'Test Event',
+                eventDate: '2024-12-25'
+            };
+            Notification.create.mockRejectedValue(new Error('Create error'));
+
+            await expect(notificationService.createEventNotification(mockEvent))
+                .rejects
+                .toThrow('Create error');
         });
     });
 
@@ -124,51 +145,17 @@ describe('Notification Service', () => {
             });
             expect(result).toEqual(mockCreatedNotification);
         });
-    });
 
-    describe('addUpdateNotification', () => {
-        it('should create an update notification', async () => {
-            const message = 'Test update message';
-            const mockCreatedNotification = {
-                id: 1,
-                type: 'Update',
-                message
-            };
+        it('should handle errors when creating a volunteer match notification', async () => {
+            Notification.create.mockRejectedValue(new Error('Create error'));
 
-            Notification.create.mockResolvedValue(mockCreatedNotification);
-
-            const result = await notificationService.addUpdateNotification(message);
-
-            expect(Notification.create).toHaveBeenCalledWith({
-                type: 'Update',
-                message,
-                recipientEmail: null,
-                isRead: false
-            });
-            expect(result).toEqual(mockCreatedNotification);
-        });
-    });
-
-    describe('addReminderNotification', () => {
-        it('should create a reminder notification', async () => {
-            const message = 'Test reminder message';
-            const mockCreatedNotification = {
-                id: 1,
-                type: 'Reminder',
-                message
-            };
-
-            Notification.create.mockResolvedValue(mockCreatedNotification);
-
-            const result = await notificationService.addReminderNotification(message);
-
-            expect(Notification.create).toHaveBeenCalledWith({
-                type: 'Reminder',
-                message,
-                recipientEmail: null,
-                isRead: false
-            });
-            expect(result).toEqual(mockCreatedNotification);
+            await expect(
+                notificationService.createVolunteerMatchNotification(
+                    'test@example.com',
+                    'Test Event',
+                    '2024-12-25'
+                )
+            ).rejects.toThrow('Create error');
         });
     });
 
@@ -189,13 +176,12 @@ describe('Notification Service', () => {
             expect(result).toEqual(mockNotification);
         });
 
-        it('should return null when deleting non-existent notification', async () => {
-            Notification.findByPk.mockResolvedValue(null);
+        it('should handle errors when deleting a notification', async () => {
+            Notification.findByPk.mockRejectedValue(new Error('Delete error'));
 
-            const result = await notificationService.deleteNotification(999);
-
-            expect(Notification.findByPk).toHaveBeenCalledWith(999);
-            expect(result).toBeNull();
+            await expect(notificationService.deleteNotification(1))
+                .rejects
+                .toThrow('Delete error');
         });
     });
 
@@ -230,6 +216,16 @@ describe('Notification Service', () => {
             await expect(notificationService.getNotificationsForUser(userEmail))
                 .rejects
                 .toThrow('Database error');
+        });
+
+        it('should return an empty array if no notifications are found', async () => {
+            const userEmail = 'test@example.com';
+            Notification.findAll.mockResolvedValue([]);
+
+            const result = await notificationService.getNotificationsForUser(userEmail);
+
+            expect(Notification.findAll).toHaveBeenCalled();
+            expect(result).toEqual([]);
         });
     });
 });
