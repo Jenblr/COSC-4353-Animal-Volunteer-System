@@ -174,6 +174,7 @@ generateEventReport: async (format, startDate, endDate) => {
       eventDate: event.eventDate,
       location: `${event.city}, ${event.state}`,
       urgency: event.urgency || 'N/A', // Added urgency
+      description: event.eventDescription || 'N/A', // Added event description
       volunteersMatched: (event.VolunteerHistories || []).filter(history => history.participationStatus === 'Matched - Pending Attendance').length,
       matchedVolunteers: (event.VolunteerHistories || [])
         .filter(history => history.participationStatus === 'Matched - Pending Attendance')
@@ -191,8 +192,7 @@ generateEventReport: async (format, startDate, endDate) => {
     console.error('Error in generateEventReport:', error);
     throw error;
   }
-},
-generateSpecificEventReport: async (eventId, format) => {
+},generateSpecificEventReport: async (eventId, format) => {
   try {
     const event = await Event.findOne({
       where: { id: eventId },
@@ -213,6 +213,7 @@ generateSpecificEventReport: async (eventId, format) => {
       eventDate: event.eventDate,
       location: `${event.city}, ${event.state}`,
       urgency: event.urgency || 'N/A', // Added urgency
+      description: event.eventDescription || 'N/A', // Added event description
       volunteers: (event.VolunteerHistories || [])
         .filter(history => history.participationStatus === 'Matched - Pending Attendance')
         .map(history => ({
@@ -436,37 +437,41 @@ const generateCSVReport = async (data, isDetailedReport = false) => {
 const generateEventPDFReport = async (data) => {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ 
-        size: 'A4', 
-        margins: { top: 50, bottom: 50, left: 50, right: 50 } 
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: { top: 50, bottom: 50, left: 50, right: 50 }
       });
-      
+
       const chunks = [];
       doc.on('data', chunk => chunks.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
 
-      // Title
+      // title
       doc.fontSize(20)
          .font('Helvetica-Bold')
          .text('Event Report', { align: 'center' });
 
-      // Generation Date
+      //generation date
       doc.fontSize(10)
          .font('Helvetica')
          .text(`Generated on: ${new Date().toLocaleString()}`, { align: 'right' })
          .moveDown();
 
       data.forEach(event => {
-        // Event Name Header
+        //name 
         doc.fontSize(16)
            .font('Helvetica-Bold')
            .text(event.eventName)
-           .moveDown(1);
-           
+           .moveDown(0.5);
 
-        // Event Details
+        //event details
         doc.fontSize(12)
            .font('Helvetica-Bold')
+           .text('Description: ', { continued: true })
+           .font('Helvetica')
+           .text(event.description || 'N/A');
+
+        doc.font('Helvetica-Bold')
            .text('Date: ', { continued: true })
            .font('Helvetica')
            .text(new Date(event.eventDate).toLocaleDateString());
@@ -487,7 +492,7 @@ const generateEventPDFReport = async (data) => {
            .text(event.volunteersMatched.toString())
            .moveDown(1);
 
-        // Volunteers Section
+        //volunteers Section
         if (event.matchedVolunteers.length > 0) {
           doc.fontSize(16)
              .font('Helvetica-Bold')
@@ -531,15 +536,15 @@ const generateEventPDFReport = async (data) => {
 //all event csv
 const generateEventCSVReport = async (data) => {
   try {
-    let csvContent = 'Event Name,Date,Location,Urgency,Total Matched Volunteers,Volunteer Name,Volunteer Email,Matched At\n';
+    let csvContent = 'Event Name,Description,Date,Location,Urgency,Total Matched Volunteers,Volunteer Name,Volunteer Email,Matched At\n';
 
     data.forEach(event => {
       event.matchedVolunteers.forEach(volunteer => {
-        csvContent += `"${event.eventName}","${new Date(event.eventDate).toLocaleDateString()}","${event.location}","${event.urgency}",${event.volunteersMatched},"${volunteer.name}","${volunteer.email}","${new Date(volunteer.matchedAt).toLocaleString()}"\n`;
+        csvContent += `"${event.eventName}","${event.description || 'N/A'}","${new Date(event.eventDate).toLocaleDateString()}","${event.location}","${event.urgency}",${event.volunteersMatched},"${volunteer.name}","${volunteer.email}","${new Date(volunteer.matchedAt).toLocaleString()}"\n`;
       });
 
       if (event.matchedVolunteers.length === 0) {
-        csvContent += `"${event.eventName}","${new Date(event.eventDate).toLocaleDateString()}","${event.location}","${event.urgency}",${event.volunteersMatched},"No Matched Volunteers","",""\n`;
+        csvContent += `"${event.eventName}","${event.description || 'N/A'}","${new Date(event.eventDate).toLocaleDateString()}","${event.location}","${event.urgency}",${event.volunteersMatched},"No Matched Volunteers","",""\n`;
       }
     });
 
@@ -558,22 +563,23 @@ const generateSpecificEventPDFReport = async (data) => {
         size: 'A4',
         margins: { top: 50, bottom: 50, left: 50, right: 50 }
       });
-      
+
       const chunks = [];
       doc.on('data', chunk => chunks.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
 
       // Title
       doc.fontSize(20)
-      .font('Helvetica-Bold')
-      .text('Specific Event Report', { align: 'center' })
-      .moveDown();
+         .font('Helvetica-Bold')
+         .text('Specific Event Report', { align: 'center' })
+         .moveDown();
 
       doc.fontSize(18)
          .font('Helvetica-Bold')
          .text('Event: ', { continued: true })
-         .font('Helvetica-Bold')
+         .font('Helvetica')
          .text(data.eventName);
+
       doc.moveDown(0.5);
 
       // Generation Date
@@ -585,34 +591,38 @@ const generateSpecificEventPDFReport = async (data) => {
       // Event Details Section
       doc.fontSize(12)
          .font('Helvetica-Bold')
+         .text('Description: ', { continued: true })
+         .font('Helvetica')
+         .text(data.description || 'N/A');
+
+      doc.font('Helvetica-Bold')
          .text('Date: ', { continued: true })
          .font('Helvetica')
-         .text(`${new Date(data.eventDate).toLocaleDateString()}`);
+         .text(new Date(data.eventDate).toLocaleDateString());
 
       doc.font('Helvetica-Bold')
          .text('Location: ', { continued: true })
          .font('Helvetica')
-         .text(`${data.location}`);
+         .text(data.location);
 
       doc.font('Helvetica-Bold')
          .text('Urgency: ', { continued: true })
          .font('Helvetica')
-         .text(`${data.urgency}`);
+         .text(data.urgency);
 
       doc.font('Helvetica-Bold')
          .text('Matched Volunteers: ', { continued: true })
          .font('Helvetica')
-         .text(`${data.volunteers.length}`);
+         .text(data.volunteers.length.toString());
       doc.moveDown(1);
 
-      // Volunteers Section Header
-      doc.fontSize(16)
-         .font('Helvetica-Bold')
-         .text('Matched Volunteers');
-      doc.moveDown(0.5);
-
-      // Volunteers List
+      // Volunteers Section
       if (data.volunteers.length > 0) {
+        doc.fontSize(16)
+           .font('Helvetica-Bold')
+           .text('Matched Volunteers')
+           .moveDown();
+
         data.volunteers.forEach((volunteer, index) => {
           doc.fontSize(12)
              .font('Helvetica')
@@ -621,23 +631,23 @@ const generateSpecificEventPDFReport = async (data) => {
           doc.font('Helvetica-Bold')
              .text('Name: ', { continued: true })
              .font('Helvetica')
-             .text(`${volunteer.name}`);
+             .text(volunteer.name);
 
           doc.font('Helvetica-Bold')
              .text('Email: ', { continued: true })
              .font('Helvetica')
-             .text(`${volunteer.email}`);
+             .text(volunteer.email);
 
           doc.font('Helvetica-Bold')
              .text('Status: ', { continued: true })
              .font('Helvetica')
-             .text(`${volunteer.status}`);
+             .text(volunteer.status);
 
           doc.font('Helvetica-Bold')
              .text('Matched At: ', { continued: true })
              .font('Helvetica')
-             .text(`${new Date(volunteer.matchedAt).toLocaleString()}`);
-          
+             .text(new Date(volunteer.matchedAt).toLocaleString());
+
           doc.moveDown(1);
         });
       } else {
@@ -653,16 +663,17 @@ const generateSpecificEventPDFReport = async (data) => {
     }
   });
 };
+
 const generateSpecificEventCSVReport = async (data) => {
   try {
-    let csvContent = 'Event Name,Date,Location,Urgency,Volunteer Name,Volunteer Email,Status,Matched At\n';
+    let csvContent = 'Event Name,Description,Date,Location,Urgency,Volunteer Name,Volunteer Email,Status,Matched At\n';
 
     if (data.volunteers.length > 0) {
       data.volunteers.forEach(volunteer => {
-        csvContent += `"${data.eventName}","${new Date(data.eventDate).toLocaleDateString()}","${data.location}","${data.urgency}","${volunteer.name}","${volunteer.email}","${volunteer.status}","${new Date(volunteer.matchedAt).toLocaleString()}"\n`;
+        csvContent += `"${data.eventName}","${data.description || 'N/A'}","${new Date(data.eventDate).toLocaleDateString()}","${data.location}","${data.urgency}","${volunteer.name}","${volunteer.email}","${volunteer.status}","${new Date(volunteer.matchedAt).toLocaleString()}"\n`;
       });
     } else {
-      csvContent += `"${data.eventName}","${new Date(data.eventDate).toLocaleDateString()}","${data.location}","${data.urgency}","No Matched Volunteers","","",""\n`;
+      csvContent += `"${data.eventName}","${data.description || 'N/A'}","${new Date(data.eventDate).toLocaleDateString()}","${data.location}","${data.urgency}","No Matched Volunteers","","",""\n`;
     }
 
     return Buffer.from(csvContent, 'utf-8');
