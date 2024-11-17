@@ -213,3 +213,37 @@ button[type="submit"]:active {
     width: 100%;
   }
 }
+.form-section input[type="date"] {
+  box-sizing: border-box; /* Ensures padding and border are included in the element's total width and height */
+  width: 100%; 
+  padding: 12px 15px;
+  margin: 0; 
+  border: 2px solid var(--border-color); 
+  border-radius: 10px; 
+  background-color: #FFF; 
+  color: var(--text-color); 
+  font-size: 16px; 
+}
+
+.form-section input[type="date"]:focus {
+  border-color: var(--primary-color); 
+  box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.2); 
+  outline: none; 
+}
+
+.select-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px; 
+}
+
+.reports-container {
+  padding: 20px;
+  border-radius: 20px;
+  background-color: var(--form-bg-color);
+  max-width: 800px;
+  margin: 20px auto;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}

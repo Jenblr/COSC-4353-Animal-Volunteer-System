@@ -150,7 +150,86 @@ const reportsService = {
       console.error('Error generating specific volunteer report:', error);
       throw error;
     }
-  }
+  },
+
+  //Event 
+  generateEventReport: async (format, startDate, endDate) => {
+    try {
+      const events = await Event.findAll({
+        where: { eventDate: { [Op.between]: [startDate, endDate] } },
+        include: [
+          {
+            model: VolunteerHistory,
+            as: 'VolunteerHistories',
+            required: false,
+            include: [{ model: User, include: [{ model: Profile, as: 'Profile' }] }]
+          }
+        ]
+      });
+  
+      if (!events.length) throw new Error('No events found in the specified date range');
+  
+      const reportData = events.map(event => ({
+        eventName: event.eventName,
+        eventDate: event.eventDate,
+        location: `${event.city}, ${event.state}`,
+        volunteersMatched: (event.VolunteerHistories || []).filter(history => history.participationStatus === 'Matched - Pending Attendance').length,
+        matchedVolunteers: (event.VolunteerHistories || [])
+          .filter(history => history.participationStatus === 'Matched - Pending Attendance')
+          .map(history => ({
+            name: history.User?.Profile?.fullName || 'N/A',
+            email: history.User?.email || 'N/A',
+            matchedAt: history.matchedAt || 'N/A'
+          }))
+      }));
+  
+      return format === 'PDF'
+        ? await generateEventPDFReport(reportData)
+        : await generateEventCSVReport(reportData);
+    } catch (error) {
+      console.error('Error in generateEventReport:', error);
+      throw error;
+    }
+  },
+
+  generateSpecificEventReport: async (eventId, format) => {
+    try {
+      const event = await Event.findOne({
+        where: { id: eventId },
+        include: [
+          {
+            model: VolunteerHistory,
+            as: 'VolunteerHistories',
+            required: false,
+            include: [{ model: User, include: [{ model: Profile, as: 'Profile' }] }]
+          }
+        ]
+      });
+  
+      if (!event) throw new Error('Event not found');
+  
+      const reportData = {
+        eventName: event.eventName,
+        eventDate: event.eventDate,
+        location: `${event.city}, ${event.state}`,
+        volunteers: (event.VolunteerHistories || [])
+          .filter(history => history.participationStatus === 'Matched - Pending Attendance')
+          .map(history => ({
+            name: history.User?.Profile?.fullName || 'N/A',
+            email: history.User?.email || 'N/A',
+            status: history.participationStatus || 'N/A',
+            matchedAt: history.matchedAt || 'N/A'
+          }))
+      };
+  
+      return format === 'PDF'
+        ? await generateSpecificEventPDFReport(reportData)
+        : await generateSpecificEventCSVReport(reportData);
+    } catch (error) {
+      console.error('Error in generateSpecificEventReport:', error);
+      throw error;
+    }
+  }  
 };
 
 const generateParticipationStats = (history) => {
@@ -353,4 +432,244 @@ const generateCSVReport = async (data, isDetailedReport = false) => {
   }
 };
 
+const generateEventPDFReport = async (data) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ 
+        size: 'A4', 
+        margins: { top: 50, bottom: 50, left: 50, right: 50 } 
+      });
+      
+      const chunks = [];
+      doc.on('data', chunk => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+      // Title
+      doc.fontSize(20)
+         .font('Helvetica-Bold')
+         .text('Event Report', { align: 'center' });
+
+      // Generation Date
+      doc.fontSize(10)
+         .font('Helvetica')
+         .text(`Generated on: ${new Date().toLocaleString()}`, { align: 'right' })
+         .moveDown();
+
+      data.forEach(event => {
+        // Event Name Header
+        doc.fontSize(16)
+           .font('Helvetica-Bold')
+           .text(event.eventName)
+           .moveDown(1);
+           
+
+        // Event Details
+        doc.fontSize(12)
+           .font('Helvetica-Bold')
+           .text('Date: ', { continued: true })
+           .font('Helvetica')
+           .text(new Date(event.eventDate).toLocaleDateString());
+
+        doc.font('Helvetica-Bold')
+           .text('Location: ', { continued: true })
+           .font('Helvetica')
+           .text(event.location);
+
+        doc.font('Helvetica-Bold')
+           .text('Total Matched Volunteers: ', { continued: true })
+           .font('Helvetica')
+           .text(event.volunteersMatched.toString())
+           .moveDown(1);
+
+        // Volunteers Section
+        if (event.matchedVolunteers.length > 0) {
+          doc.fontSize(16)
+             .font('Helvetica-Bold')
+             .text('Matched Volunteers')
+             .moveDown();
+
+          event.matchedVolunteers.forEach(volunteer => {
+            doc.fontSize(12)
+               .font('Helvetica-Bold')
+               .text('Name: ', { continued: true })
+               .font('Helvetica')
+               .text(volunteer.name);
+
+            doc.font('Helvetica-Bold')
+               .text('Email: ', { continued: true })
+               .font('Helvetica')
+               .text(volunteer.email);
+
+            doc.font('Helvetica-Bold')
+               .text('Matched At: ', { continued: true })
+               .font('Helvetica')
+               .text(new Date(volunteer.matchedAt).toLocaleString())
+               .moveDown();
+          });
+        } else {
+          doc.font('Helvetica')
+             .text('No matched volunteers found.')
+             .moveDown();
+        }
+
+        doc.addPage();
+      });
+
+      doc.end();
+    } catch (error) {
+      console.error('Error in generateEventPDFReport:', error);
+      reject(error);
+    }
+  });
+};
+
+const generateEventCSVReport = async (data) => {
+  try {
+    let csvContent = 'Event Name,Date,Location,Total Matched Volunteers,Volunteer Name,Volunteer Email,Matched At\n';
+
+    data.forEach(event => {
+      event.matchedVolunteers.forEach(volunteer => {
+        csvContent += `"${event.eventName}","${new Date(event.eventDate).toLocaleDateString()}","${event.location}",${event.volunteersMatched},"${volunteer.name}","${volunteer.email}","${new Date(volunteer.matchedAt).toLocaleString()}"\n`;
+      });
+
+      if (event.matchedVolunteers.length === 0) {
+        csvContent += `"${event.eventName}","${new Date(event.eventDate).toLocaleDateString()}","${event.location}",${event.volunteersMatched},"No Matched Volunteers","",""\n`;
+      }
+    });
+
+    return Buffer.from(csvContent, 'utf-8');
+  } catch (error) {
+    console.error('Error in generateEventCSVReport:', error);
+    throw error;
+  }
+};
+
+//specific event
+const generateSpecificEventPDFReport = async (data) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: { top: 50, bottom: 50, left: 50, right: 50 }
+      });
+      
+      const chunks = [];
+      doc.on('data', chunk => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+      // Title
+      doc.fontSize(20)
+      .font('Helvetica-Bold')
+      .text('Specific Event Report', { align: 'center' })
+      .moveDown();
+
+      doc.fontSize(18)
+         .font('Helvetica-Bold')
+         .text('Event: ', { continued: true })
+         .font('Helvetica-Bold')
+         .text(data.eventName);
+      doc.moveDown(0.5);
+
+      // Generation Date
+      doc.fontSize(10)
+         .font('Helvetica')
+         .text(`Generated on: ${new Date().toLocaleString()}`, { align: 'right' });
+      doc.moveDown(1);
+
+      // Event Details Section
+      doc.fontSize(12)
+         .font('Helvetica-Bold')
+         .text('Date: ', { continued: true })
+         .font('Helvetica')
+         .text(`${new Date(data.eventDate).toLocaleDateString()}`);
+
+      doc.font('Helvetica-Bold')
+         .text('Location: ', { continued: true })
+         .font('Helvetica')
+         .text(`${data.location}`);
+
+      doc.font('Helvetica-Bold')
+         .text('Urgency: ', { continued: true })
+         .font('Helvetica')
+         .text(`${data.urgency}`);
+
+      doc.font('Helvetica-Bold')
+         .text('Matched Volunteers: ', { continued: true })
+         .font('Helvetica')
+         .text(`${data.volunteers.length}`);
+      doc.moveDown(1);
+
+      // Volunteers Section Header
+      doc.fontSize(16)
+         .font('Helvetica-Bold')
+         .text('Matched Volunteers');
+      doc.moveDown(0.5);
+
+      // Volunteers List
+      if (data.volunteers.length > 0) {
+        data.volunteers.forEach((volunteer, index) => {
+          doc.fontSize(12)
+             .font('Helvetica')
+             .text(`Volunteer ${index + 1}`);
+
+          doc.font('Helvetica-Bold')
+             .text('Name: ', { continued: true })
+             .font('Helvetica')
+             .text(`${volunteer.name}`);
+
+          doc.font('Helvetica-Bold')
+             .text('Email: ', { continued: true })
+             .font('Helvetica')
+             .text(`${volunteer.email}`);
+
+          doc.font('Helvetica-Bold')
+             .text('Status: ', { continued: true })
+             .font('Helvetica')
+             .text(`${volunteer.status}`);
+
+          doc.font('Helvetica-Bold')
+             .text('Matched At: ', { continued: true })
+             .font('Helvetica')
+             .text(`${new Date(volunteer.matchedAt).toLocaleString()}`);
+          
+          doc.moveDown(1);
+        });
+      } else {
+        doc.fontSize(12)
+           .font('Helvetica')
+           .text('No matched volunteers for this event.', { align: 'left' });
+      }
+
+      doc.end();
+    } catch (error) {
+      console.error('Error in generateSpecificEventPDFReport:', error);
+      reject(error);
+    }
+  });
+};
+const generateSpecificEventCSVReport = async (data) => {
+  try {
+    let csvContent = 'Event Name,Date,Location,Volunteer Name,Volunteer Email,Status,Matched At\n';
+
+    if (data.volunteers.length > 0) {
+      data.volunteers.forEach(volunteer => {
+        csvContent += `"${data.eventName}","${new Date(data.eventDate).toLocaleDateString()}","${data.location}","${volunteer.name}","${volunteer.email}","${volunteer.status}","${new Date(volunteer.matchedAt).toLocaleString()}"\n`;
+      });
+    } else {
+      csvContent += `"${data.eventName}","${new Date(data.eventDate).toLocaleDateString()}","${data.location}","No Matched Volunteers","","",""\n`;
+    }
+
+    return Buffer.from(csvContent, 'utf-8');
+  } catch (error) {
+    console.error('Error in generateSpecificEventCSVReport:', error);
+    throw error;
+  }
+};
+
+
 module.exports = reportsService;
+
+
+
+
+

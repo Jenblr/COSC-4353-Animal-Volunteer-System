@@ -105,6 +105,7 @@ exports.createEvent = async (eventData, userId) => {
         console.log('Final event data:', eventWithUser);  
 
         const event = await Event.create(eventWithUser);
+        
 
         notificationService.createEventNotification({
             eventName: event.eventName,
