@@ -4,16 +4,37 @@ const UserModel = require('../../../models/user');
 
 describe('User Model', () => {
   let sequelize;
-  let User;
+  let User, Profile, VolunteerHistory;
 
   beforeAll(async () => {
     sequelize = new Sequelize('sqlite::memory:', { logging: false });
+    
+    // Define User model
     User = UserModel(sequelize, DataTypes);
-    await sequelize.sync(); // Sync the database
+    
+    // Mock associated models
+    Profile = sequelize.define('Profile', {
+      userId: DataTypes.INTEGER,
+    });
+
+    VolunteerHistory = sequelize.define('VolunteerHistory', {
+      volunteerId: DataTypes.INTEGER,
+    });
+
+    // Define associations
+    User.associate({ Profile, VolunteerHistory });
+
+    // Sync database
+    await sequelize.sync();
   });
 
   afterAll(async () => {
     await sequelize.close();
+  });
+
+  beforeEach(async () => {
+    // Reset database before each test
+    await sequelize.sync({ force: true });
   });
 
   describe('Model Validations', () => {
@@ -73,6 +94,7 @@ describe('User Model', () => {
 
       const originalPassword = user.password;
       user.password = 'newpassword123';
+      user.changed('password', true); // Explicitly mark password as changed
       await user.save();
 
       expect(user.password).not.toBe(originalPassword);

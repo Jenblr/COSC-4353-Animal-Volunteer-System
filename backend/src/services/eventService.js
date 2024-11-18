@@ -135,31 +135,32 @@ exports.createEvent = async (eventData, userId) => {
 
 exports.getEventById = async (id) => {
     try {
-        const event = await Event.findByPk(id, {
-            include: [
-                {
-                    model: State,
-                    attributes: ['code', 'name']
-                },
-                {
-                    model: User,
-                    attributes: ['email']
-                }
-            ]
-        });
-
-        if (!event) {
-            throw {
-                status: 404,
-                message: 'Event not found'
-            };
-        }
-
-        return event;
+      const event = await Event.findByPk(id, {
+        include: [
+          {
+            model: State,
+            attributes: ['code', 'name'],
+          },
+          {
+            model: User,
+            attributes: ['email'],
+          },
+        ],
+      });
+  
+      if (!event) {
+        throw {
+          status: 404,
+          message: 'Event not found',
+        };
+      }
+  
+      return event;
     } catch (error) {
-        throw error;
+      throw error;
     }
-};
+  };
+  
 
 exports.searchEvents = async (criteria) => {
     try {

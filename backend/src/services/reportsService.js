@@ -155,6 +155,9 @@ const reportsService = {
   //Event 
   generateEventReport: async (format, startDate, endDate) => {
     try {
+      if (new Date(startDate) > new Date(endDate)) {
+        throw new Error('Invalid date range: startDate must be before endDate');
+      }
       const events = await Event.findAll({
         where: { eventDate: { [Op.between]: [startDate, endDate] } },
         include: [

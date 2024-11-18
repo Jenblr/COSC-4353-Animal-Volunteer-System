@@ -235,34 +235,43 @@ describe('eventService', () => {
 
   describe('getEventById', () => {
     it('should return event details when event exists', async () => {
-        const mockEvent = { id: 1, eventName: 'Test Event' };
-      
-        Event.findByPk.mockResolvedValue(mockEvent);
-      
-        const result = await eventService.getEventById(1);
-      
-        expect(Event.findByPk).toHaveBeenCalledWith(1, {
-          include: [
-            { model: State, attributes: ['code', 'name'] },
-            { model: User, attributes: ['email'] },
-          ],
-        });
-        expect(result).toEqual(mockEvent);
+      const mockEvent = {
+        id: 1,
+        eventName: 'Test Event',
+        State: { code: 'CA', name: 'California' },
+        User: { email: 'test@example.com' },
+      };
+  
+      Event.findByPk.mockResolvedValue(mockEvent);
+  
+      const result = await eventService.getEventById(1);
+  
+      expect(Event.findByPk).toHaveBeenCalledWith(1, {
+        include: [
+          { model: State, attributes: ['code', 'name'] },
+          { model: User, attributes: ['email'] },
+        ],
       });
-      
-      
-      
-
-    it('should throw an error if the event does not exist', async () => {
-        Event.findByPk.mockResolvedValue(null);
-      
-        await expect(eventService.getEventById(999)).rejects.toEqual({
-          status: 404,
-          message: 'Event not found',
-        });
+      expect(result).toEqual(mockEvent);
     });
-      
+  
+    it('should throw an error if the event does not exist', async () => {
+      Event.findByPk.mockResolvedValue(null);
+  
+      await expect(eventService.getEventById(999)).rejects.toEqual({
+        status: 404,
+        message: 'Event not found',
+      });
+  
+      expect(Event.findByPk).toHaveBeenCalledWith(999, {
+        include: [
+          { model: State, attributes: ['code', 'name'] },
+          { model: User, attributes: ['email'] },
+        ],
+      });
+    });
   });
+  
 
   describe('searchEvents', () => {
     it('should throw an error for no search criteria', async () => {
@@ -410,11 +419,11 @@ describe('eventService', () => {
     it('should handle error thrown inside searchEvents', async () => {
       const criteria = { state: 'CA' };
       Event.findAll.mockRejectedValue(new Error('Database error'));
-
+  
       await expect(eventService.searchEvents(criteria)).rejects.toEqual({
-        status: 500,
-        message: 'Error searching events',
-        error: 'Database error',
+          status: 500,
+          message: 'Error searching events',
+          error: 'Database error',
       });
     });
   });
