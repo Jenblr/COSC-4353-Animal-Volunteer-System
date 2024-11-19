@@ -39,13 +39,6 @@ const AdminLoginPage = () => {
 		}
 	};
 
-	// For 'Use Demo Admin Credentials' button
-    const fillDemoAdminCredentials = () => {
-        setEmail('admin@example.com');
-        setPassword('adminpassword');
-        setError('');
-    };
-
 	return (
 		<div className="login-container admin-login">
 			<form className="login-form" onSubmit={handleSubmit}>
@@ -79,10 +72,6 @@ const AdminLoginPage = () => {
 				<button type="submit" className="login-button admin-login-button" disabled={loading}>
 					{loading ? 'Logging in...' : 'Admin Log In'}
 				</button>
-
-                <button type="button" onClick={fillDemoAdminCredentials} className="demo-button">
-                    Use Demo Admin Credentials
-                </button>
 
 				{/* If user accidentally clicks admin login */}
 				<div className="additional-links">

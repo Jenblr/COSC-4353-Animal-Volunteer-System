@@ -13,20 +13,11 @@
 ---
 # Packages Installed
 **Frontend**
-- npm install
-- npm install react-router-dom
-- npm install @fortawesome/react-fontawesome
-- npm install @fortawesome/free-solid-svg-icons
-- npm install react-select
-- npm install react-datepicker
-- npm install axios
+- npm install react-router-dom @fortawesome/react-fontawesome @fortawesome/free-solid-svg-icons react-select react-datepicker axios
 
 **Backend**
-- npm install express bcryptjs jsonwebtoken dotenv
+- npm install express bcryptjs jsonwebtoken dotenv cors express-validator pdfkit csv-writer
 - npm install --save-dev jest supertest nodemon
-- npm install cors
-- npm install express-validator
-- npm install pdfkit csv-writer
 
 **Unit Testing**
 - npm install --save-dev jest supertest
@@ -55,6 +46,9 @@
 - Test → ```npm test```
 ---
 # Notes
+- ADMIN LOGIN: 
+    - admin@example.com
+    - adminpassword 
 - You have to start the backend up first (w/ database), then the frontend
 - A lot of forms are empty because an admin would need to sign in and create something, or a user needs to be registered
     - EX: Calendar = For a future event to display, an admin would need to go to Event Management to create events
